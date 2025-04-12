@@ -88,19 +88,68 @@ impl CGA {
 
     /// Return cursor position `x`,`y`
     pub fn getpos(&mut self) -> (usize, usize) {
-        /* Hier muss Code eingefuegt werden */
 
-        (0, 0) // Platzhalter, entfernen und durch sinnvollen Rueckgabewert ersetzen 
+        // Get cursor position (Lower Byte)
+        let low_csr :u8;
+        unsafe {
+            self.index_port.outb(CGA_LOW_BYTE_CMD); // Put "lower cursor position"- index in index-register
+            low_csr = self.data_port.inb(); // Get data at position stated inside index-register
+        }
+
+        // Get cursor position (Higher Byte)
+        let high_csr :u8;
+        unsafe {
+            self.index_port.outb(CGA_HIGH_BYTE_CMD);
+            high_csr = self.data_port.inb();
+        }
+
+        // Combine Bytes
+        let pos_crs :u16 = ((high_csr as u16) << 8) + (low_csr as u16);
+
+        // position -> X,Y
+        let x :usize = (pos_crs % CGA_COLUMNS as u16) as usize;
+        let y :usize = (pos_crs / CGA_COLUMNS as u16) as usize;
+
+        (x, y)
     }
 
     /// Set cursor position `x`,`y` 
     pub fn setpos(&mut self, x: usize, y: usize) {
-        /* Hier muss Code eingefuegt werden */
+        
+        // X,Y -> position
+        let pos_crs :u16 = (y * CGA_ROWS + x) as u16;
+
+        // Set cursor position (Lower Byte)
+        let low_csr :u8 = pos_crs as u8; // Nur untere 8 Bits
+        unsafe {
+            self.index_port.outb(CGA_LOW_BYTE_CMD); // Put "lower cursor position"- index in index-register
+            self.data_port.outb(low_csr); // Set data at position stated inside index-register
+        }
+
+        // Set cursor position (Higher Byte)
+        let high_csr :u8 = (pos_crs >> 8) as u8; // Nur Obere 8 Bits
+        unsafe {
+            self.index_port.outb(CGA_HIGH_BYTE_CMD);
+            self.data_port.outb(high_csr);
+        }      
     }
 
     /// Print byte `b` at actual position cursor position `x`,`y`
     pub fn print_byte(&mut self, b: u8) {
-        /* Hier muss Code eingefuegt werden */
+        let (x,y) = self.getpos();
+
+        // calculate position in storage
+        let pos :usize = CGA_BASE_ADDR as usize + 2 * ((x+y*CGA_COLUMNS) as usize);
+
+        // Generate output
+        let output_data :u16 = b as u16 | ((CGA_STD_ATTR as u16) << 8);
+
+        unsafe{
+            *(pos as *mut u16) = output_data;
+        }
+
+        // Set new Position
+        self.setpos(x+1, y); // TODO: Exchange for reeeal calculattion
     }
 
     /// Scroll text lines by one to the top.
@@ -112,8 +161,13 @@ impl CGA {
     /// Note: Blinking characters do not work in QEMU, but work on real hardware.
     ///       Support for blinking characters is optional and can be removed, if you want.
     pub fn attribute(&mut self, bg: Color, fg: Color, blink: bool) -> u8 {
-        /* Hier muss Code eingefuegt werden */
 
-        0 // Platzhalter, entfernen und durch sinnvollen Rueckgabewert ersetzen 
+        let fg_att :u8 = fg as u8; // Forground-Color
+        let bg_att :u8 = (bg as u8) << 3; // Background-Color
+        let blink_att :u8 = (blink as u8) << 7; // Blinking
+
+        let result :u8 = fg_att | bg_att | blink_att;
+
+        result
     }
 }
