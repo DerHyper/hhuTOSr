@@ -110,14 +110,18 @@ impl CGA {
         let x :usize = (pos_crs % CGA_COLUMNS as u16) as usize;
         let y :usize = (pos_crs / CGA_COLUMNS as u16) as usize;
 
+        kprintln!("getpos: ({0}, {1})", x, y);
+        kprintln!("--pos_crs: {:x}", pos_crs);
         (x, y)
     }
 
     /// Set cursor position `x`,`y` 
     pub fn setpos(&mut self, x: usize, y: usize) {
-        
+        kprintln!("setpos: ({0}, {1})", x, y);
+
         // X,Y -> position
-        let pos_crs :u16 = (y * CGA_ROWS + x) as u16;
+        let pos_crs :u16 = (y * CGA_COLUMNS + x) as u16;
+        kprintln!("--pos_crs: {:x}", pos_crs);
 
         // Set cursor position (Lower Byte)
         let low_csr :u8 = pos_crs as u8; // Nur untere 8 Bits
@@ -131,15 +135,25 @@ impl CGA {
         unsafe {
             self.index_port.outb(CGA_HIGH_BYTE_CMD);
             self.data_port.outb(high_csr);
-        }      
+        }
+
+        
     }
 
     /// Print byte `b` at actual position cursor position `x`,`y`
     pub fn print_byte(&mut self, b: u8) {
-        let (x,y) = self.getpos();
-
         // calculate position in storage
+        let (x,y) = self.getpos();
         let pos :usize = CGA_BASE_ADDR as usize + 2 * ((x+y*CGA_COLUMNS) as usize);
+
+        kprintln!("Write symbol: {} = {} and \\n = {}", b as char, b, '\n' as u8);
+
+        // Check for new line
+        if b == '\n' as u8
+        {
+            self.setpos(0, y+1);
+            return
+        }
 
         // Generate output
         let output_data :u16 = b as u16 | ((CGA_STD_ATTR as u16) << 8);
