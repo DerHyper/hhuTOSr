@@ -64,7 +64,15 @@ impl CGA {
 
     /// Clear CGA screen and set cursor position to (0, 0).
     pub fn clear(&mut self) {
-        /* Hier muss Code eingefuegt werden */
+        for x in 0..CGA_COLUMNS
+        {
+            for y in 0..CGA_ROWS
+            {
+                self.setpos(x, y);
+                self.print_byte(' ' as u8);
+            }
+        }
+        self.setpos(0,0);
     }
 
     /// Display the `character` at the given position `x`,`y` with attribute `attrib`.
@@ -162,13 +170,48 @@ impl CGA {
             *(pos as *mut u16) = output_data;
         }
 
+        // TODO: Fix Scrolling
         // Set new Position
-        self.setpos(x+1, y); // TODO: Exchange for reeeal calculattion
+        if y+1 > CGA_ROWS // Scroll Up
+        {
+            self.scrollup();
+            self.setpos(0, y-1);
+        }
+        else if x+1 > CGA_COLUMNS // Linebrake
+        {
+            self.setpos(0, y+1);
+        }
+        else 
+        {
+            self.setpos(x+1, y);
+        }
     }
 
     /// Scroll text lines by one to the top.
     pub fn scrollup(&mut self) {
-        /* Hier muss Code eingefuegt werden */
+        for y in 1..CGA_ROWS
+        {
+            for x in 0..CGA_COLUMNS
+            {
+                let symbol: u8 = self.get_byte(x, y);
+                self.setpos(x, y-1);
+                self.print_byte(symbol);
+            }
+        }
+    }
+
+    fn get_byte(&mut self, x: usize, y: usize) -> u8 {
+        // Calculate position
+        let pos :usize = CGA_BASE_ADDR as usize + 2 * ((x+y*CGA_COLUMNS) as usize);
+        let pos_ptr: *mut u8 = pos as *mut u8;
+
+        // Get Value
+        let byte: u8;
+        unsafe {
+            byte = pos_ptr.read_volatile();
+        }
+
+        byte
     }
 
     /// Helper function returning an attribute byte for the given parameters `bg`, `fg`, and `blink`
