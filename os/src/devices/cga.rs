@@ -37,7 +37,7 @@ pub enum Color {
     White      = 15,
 }
 
-pub const CGA_STD_ATTR: u8 = (Color::Black as u8) << 4 | (Color::Green as u8);
+pub const CGA_STD_ATTR: u8 = (Color::Black as u8) << 4 | (Color::Brown as u8);
 
 const CGA_BASE_ADDR: *mut u8 = 0xb8000 as *mut u8;
 const CGA_ROWS: usize = 25;
@@ -154,23 +154,22 @@ impl CGA {
             return
         }
 
-        self.print_byte_at_nowrapping(b, x, y);
-
-        // TODO: Fix Scrolling
-        // Set new Position
+        // Scroll up if needed
         if y >= CGA_ROWS // Scroll Up
         {
             self.scrollup();
-            self.setpos(0, CGA_ROWS-1);
+            (x, y) = (0, CGA_ROWS-1);
+            self.setpos(x, y);
         }
         else if x+1 > CGA_COLUMNS // Linebrake
         {
-            self.setpos(0, y+1);
+            (x, y) = (0, y+1);
+            self.setpos(x, y);
         }
-        else 
-        {
-            self.setpos(x+1, y);
-        }
+
+        // Print character
+        self.print_byte_at_nowrapping(b, x, y);
+        self.setpos(x+1, y);  
     }
 
     /// Print byte `b` at `x`,`y`
@@ -184,8 +183,6 @@ impl CGA {
         unsafe{
             *(pos as *mut u16) = output_data;
         }
-
-        kprintln!("print {} at ({},{})", b as char, x, y);
     }
 
     /// Scroll text lines by one to the top.
