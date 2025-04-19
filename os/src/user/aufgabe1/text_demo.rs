@@ -10,22 +10,28 @@ pub fn run () {
     } // Curly brackets for unlock
 
     // Test scroll
-    println!("You can\'t see this!");
-    for i in 0..25
+    // println!("You can\'t see this!");
+    // for i in 0..25
+    // {
+    //     println!("|");
+    // }
+    
+    // // Test prints
+    // print!("Hello ");
+    // println!("World!");
+
+    // // Test Escaping
+    // println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
+
+    // // Test Wrapping
+    // // Should look like: ###### \n # 
+    // println!("#################################################################################");
+    println!("---------------------");
+    println!("| dec | hex | bin   |");
+    println!("---------------------");
+    for i in 0..17
     {
-        println!("|");
+        println!("| {:>3} | {:>3x} | {:0>5b} |", i, i, i);
     }
-    
-    // Test prints
-    print!("Hello ");
-    println!("World!");
-
-    // Test Escaping
-    println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
-
-    // Test Wrapping
-    // Should look like: ###### \n # 
-    println!("#################################################################################");
-
-    
+    println!("---------------------");
 }
