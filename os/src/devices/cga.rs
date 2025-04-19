@@ -184,6 +184,8 @@ impl CGA {
         unsafe{
             *(pos as *mut u16) = output_data;
         }
+
+        kprintln!("print {} at ({},{})", b as char, x, y);
     }
 
     /// Scroll text lines by one to the top.
@@ -195,6 +197,11 @@ impl CGA {
                 let symbol: u8 = self.get_byte(x, y);
                 self.print_byte_at_nowrapping(symbol, x, y-1);
             }
+        }
+
+        // Clear the last line (row CGA_ROWS - 1)
+        for x in 0..CGA_COLUMNS {
+            self.print_byte_at_nowrapping(b' ', x, CGA_ROWS - 1);
         }
     }
 
