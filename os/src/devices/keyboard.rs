@@ -314,28 +314,62 @@ impl Keyboard {
     /// 0 = 250ms, 1 = 500ms, 2 = 750ms, 3 = 1000ms
     pub fn set_repeat_rate(&mut self, speed: u8, delay: u8) {
 
-        /* Hier muss Code eingefuegt werden. */
+        // Wait until Inputpuffer is empty
+        while unsafe { self.control_port.inb() } & KBD_INPB != 0 {}
 
-        /*****************************************************************************
-         * Funkion:         set_repeat_rate                                          *
-         *---------------------------------------------------------------------------*
-         * Beschreibung:    Einstellen der Wiederholungsrate der Tastatur.           *
-         *                                                                           *
-         * Parameter:                                                                *
-         *      delay:      Bestimmt, wie lange eine Taste gedrueckt werden muss,    *
-         *                  bevor die Wiederholung einsetzt. Erlaubt sind Werte      *
-         *                  zw. 0 (minimale Wartezeit) und 3 (maximale Wartezeit).   *
-         *                  0=250ms, 1=500ms, 2=750ms, 3=1000ms                      *
-         *                                                                           *
-         *      speed:      Bestimmt, wie schnell die Tastencodes aufeinander folgen *
-         *                  sollen. Erlaubt sind Werte zwischen 0 (sehr schnell)     *
-         *                  und 31 (sehr langsam).                                   *
-         *                                                                           *
-         *                  ((2 ^ B) * (D + 8) / 240 sec                             *
-         *                  Bits 4-3 = B; Bits 2-0 = D;                              *
-         *****************************************************************************/
+        // Configure repeat rate
+        let repeat_rate: u8 = speed & 0x1F;
+        let delay_time: u8 = delay & 0x3;
+        let output_data: u8 = repeat_rate | (delay_time << 5);
+
+        // Send Request to Dataport
+        unsafe { self.data_port.outb(KBD_CMD_SET_SPEED); }
+        
+        // Wait for Response
+        while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
+
+        // Check for ACK in Dataport
+        let data_response: u8 = unsafe{self.data_port.inb()};
+        if data_response != KBD_REPLY_ACK {
+            kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
+            return;
+        }
+
+        // Send repeat_rate to Dataport
+        unsafe { self.data_port.outb(output_data); }
+
+        // Wait for Response
+        while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
+
+        // Check for ACK in Dataport
+        let data_response: u8 = unsafe{self.data_port.inb()};
+        if data_response != KBD_REPLY_ACK {
+            kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
+            return;
+        }
+
+        kprintln!("Info: Set repeat_rate to {}. with a delay of {}", speed, delay);
+
+/*****************************************************************************
+ * Funkion:         set_repeat_rate                                          *
+ *---------------------------------------------------------------------------*
+ * Beschreibung:    Einstellen der Wiederholungsrate der Tastatur.           *
+ *                                                                           *
+ * Parameter:                                                                *
+ *      delay:      Bestimmt, wie lange eine Taste gedrueckt werden muss,    *
+ *                  bevor die Wiederholung einsetzt. Erlaubt sind Werte      *
+ *                  zw. 0 (minimale Wartezeit) und 3 (maximale Wartezeit).   *
+ *                  0=250ms, 1=500ms, 2=750ms, 3=1000ms                      *
+ *                                                                           *
+ *      speed:      Bestimmt, wie schnell die Tastencodes aufeinander folgen *
+ *                  sollen. Erlaubt sind Werte zwischen 0 (sehr schnell)     *
+ *                  und 31 (sehr langsam).                                   *
+ *                                                                           *
+ *                  ((2 ^ B) * (D + 8) / 240 sec                             *
+ *                  Bits 4-3 = B; Bits 2-0 = D;                              *
+ *****************************************************************************/
     }
-    
+
     /// Enable/Disable the LEDs on the keyboard.
     /// Multiple LEDs can be set at the same time as a bit mask.
     /// 1 = Caps Lock, 2 = Num Lock, 4 = Scroll Lock

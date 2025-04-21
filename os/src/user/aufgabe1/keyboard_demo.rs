@@ -6,11 +6,18 @@ use crate::devices::keyboard as keyboard; // shortcut for keyboard
 
 pub fn run() {
 
+    // Set repeat rate
+    {
+        let mut keyboard = keyboard::KEYBOARD.lock();
+        keyboard.set_repeat_rate(0, 3);
+    }
+
     // 'key_hit' aufrufen und Zeichen ausgeben
     loop{
         let mut keyboard = keyboard::KEYBOARD.lock();
         let key = keyboard.key_hit();
-        if key != Default::default() {
+        let invalid_key = Default::default();
+        if key != invalid_key {
             print_to_terminal(key);
         }
     }
