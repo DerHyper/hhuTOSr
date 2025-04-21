@@ -28,7 +28,7 @@ pub const SCAN_RIGHT: u8 = 77;
 pub const SCAN_DIV: u8 = 8;
 
 /// Struct representing a key.
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq)]
 pub struct Key {
     asc: u8,  // ASCII code
     scan: u8, // scan code

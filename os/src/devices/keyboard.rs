@@ -251,7 +251,36 @@ impl Keyboard {
     pub fn key_hit(&mut self) -> Key {
         let invalid: Key = Default::default();  // nicht explizit initialisierte Tasten sind ungueltig
 
-        /* Hier muss Code eingefuegt werden. */
+        // Check if databyte is set
+        let control_port_data: u8;
+        unsafe {
+            control_port_data = self.control_port.inb();
+        }
+        let databyte_is_set :bool = (control_port_data & KBD_OUTB) != 0;
+        if !databyte_is_set {
+            return invalid; // not set
+        }
+
+        // Check if databyte is from mouse
+        let databyte_is_from_mouse :bool = (control_port_data & KBD_AUXB) == 0;
+        if !databyte_is_from_mouse {
+            return invalid; // from mouse
+        }
+
+        // Get databyte
+        let data_port_data: u8;
+        unsafe {
+            data_port_data = self.data_port.inb();
+        }
+        self.code = data_port_data;
+        
+        // Translate Databyte, check if valid
+        let is_valid: bool = self.key_decoded();
+        if is_valid {
+            return self.gather;
+        } else {
+            return invalid;
+        }
 
         /*****************************************************************************
          * Funktion:        key_hit                                                  *
@@ -273,7 +302,6 @@ impl Keyboard {
          *                  ueberprueft werden kann.                                 *
          *****************************************************************************/
 
-        invalid
     }
     
     /// Set the repeat rate of the keyboard (determined by the speed and delay).

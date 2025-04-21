@@ -6,13 +6,19 @@ use crate::devices::keyboard as keyboard; // shortcut for keyboard
 
 pub fn run() {
 
-    /* Hier muss Code einfgeügt werden */
-    let mut cga = cga::CGA.lock();
-
-    loop{
-        let keyboard = keyboard::KEYBOARD.lock();
-        let key = keyboard.key_hit();
-    }
     // 'key_hit' aufrufen und Zeichen ausgeben
+    loop{
+        let mut keyboard = keyboard::KEYBOARD.lock();
+        let key = keyboard.key_hit();
+        if key != Default::default() {
+            print_to_terminal(key);
+        }
+    }
+}
 
+fn print_to_terminal(mut key: key::Key) {
+    let mut cga = cga::CGA.lock();
+    let value: u8 = key.get_ascii();
+    kprintln!("Got Key: {}", value);
+    cga.print_byte(value);
 }
