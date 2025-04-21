@@ -45,8 +45,22 @@ impl BumpAllocator {
     /// Allocate memory of the given size and alignment.
     pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
 
-        /* Hier muss Code eingefuegt werden */
+        let size = layout.size();
+        let align = layout.align();
+        let aligned_next = align_up(self.next, align);
 
+        // Check if there is enough space
+        if aligned_next + size > self.heap_end {
+            return ptr::null_mut(); // Not enough space
+        }
+
+        // Update next pointer
+        self.next = aligned_next + size;
+        self.allocations += 1;
+
+        // Return Pointer
+        let next_ptr: *mut u8 = aligned_next as *mut u8;
+        next_ptr
     }
 
     /// Deallocate memory (not supported by bump allocator).
