@@ -37,8 +37,15 @@ impl BumpAllocator {
 
     /// Dump free memory for debugging purposes.
     pub fn dump_free_list(&mut self) {
+        println!("Dumping free memory list:");
+        println!("   Heap start:   0x{:x}, heap end:   0x{:x}", self.heap_start, self.heap_end);
+        println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}\n", self.next, self.heap_end, self.heap_end - self.next);
+        
+        // Reset next pointer
+        self.next = self.heap_start;
+        self.allocations = 0;
 
-        /* Hier muss Code eingefuegt werden */
+        
 
     }
 

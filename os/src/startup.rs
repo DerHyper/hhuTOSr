@@ -47,7 +47,7 @@ fn aufgabe1() {
 fn aufgabe2() {
     heap_demo::run();
     sound_demo::run();
- }
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn startup() {
@@ -58,7 +58,7 @@ pub extern "C" fn startup() {
     
     cga::CGA.lock().clear();
     
-    aufgabe1();
+    //aufgabe1();
     aufgabe2();
     
     loop{}
