@@ -79,14 +79,14 @@ impl LinkedListAllocator {
     fn find_free_block(&mut self, size: usize, align: usize) -> Option<&'static mut ListNode> {
 
         /* Hier muss Code eingefuegt werden */
-
+        None
     }
 
     /// Check if the given block is large enough for an allocation with `size` and `align`.
     fn check_block_for_alloc(block: &ListNode, size: usize, align: usize) -> Result<(),()> {
 
         /* Hier muss Code eingefuegt werden */
-
+        Err(())
     }
 
     /// Adjust the given layout so that the resulting allocated memory
@@ -112,7 +112,7 @@ impl LinkedListAllocator {
         kprint!("list-alloc: size={}, align={}", layout.size(), layout.align());
 
         /* Hier muss Code eingefuegt werden */
-
+        0 as *mut u8
     }
 
     pub unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
