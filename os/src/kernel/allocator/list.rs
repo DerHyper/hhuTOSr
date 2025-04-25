@@ -75,8 +75,19 @@ impl LinkedListAllocator {
     /// Adds the given free memory block 'addr' to the front of the free list.
     unsafe fn add_free_block(&mut self, addr: usize, size: usize) {
 
-        /* Hier muss Code eingefuegt werden */
+        // Get current head
+        let mut allocator = ALLOCATOR.lock();
+        let current_head = allocator.head.next.take();
 
+        // Create new node
+        let new_note_addr: *mut ListNode = addr as *mut ListNode;
+        unsafe {
+            (*new_note_addr).size = size;
+            (*new_note_addr).next = current_head;
+        }
+
+        // Set new head
+        allocator.head.next = Some(unsafe{ &mut *new_note_addr });
     }
 
     /// Search a free block with the given size and alignment and remove it from the list.
