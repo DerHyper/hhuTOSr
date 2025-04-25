@@ -93,7 +93,27 @@ impl LinkedListAllocator {
     /// Search a free block with the given size and alignment and remove it from the list.
     fn find_free_block(&mut self, size: usize, align: usize) -> Option<&'static mut ListNode> {
 
-        /* Hier muss Code eingefuegt werden */
+        // Get the head of the list
+        let mut allocator = ALLOCATOR.lock();
+        
+        // Iterate over the list and find a free block
+        let mut current = &mut allocator.head.next; // mutable borrow
+        while let Some(node) = current.take() { // Take the current node
+
+            if LinkedListAllocator::check_block_for_alloc(node, size, align).is_ok() {
+                // Remove node from the list
+                *current = node.next.take(); // Override current with next
+                return Some(node);
+            } else {
+                let next_ptr: *mut Option<&'static mut ListNode> = &mut node.next; // Get next
+                *current = Some(node); // Put the node back into the list
+
+                unsafe {
+                    current = &mut *next_ptr; // Set current to next
+                }
+            }
+        }
+
         None
     }
 
