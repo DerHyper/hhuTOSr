@@ -152,17 +152,38 @@ impl LinkedListAllocator {
 
     /// Dump the free list for debugging purposes.
     pub fn dump_free_list(&mut self) {
+        println!("Dumping free memory list:");
+        println!("   Heap start:   0x{:x}, heap end:   0x{:x}", self.heap_start, self.heap_end);
 
-        /* Hier muss Code eingefuegt werden */
+        for node in self.head.next.iter() {
+            println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
+        }
+        
+        unsafe {self.init()};
 
     }
 
     pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
         kprint!("list-alloc: size={}, align={}", layout.size(), layout.align());
+        let (size, align) = LinkedListAllocator::size_align(layout);
 
-        /* Hier muss Code eingefuegt werden */
+        // check for block
+        let block_link = self.find_free_block(size, align);
+        let block = match block_link { Some(v) => v, none => {
+            kprintln!("   no free block found");
+            return ptr::null_mut();
+        }};
 
-        0 as *mut u8
+        // If remaining memory is big enough, split the block
+        let memory_remaining = block.size - size;
+        if memory_remaining > mem::size_of::<ListNode>() {
+            let new_block_addr = block.start_addr() + size;
+            unsafe {self.add_free_block(new_block_addr, memory_remaining);}
+            block.size = size;
+        }
+        
+        // return pointer to the allocated memory
+        block.start_addr() as *mut u8
     }
 
     pub unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
