@@ -7,7 +7,7 @@
  *  ║         https://os.phil-opp.com/allocator-designs/                      ║
  *  ╚═════════════════════════════════════════════════════════════════════════╝
  */
-use super::{align_up, Locked};
+use super::{align_up, Locked, ALLOCATOR};
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::{mem, ptr};
 use crate::kernel::allocator::bump::BumpAllocator;
@@ -64,7 +64,11 @@ impl LinkedListAllocator {
     /// Initialize the allocator with the heap bounds given in the constructor.
     pub unsafe fn init(&mut self) {
 
-        /* Hier muss Code eingefuegt werden */
+        // Add one single free block to the list that covers the whole heap.
+        let mut allocator = ALLOCATOR.lock();
+        let size = allocator.heap_end - allocator.heap_start;
+        let start_node: ListNode = ListNode::new(size);
+        allocator.head = start_node;
 
     }
 

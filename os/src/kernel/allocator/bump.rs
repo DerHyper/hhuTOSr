@@ -44,9 +44,6 @@ impl BumpAllocator {
         // Reset next pointer
         self.next = self.heap_start;
         self.allocations = 0;
-
-        
-
     }
 
     /// Allocate memory of the given size and alignment.
@@ -54,7 +51,7 @@ impl BumpAllocator {
 
         let size = layout.size();
         let align = layout.align();
-        let aligned_next = align_up(self.next, align);
+        let aligned_next = align_up(self.next, align); // Align the next pointer
 
         // Check if there is enough space
         if aligned_next + size > self.heap_end {

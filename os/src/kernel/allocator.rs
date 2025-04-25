@@ -29,8 +29,8 @@ const HEAP_SIZE: usize = 1024 * 1024; // 1 MiB heap size
 
 // Define the allocator (which implements the 'GlobalAlloc' trait)
 #[global_allocator]
-static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new(HEAP_START, HEAP_SIZE));
-//static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new(HEAP_START, HEAP_SIZE));
+//static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new(HEAP_START, HEAP_SIZE));
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new(HEAP_START, HEAP_SIZE));
 
 /// Initialize the heap allocator.
 pub fn init() {
