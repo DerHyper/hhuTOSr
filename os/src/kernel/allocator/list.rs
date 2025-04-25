@@ -7,7 +7,7 @@
  *  ║         https://os.phil-opp.com/allocator-designs/                      ║
  *  ╚═════════════════════════════════════════════════════════════════════════╝
  */
-use super::{align_up, Locked, ALLOCATOR};
+use super::{align_up, Locked};
 use alloc::alloc::{GlobalAlloc, Layout};
 use core::{mem, ptr};
 use crate::devices::kprint;
@@ -66,19 +66,17 @@ impl LinkedListAllocator {
     pub unsafe fn init(&mut self) {
         kprintln!("list-allocator: init");
         // Add one single free block to the list that covers the whole heap.
-        let mut allocator = ALLOCATOR.lock();
-        let size = allocator.heap_end - allocator.heap_start;
+        let size = self.heap_end - self.heap_start;
         let start_node: ListNode = ListNode::new(size);
-        allocator.head = start_node;
-
+        self.head = start_node;
+        kprintln!("list-allocator: init done");
     }
 
     /// Adds the given free memory block 'addr' to the front of the free list.
     unsafe fn add_free_block(&mut self, addr: usize, size: usize) {
         kprintln!("list-allocator: add_free_block: addr=0x{:x}, size={}", addr, size);
         // Get current head
-        let mut allocator = ALLOCATOR.lock();
-        let current_head = allocator.head.next.take();
+        let current_head = self.head.next.take();
 
         // Create new node
         let new_note_addr: *mut ListNode = addr as *mut ListNode;
@@ -88,17 +86,16 @@ impl LinkedListAllocator {
         }
 
         // Set new head
-        allocator.head.next = Some(unsafe{ &mut *new_note_addr });
+        self.head.next = Some(unsafe{ &mut *new_note_addr });
     }
 
     /// Search a free block with the given size and alignment and remove it from the list.
     fn find_free_block(&mut self, size: usize, align: usize) -> Option<&'static mut ListNode> {
         kprintln!("list-allocator: find_free_block: size={}, align={}", size, align);
         // Get the head of the list
-        let mut allocator = ALLOCATOR.lock();
+        let mut current = &mut self.head.next; // mutable borrow
         
         // Iterate over the list and find a free block
-        let mut current = &mut allocator.head.next; // mutable borrow
         while let Some(node) = current.take() { // Take the current node
             kprintln!("   ... checking block: addr=0x{:x}, size={}", node.start_addr(), node.size);
             if LinkedListAllocator::check_block_for_alloc(node, size, align).is_ok() {
