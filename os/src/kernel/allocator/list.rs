@@ -160,6 +160,8 @@ impl LinkedListAllocator {
             println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
         }
         
+        println!("");
+
         unsafe {self.init()};
 
     }
