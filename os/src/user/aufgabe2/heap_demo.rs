@@ -4,6 +4,7 @@ use crate::kernel::allocator;
 
 
 pub fn run () {
+    kprintln!("starting heap demo");
     println!("Heap Demo 1/1: Allocate 2 structs unsing Box::new");
     println!("=================================================\n");
 

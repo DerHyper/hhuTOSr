@@ -65,10 +65,14 @@ impl LinkedListAllocator {
     /// Initialize the allocator with the heap bounds given in the constructor.
     pub unsafe fn init(&mut self) {
         kprintln!("list-allocator: init");
+
+        // Add empty head
+        let head = ListNode::new(0);
+        self.head = head;
+
         // Add one single free block to the list that covers the whole heap.
         let size = self.heap_end - self.heap_start;
-        let start_node: ListNode = ListNode::new(size);
-        self.head = start_node;
+        unsafe {self.add_free_block(self.heap_start, size)}
         kprintln!("list-allocator: init done");
     }
 
@@ -161,7 +165,7 @@ impl LinkedListAllocator {
     }
 
     pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
-        kprint!("list-alloc: size={}, align={}", layout.size(), layout.align());
+        kprintln!("list-alloc: size={}, align={}", layout.size(), layout.align());
         let (size, align) = LinkedListAllocator::size_align(layout);
 
         // check for block
