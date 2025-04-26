@@ -30,6 +30,7 @@ fn ask_for_input() {
 }
 
 fn demo_alloc_box(cur_n: usize, max_n: usize) {
+    kprintln!("[START DEMO {}]",cur_n);
     println!("Heap Demo {}/{}: Allocate 2 structs unsing Box::new", cur_n, max_n);
     println!("=================================================\n");
 
@@ -49,6 +50,7 @@ fn demo_alloc_box(cur_n: usize, max_n: usize) {
 }
 
 fn demo_oversized_alloc_box(cur_n: usize, max_n: usize) {
+    kprintln!("[START DEMO {}]",cur_n);
     println!("Heap Demo {}/{}: Allocate 2 structs unsing Box::new",cur_n, max_n);
     println!("=================================================\n");
 
@@ -61,7 +63,8 @@ fn demo_oversized_alloc_box(cur_n: usize, max_n: usize) {
     let b = Box::new(Dummy64([0u8; 64]));
     let c = Box::new(Dummy64([0u8; 64]));
 
-
+    kprintln!("[DROPPING B]");
+    drop(b);
 
     println!("Added Dummy structs:\n   [a] [Deleted b] [c]\n");
 

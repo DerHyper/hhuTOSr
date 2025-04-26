@@ -72,13 +72,23 @@ impl LinkedListAllocator {
 
         // Add one single free block to the list that covers the whole heap.
         let size = self.heap_end - self.heap_start;
-        unsafe {self.add_free_block(self.heap_start, size)}
+        let empty_node = self.heap_start as *mut ListNode;
+        unsafe {
+            (*empty_node).size = size;
+            (*empty_node).next = None;
+        }
+        
+        self.head.next = Some(unsafe{&mut (*empty_node)});
+        //unsafe {self.add_free_block(self.heap_start, size)}
         kprintln!("list-allocator: init done");
     }
 
     /// Adds the given free memory block 'addr' to the front of the free list.
     unsafe fn add_free_block(&mut self, addr: usize, size: usize) {
+        // Current_Head ist an stelle 0x5... und new_note_addr ist auch an stelle 0x5... 
+        // Dadurch wird das Original verändert und eine REferenz auf sich selbst gespeichert
         kprintln!("list-allocator: add_free_block: addr=0x{:x}, size={}", addr, size);
+
         // Get current head
         let current_head = self.head.next.take();
 
@@ -156,8 +166,19 @@ impl LinkedListAllocator {
         println!("Dumping free memory list:");
         println!("   Heap start:   0x{:x}, heap end:   0x{:x}", self.heap_start, self.heap_end);
 
-        for node in self.head.next.iter() {
+        //for node in self.head.next.iter() {
+            //println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
+        //}
+
+        // Get the head of the list
+        let mut current = &mut self.head.next; // mutable borrow
+        // Itter
+        while let Some(node) = current.take() { // Take the current node
+            let next_ptr: *mut Option<&'static mut ListNode> = &mut node.next; // Get next
             println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
+            unsafe {
+                current = &mut *next_ptr; // Set current to next
+            }
         }
         
         println!("");
@@ -190,7 +211,7 @@ impl LinkedListAllocator {
     }
 
     pub unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        kprintln!("list-dealloc: size={}, align={}; not supported", layout.size(), layout.align());
+        kprintln!("list-dealloc: size={}, align={}", layout.size(), layout.align());
 
         let (size, _) = LinkedListAllocator::size_align(layout);
 
