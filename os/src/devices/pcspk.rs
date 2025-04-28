@@ -109,6 +109,8 @@ impl Speaker {
 
         /* Hier muss Code eingefuegt werden */
 
+        0
+
     }
     
     /// Wait for a given amount of time in milliseconds using counter 0 of the PIT.

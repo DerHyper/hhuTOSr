@@ -7,4 +7,4 @@ pub mod cga;
 pub mod keyboard;
 pub mod key;
 pub mod serial;
-
+pub mod pcspk;
