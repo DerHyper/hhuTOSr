@@ -92,7 +92,28 @@ impl Speaker {
     /// The played tone is dependent on counter 2 of the PIT.
     pub fn on(&mut self) {
 
-        /* Hier muss Code eingefuegt werden */
+        // Set Frequencie
+        let bin_mode = 0b0000_000_1; // binary mode
+        let operating_mode = 0b0000_011_0; // Square Wave generator
+        let access_mode = 0b00_11_0000; // low + high byte
+        let channel = 0b10_00_0000; // Channel 2
+        let data = bin_mode | operating_mode | access_mode | channel;
+
+        unsafe {self.pit_ctrl_port.outb(data)};
+
+        // Set the frequency
+        let frequency = (1193180 / A1) as u16;
+        let low_byte = (frequency & 0xFF) as u8;
+        let high_byte = ((frequency >> 8) & 0xFF) as u8;
+
+        unsafe {self.pit_data2_port.outb(low_byte)};
+        unsafe {self.pit_data2_port.outb(high_byte)};
+
+        // Play Sound
+
+        let tmp = unsafe {self.ppi_port.inb()}; // read current value
+        let spk_on = tmp | 0b0000_0011;
+        unsafe {self.ppi_port.outb(spk_on)}; // set bit 0 to 1
 
     }
 
