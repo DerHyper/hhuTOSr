@@ -83,7 +83,15 @@ impl Speaker {
 
     /// Play a specific frequency for a given amount of time (milliseconds).
     pub fn play(&mut self, frequency: usize, duration: usize) {
-        // Set the frequency
+        self.setup_pit();
+        // Set PIT to 1193180 Hz
+        let pit_frequency = 1193 as u16;
+        let low_byte = (pit_frequency & 0xFF) as u8;
+        let high_byte = ((pit_frequency >> 8) & 0xFF) as u8;
+        unsafe {self.pit_data0_port.outb(low_byte)};
+        unsafe {self.pit_data0_port.outb(high_byte)};
+
+        // Set Frequency
         let frequency_code = (1193180 / frequency) as u16;
         let low_byte = (frequency_code & 0xFF) as u8;
         let high_byte = ((frequency_code >> 8) & 0xFF) as u8;
@@ -124,7 +132,16 @@ impl Speaker {
         let bin_mode = 0b0000_000_1; // binary mode
         let operating_mode = 0b0000_011_0; // Square Wave generator
         let access_mode = 0b00_00_0000; // FREEZE MODE!
-        let channel = 0b10_00_0000; // Channel 2 (Speaker Mode)
+        let channel = 0b00_00_0000; // Channel 0 (Counter Mode)
+        let data = bin_mode | operating_mode | access_mode | channel;
+        unsafe {self.pit_ctrl_port.outb(data)};
+    }
+
+    fn unfreeze_pit_count(&mut self) {
+        let bin_mode = 0b0000_000_1; // binary mode
+        let operating_mode = 0b0000_011_0; // Square Wave generator
+        let access_mode = 0b00_11_0000; // UNFREEZE: low + high byte
+        let channel = 0b00_00_0000; // Channel 0 (Counter Mode)
         let data = bin_mode | operating_mode | access_mode | channel;
         unsafe {self.pit_ctrl_port.outb(data)};
     }
@@ -144,13 +161,12 @@ impl Speaker {
         self.freeze_pit_count();
 
         // Read the counter value
-        let count_low = unsafe{self.pit_data2_port.inb() as u16}; // read low byte
-        let count_high = unsafe{self.pit_data2_port.inb() as u16}; // read high byte
+        let count_low = unsafe{self.pit_data0_port.inb() as u16}; // read low byte
+        let count_high = unsafe{self.pit_data0_port.inb() as u16}; // read high byte
         let count = (count_high << 8) | count_low;
 
-
         // Unfreeze the counter
-        self.setup_pit();
+        self.unfreeze_pit_count();
 
         count
     }
@@ -160,7 +176,6 @@ impl Speaker {
     /// This means that the counter will count down from 1193 to 0 and then reload itself.
     /// Counting from 1193 to 0 takes 1ms.
     fn delay(&mut self, duration: usize) {
-
         let mut last = self.read_counter();
         let mut time_passed = 0;
 
@@ -173,19 +188,20 @@ impl Speaker {
             }
 
             last = current;
+        }
     }
-        // let mut waiting_time = 0;
-        // kprintln!("Waiting for {} ms", duration);
-        // while waiting_time < duration { // wait for the duration
-        //     let mut current_lowest = self.read_counter();
-        //     while current_lowest > self.read_counter() { // wait for the counter to reach 0
-        //         current_lowest = self.read_counter();
-        //         kprintln!("   current_lowest = {}", current_lowest);
-        //     }
+}
 
-        //     waiting_time += 1;
-        // }
-    }
+pub fn debugsong() {
+    let mut speaker = SPEAKER.lock();
+    
+    speaker.play(200, 10000);
+    speaker.delay(5000);
+
+    speaker.play(1000, 10000);
+    speaker.delay(500);
+
+
 }
 
 /// Plays the Tetris theme using the PC speaker.
