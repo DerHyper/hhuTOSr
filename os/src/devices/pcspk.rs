@@ -83,55 +83,76 @@ impl Speaker {
 
     /// Play a specific frequency for a given amount of time (milliseconds).
     pub fn play(&mut self, frequency: usize, duration: usize) {
+        // Set the frequency
+        let frequency_code = (1193180 / frequency) as u16;
+        let low_byte = (frequency_code & 0xFF) as u8;
+        let high_byte = ((frequency_code >> 8) & 0xFF) as u8;
+        unsafe {self.pit_data2_port.outb(low_byte)};
+        unsafe {self.pit_data2_port.outb(high_byte)};
 
-        /* Hier muss Code eingefuegt werden */
-
+        self.on();
+        self.delay(duration);
+        self.off();
     }
 
     /// Turn on the speaker.
     /// The played tone is dependent on counter 2 of the PIT.
     pub fn on(&mut self) {
+        // Setup PIT
+        self.setup_pit();
 
-        // Set Frequencie
+        // Play Sound
+        let tmp = unsafe {self.ppi_port.inb()}; // read current value
+        let spk_on = tmp | 0b01 | 0b10; // Connect PIT channel 2 gate; Activate channel 2 timer
+        unsafe {self.ppi_port.outb(spk_on)};
+    }
+
+    // Setup the PIT to use channel 2 in square wave mode.
+    fn setup_pit(&mut self) {
+        // Setup PIT
         let bin_mode = 0b0000_000_1; // binary mode
         let operating_mode = 0b0000_011_0; // Square Wave generator
         let access_mode = 0b00_11_0000; // low + high byte
-        let channel = 0b10_00_0000; // Channel 2
+        let channel = 0b10_00_0000; // Channel 2 (Speaker Mode)
         let data = bin_mode | operating_mode | access_mode | channel;
-
         unsafe {self.pit_ctrl_port.outb(data)};
-
-        // Set the frequency
-        let frequency = (1193180 / A1) as u16;
-        let low_byte = (frequency & 0xFF) as u8;
-        let high_byte = ((frequency >> 8) & 0xFF) as u8;
-
-        unsafe {self.pit_data2_port.outb(low_byte)};
-        unsafe {self.pit_data2_port.outb(high_byte)};
-
-        // Play Sound
-
-        let tmp = unsafe {self.ppi_port.inb()}; // read current value
-        let spk_on = tmp | 0b0000_0011;
-        unsafe {self.ppi_port.outb(spk_on)}; // set bit 0 to 1
-
     }
 
+
+
+    fn freeze_pit_count(&mut self) {
+        let bin_mode = 0b0000_000_1; // binary mode
+        let operating_mode = 0b0000_011_0; // Square Wave generator
+        let access_mode = 0b00_00_0000; // FREEZE MODE!
+        let channel = 0b10_00_0000; // Channel 2 (Speaker Mode)
+        let data = bin_mode | operating_mode | access_mode | channel;
+        unsafe {self.pit_ctrl_port.outb(data)};
+    }
+    
     /// Turn off the speaker.
     pub fn off(&mut self) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        // Deactivate PPI
+        let tmp = unsafe {self.ppi_port.inb()}; // read current value
+        let spk_off = tmp & 0b1111_1100; // Disconnect PIT channel 2 gate; Deactivate channel 2 timer
+        unsafe {self.ppi_port.outb(spk_off)};
     }
 
     /// Return the current value of the PIT counter (16-bit).
     /// Used by `delay()` to check if the counter has reached 0 or has been reloaded.
     fn read_counter(&mut self) -> u16 {
+        // freeze current counter value
+        self.freeze_pit_count();
 
-        /* Hier muss Code eingefuegt werden */
+        // Read the counter value
+        let count_low = unsafe{self.pit_data2_port.inb() as u16}; // read low byte
+        let count_high = unsafe{self.pit_data2_port.inb() as u16}; // read high byte
+        let count = (count_high << 8) | count_low;
 
-        0
 
+        // Unfreeze the counter
+        self.setup_pit();
+
+        count
     }
     
     /// Wait for a given amount of time in milliseconds using counter 0 of the PIT.
@@ -140,8 +161,30 @@ impl Speaker {
     /// Counting from 1193 to 0 takes 1ms.
     fn delay(&mut self, duration: usize) {
 
-        /* Hier muss Code eingefuegt werden */
+        let mut last = self.read_counter();
+        let mut time_passed = 0;
 
+        while time_passed < duration {
+            let current = self.read_counter();
+
+            // Ckech if the counter has been reloaded
+            if current > last {
+                time_passed += 1;
+            }
+
+            last = current;
+    }
+        // let mut waiting_time = 0;
+        // kprintln!("Waiting for {} ms", duration);
+        // while waiting_time < duration { // wait for the duration
+        //     let mut current_lowest = self.read_counter();
+        //     while current_lowest > self.read_counter() { // wait for the counter to reach 0
+        //         current_lowest = self.read_counter();
+        //         kprintln!("   current_lowest = {}", current_lowest);
+        //     }
+
+        //     waiting_time += 1;
+        // }
     }
 }
 
