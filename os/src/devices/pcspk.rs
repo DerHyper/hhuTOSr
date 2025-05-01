@@ -126,8 +126,7 @@ impl Speaker {
         unsafe {self.pit_ctrl_port.outb(data)};
     }
 
-
-
+    /// Freeze the PIT counter channel 0 to read its value.
     fn freeze_pit_count(&mut self) {
         let bin_mode = 0b0000_000_1; // binary mode
         let operating_mode = 0b0000_011_0; // Square Wave generator
@@ -137,6 +136,7 @@ impl Speaker {
         unsafe {self.pit_ctrl_port.outb(data)};
     }
 
+    /// Unfreeze the PIT counter channel 0 to allow it to update its value again.
     fn unfreeze_pit_count(&mut self) {
         let bin_mode = 0b0000_000_1; // binary mode
         let operating_mode = 0b0000_011_0; // Square Wave generator
@@ -190,18 +190,6 @@ impl Speaker {
             last = current;
         }
     }
-}
-
-pub fn debugsong() {
-    let mut speaker = SPEAKER.lock();
-    
-    speaker.play(200, 10000);
-    speaker.delay(5000);
-
-    speaker.play(1000, 10000);
-    speaker.delay(500);
-
-
 }
 
 /// Plays the Tetris theme using the PC speaker.
