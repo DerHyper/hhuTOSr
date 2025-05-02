@@ -72,6 +72,23 @@ impl CGA {
             }
         }
         self.setpos(0,0);
+        self.show_cursor();
+    }
+
+    /// Some GRUB builds do not set the cursor size and visibility correctly in QUEMU.
+    /// This function sets the cursor size and visibility to a default value.
+    /// Source: BrightLight 14.07.2017 "Re: Text mode cursor doesn't appear on QEMU - only on Linux" https://f.osdev.org/viewtopic.php?t=32222 (Visited 02.05.2025)
+    fn show_cursor(&mut self) {
+        unsafe {
+            self.index_port.outb(0x09);   // set maximum scan line register to 15
+            self.data_port.outb(0x0F);
+    
+            self.index_port.outb(0x0B);   // set the cursor end line to 15
+            self.data_port.outb(0x0F);
+    
+            self.index_port.outb(0x0A);   // set the cursor start line to 14 and enable cursor visibility
+            self.data_port.outb(0x0E);
+        }
     }
 
     /// Display the `character` at the given position `x`,`y` with attribute `attrib`.
@@ -127,20 +144,22 @@ impl CGA {
         let pos_crs :u16 = (y * CGA_COLUMNS + x) as u16;
 
         // Set cursor position (Lower Byte)
-        let low_csr :u8 = pos_crs as u8; // Nur untere 8 Bits
+        let low_csr :u8 = (pos_crs & 0xFF) as u8; // Nur untere 8 Bits
         unsafe {
             self.index_port.outb(CGA_LOW_BYTE_CMD); // Put "lower cursor position"- index in index-register
             self.data_port.outb(low_csr); // Set data at position stated inside index-register
         }
 
         // Set cursor position (Higher Byte)
-        let high_csr :u8 = (pos_crs >> 8) as u8; // Nur Obere 8 Bits
+        let high_csr :u8 = ((pos_crs >> 8) & 0xFF) as u8; // Nur Obere 8 Bits
         unsafe {
             self.index_port.outb(CGA_HIGH_BYTE_CMD);
             self.data_port.outb(high_csr);
         }
-    }
 
+        
+    }
+    
     /// Print byte `b` at actual position cursor position `x`,`y`
     pub fn print_byte(&mut self, b: u8) {
         let (mut x , mut y) = self.getpos();
