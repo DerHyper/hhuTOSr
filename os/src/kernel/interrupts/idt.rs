@@ -61,7 +61,15 @@ impl IdtEntry {
     /// The options are always 'Present', 'DPL=0' and '64-bit interrupt gate'.
     const fn new(offset: u64) -> IdtEntry {
 
-        /* Hier muss Code eingefuegt werden */
+        IdtEntry {
+            offset_low: (offset & 0xFF) as u16,
+            selector: u16,
+            options: u16,
+            offset_mid: ((offset & 0xFF00) >> 16) as u16,
+            offset_high: u32,
+        reserved: u32,
+        }
+
 
     }
 
