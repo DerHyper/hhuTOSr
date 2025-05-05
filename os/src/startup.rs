@@ -13,6 +13,7 @@
 #![allow(unused_variables)] // avoid warnings
 #![allow(unused_imports)]
 #![allow(unused_macros)]
+#![feature(abi_x86_interrupt)] // needed for interrupts
 
 extern crate alloc;
 extern crate spin; // we need a mutex in devices::cga_print
@@ -24,6 +25,7 @@ mod kernel;
 mod user;
 mod consts;
 
+use core::arch::asm;
 use core::panic::PanicInfo;
 
 use devices::cga; // shortcut for cga
@@ -32,11 +34,13 @@ use devices::keyboard; // shortcut for keyboard
 
 use kernel::cpu;
 use kernel::allocator;
+use crate::kernel::interrupts::idt;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
 use user::aufgabe2::heap_demo;
 use user::aufgabe2::sound_demo;
+
 
 fn aufgabe1() {
     text_demo::run();
@@ -49,18 +53,22 @@ fn aufgabe2() {
     sound_demo::run();
 }
 
+fn aufgabe3() {
+    unsafe{asm!("int 100")}; // test interrupt
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn startup() {
     kprintln!("Welcome to hhuTOS!");
 
-    // Speicherverwaltung initialisieren
-    allocator::init();
-    
-    cga::CGA.lock().clear();
+    allocator::init(); // Init memory management
+    cga::CGA.lock().clear(); // Bildschirm loeschen
+    idt::get_idt().load(); // Load Interrupt Descriptor Table
     
     //aufgabe1();
-    aufgabe2();
-    
+    //aufgabe2();
+    aufgabe3();
+
     loop{}
 }
 

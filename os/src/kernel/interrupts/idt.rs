@@ -73,7 +73,7 @@ impl IdtEntry {
             options: new_options as u16, // = P, DPL, 0, Gate Type, Reserved, IST
             offset_mid: ((offset & 0xFF00) >> 16) as u16,
             offset_high: ((offset & 0xFFFF0000) >> 32) as u32,
-            reserved: u32,
+            reserved: 0 as u32,
         }
     }
 

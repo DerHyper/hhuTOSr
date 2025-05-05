@@ -123,5 +123,6 @@ impl Pic {
     pub fn status (&mut self, irq: Irq) -> bool {
 
         /* Hier muss Code eingefuegt werden */
-
+        false
+    }
 }
