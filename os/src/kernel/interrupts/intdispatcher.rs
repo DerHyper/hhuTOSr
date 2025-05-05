@@ -113,6 +113,13 @@ impl IntVectors {
 
         /* Hier muss Code eingefuegt werden */
 
+        // cpu::disable_int();
+        // int_disp(vector, stack_frame, error_code);
+
+
+
+        // cpu::enable_int();
+
     }
 
     /// Check if an ISR is registered for `vector`. If so, call it.

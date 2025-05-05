@@ -107,8 +107,14 @@ impl Pic {
 
     /// Enable an IRQ to be forwarded to the processor by the PIC.
     pub fn allow (&mut self, irq: Irq) {
-
-        /* Hier muss Code eingefuegt werden */
+        // Set bits in IMR in PIC according to the IRQ number
+        let irq_value = irq as u8;
+        if irq_value < 8 {
+            unsafe {self.data1.outb(irq_value)};
+        }
+        else if irq_value < 16 {
+            unsafe {self.data2.outb(irq_value)};
+        }
 
     }
 
