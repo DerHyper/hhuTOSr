@@ -61,16 +61,20 @@ impl IdtEntry {
     /// The options are always 'Present', 'DPL=0' and '64-bit interrupt gate'.
     const fn new(offset: u64) -> IdtEntry {
 
+        let present = 1; // 1 = valid
+        let dpl = 0; // CPU privilege level
+        let gate_type = 0xE; // 64-bit interrupt gate
+        let ist = 0; // Interrupt Stack Table not used
+        let new_options: u16 = (present << 15) | (dpl << 13) | (gate_type << 8) | ist;
+
         IdtEntry {
             offset_low: (offset & 0xFF) as u16,
-            selector: u16,
-            options: u16,
+            selector: 16 as u16, // second entry in the GDT
+            options: new_options as u16, // = P, DPL, 0, Gate Type, Reserved, IST
             offset_mid: ((offset & 0xFF00) >> 16) as u16,
-            offset_high: u32,
-        reserved: u32,
+            offset_high: ((offset & 0xFFFF0000) >> 32) as u32,
+            reserved: u32,
         }
-
-
     }
 
     /// Create a new IDT entry for an interrupt handler function.
