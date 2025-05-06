@@ -131,7 +131,7 @@ where F: FnOnce() -> R{
 pub(crate) fn io_wait() {
     unsafe {
         asm!(
-            "outb 0x80, al",
+            "out 0x80, al",
             in("al") 0u8,
         );
     }
