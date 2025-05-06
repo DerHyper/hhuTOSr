@@ -107,28 +107,75 @@ impl Pic {
 
     /// Enable an IRQ to be forwarded to the processor by the PIC.
     pub fn allow (&mut self, irq: Irq) {
-        // Set bits in IMR in PIC according to the IRQ number
+        // Calculate Pin-Mask from IRQ number
         let irq_value = irq as u8;
+        let pin_mask = 1 << (irq_value as u8);
+
+
+        // Set bits in IMR in PIC according to the IRQ number
+        // PIC 1 handles IRQs 0-7, PIC 2 handles IRQs 8-15
+        // If a bit is set in the IMR, the corresponding IRQ is disabled
         if irq_value < 8 {
-            unsafe {self.data1.outb(irq_value)};
+            let current = unsafe {self.data1.inb()};
+            let new = current & !pin_mask;
+            unsafe {self.data1.outb(new)}; // Write new value to IMR via OCW1
         }
         else if irq_value < 16 {
-            unsafe {self.data2.outb(irq_value)};
+            let current = unsafe {self.data1.inb()};
+            let new = current & !pin_mask;
+            unsafe {self.data2.outb(new)}; // Write new value to IMR via OCW1
         }
-
+        else {
+            panic!("Invalid IRQ number: {}", irq_value);
+        }
     }
 
     /// Disable an IRQ to be forwarded to the processor by the PIC.
     pub fn forbid (&mut self, irq: Irq) {
 
-        /* Hier muss Code eingefuegt werden */
+        // Calculate Pin-Mask from IRQ number
+        let irq_value = irq as u8;
+        let pin_mask = 1 << (irq_value as u8);
 
+
+        // Set bits in IMR in PIC according to the IRQ number
+        // PIC 1 handles IRQs 0-7, PIC 2 handles IRQs 8-15
+        // If a bit is set in the IMR, the corresponding IRQ is disabled
+        if irq_value < 8 {
+            let current = unsafe {self.data1.inb()};
+            let new = current | pin_mask;
+            unsafe {self.data1.outb(new)}; // Write new value to IMR via OCW1
+        }
+        else if irq_value < 16 {
+            let current = unsafe {self.data1.inb()};
+            let new = current | pin_mask;
+            unsafe {self.data2.outb(new)}; // Write new value to IMR via OCW1
+        }
+        else {
+            panic!("Invalid IRQ number: {}", irq_value);
+        }
     }
 
     /// Get the state (enabled/disabled) of an IRQ in the PIC.
     pub fn status (&mut self, irq: Irq) -> bool {
 
-        /* Hier muss Code eingefuegt werden */
-        false
+        // Calculate Pin-Mask from IRQ number
+        let irq_value = irq as u8;
+        let pin_mask = 1 << (irq_value as u8);
+
+        // Get bits in IMR in PIC according to the IRQ number
+        let current: u8;
+        if irq_value < 8 {
+            current = unsafe {self.data1.inb()};
+        }
+        else if irq_value < 16 {
+            current = unsafe {self.data1.inb()};
+        }
+        else {
+            panic!("Invalid IRQ number: {}", irq_value);
+        }
+
+        // Check if bit is set
+        return (current & pin_mask) == 0
     }
 }
