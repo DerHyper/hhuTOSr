@@ -35,6 +35,7 @@ use devices::keyboard; // shortcut for keyboard
 use kernel::cpu;
 use kernel::allocator;
 use crate::kernel::interrupts::idt;
+use crate::kernel::interrupts::pic;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -64,6 +65,9 @@ pub extern "C" fn startup() {
     allocator::init(); // Init memory management
     cga::CGA.lock().clear(); // Bildschirm loeschen
     idt::get_idt().load(); // Load Interrupt Descriptor Table
+    pic::PIC.lock().init(); // Init Programmable Interrupt Controller
+    keyboard::plugin(); // Init keyboard
+    cpu::enable_int(); // Enable interrupts
     
     //aufgabe1();
     //aufgabe2();

@@ -19,6 +19,7 @@ use crate::devices::key as key;
 use crate::devices::key::Key;
 use crate::kernel::cpu::IoPort;
 use crate::kernel::interrupts::isr::ISR;
+use crate::kernel::interrupts::pic;
 
 /// Global thread-safe access to keyboard.
 /// Usage: let mut keyboard = keyboard::KEYBOARD.lock();
@@ -415,9 +416,8 @@ pub fn get_key_buffer() -> &'static KeyQueue {
 
 /// Register the keyboard interrupt handler.
 pub fn plugin() {
-
-    /* Hier muss Code eingefuegt werden */
-
+    let mut pic = pic::PIC.lock(); // Get PIC
+    pic.allow(pic::Irq::Keyboard); // Allow IRQ (Keyboard)
 }
 
 /// The keyboard interrupt service routine.
