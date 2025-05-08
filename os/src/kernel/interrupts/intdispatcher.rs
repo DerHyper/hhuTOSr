@@ -122,7 +122,12 @@ impl IntVectors {
     /// Check if an ISR is registered for `vector`. If so, call it.
     pub fn report(&mut self, vector: u8) -> bool {
 
-        /* Hier muss Code eingefuegt werden */
-        false
+        // Get entry from list
+        let entry = self.map.get(vector as usize);
+        if let Some(Some(isr)) = entry {
+            isr.trigger();
+            return true
+        }
+        return false
     }
 }
