@@ -111,14 +111,11 @@ impl IntVectors {
     /// Interrupts get disabled while registering the ISR to avoid race conditions with int_disp().
     pub fn register(&mut self, vector: InterruptVector, isr: Box<dyn ISR>) {
 
-        /* Hier muss Code eingefuegt werden */
+        cpu::disable_int();
 
-        // cpu::disable_int();
-        // int_disp(vector, stack_frame, error_code);
+        self.map.insert(vector as usize, Some(isr)); // Add ISR at index of caller
 
-
-
-        // cpu::enable_int();
+        cpu::enable_int();
 
     }
 
