@@ -1,4 +1,5 @@
 
+use alloc::boxed::Box;
 use nolock::queues::mpmc;
 use nolock::queues::mpmc::bounded::scq::{Receiver, Sender};
 
@@ -19,7 +20,7 @@ use crate::devices::key as key;
 use crate::devices::key::Key;
 use crate::kernel::cpu::IoPort;
 use crate::kernel::interrupts::isr::ISR;
-use crate::kernel::interrupts::pic;
+use crate::kernel::interrupts::{intdispatcher, pic};
 
 /// Global thread-safe access to keyboard.
 /// Usage: let mut keyboard = keyboard::KEYBOARD.lock();
@@ -418,6 +419,10 @@ pub fn get_key_buffer() -> &'static KeyQueue {
 pub fn plugin() {
     let mut pic = pic::PIC.lock(); // Get PIC
     pic.allow(pic::Irq::Keyboard); // Allow IRQ (Keyboard)
+
+    // Register KeyboardISR in intdispatcher
+    let keyboard_isr = Box::new(KeyboardISR{});
+    intdispatcher::INT_VECTORS.lock().register(intdispatcher::InterruptVector::Keyboard, keyboard_isr); 
 }
 
 /// The keyboard interrupt service routine.
@@ -425,9 +430,7 @@ pub struct KeyboardISR {}
 
 impl ISR for KeyboardISR {
     fn trigger(&self) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        kprintln!("   keyboard::trigger called!");
     }
 }
 

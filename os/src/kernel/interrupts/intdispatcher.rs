@@ -74,7 +74,8 @@ pub static INT_VECTORS: Mutex<IntVectors> = Mutex::new(IntVectors::new());
 /// Every interrupt is routed here, if not specified otherwise in the IDT.
 pub fn int_disp(vector: u8, stack_frame: InterruptStackFrame, error_code: Option<u64>) {
 
-    kprintln!("int_disp: vector = {:#x}, stack_frame = XX, error_code = {:#x}\n", vector, error_code.unwrap_or(0));
+    kprintln!("int_disp: Interrupt = {:#x}", vector);
+    INT_VECTORS.lock().report(vector); // Call the ISR if registered
 
 }
 
