@@ -34,6 +34,7 @@ use devices::keyboard; // shortcut for keyboard
 
 use kernel::cpu;
 use kernel::allocator;
+use kernel::interrupts::intdispatcher;
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 
@@ -55,7 +56,7 @@ fn aufgabe2() {
 }
 
 fn aufgabe3() {
-    unsafe{asm!("int 100")}; // test interrupt
+    
 }
 
 #[unsafe(no_mangle)]
@@ -66,8 +67,9 @@ pub extern "C" fn startup() {
     cga::CGA.lock().clear(); // Bildschirm loeschen
     idt::get_idt().load(); // Load Interrupt Descriptor Table
     pic::PIC.lock().init(); // Init Programmable Interrupt Controller
-    keyboard::plugin(); // Init keyboard
+    intdispatcher::INT_VECTORS.lock().init(); // Init Interrupt Vector Map
     cpu::enable_int(); // Enable interrupts
+    keyboard::plugin(); // Init keyboard
     
     //aufgabe1();
     //aufgabe2();
