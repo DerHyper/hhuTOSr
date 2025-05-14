@@ -431,6 +431,17 @@ pub struct KeyboardISR {}
 impl ISR for KeyboardISR {
     fn trigger(&self) {
         kprintln!("   keyboard::trigger called!");
+
+        // Get key input and push it to the key buffer if valid
+        let mut keyboard = KEYBOARD.lock();
+        let key = keyboard.key_hit_irq();
+        match key {
+            Some(mut k) => {
+                get_key_buffer().push_key(k); 
+                kprintln!("   keyboard::trigger got key: {}", k.get_ascii());
+            }
+            None => {}
+        }
     }
 }
 
@@ -508,9 +519,35 @@ impl Keyboard {
     /// Poll a byte from the keyboard controller.
     /// Decode and return the key if it is complete.
     fn key_hit_irq(&mut self) -> Option<Key> {
+        // Check if databyte is set
+        let control_port_data: u8;
+        unsafe {
+            control_port_data = self.control_port.inb();
+        }
+        let databyte_is_set :bool = (control_port_data & KBD_OUTB) != 0;
+        if !databyte_is_set {
+            return None; // not set
+        }
 
-        /* Hier muss Code eingefuegt werden */
+        // Check if databyte is from mouse
+        let databyte_is_from_mouse :bool = (control_port_data & KBD_AUXB) == 0;
+        if !databyte_is_from_mouse {
+            return None; // from mouse
+        }
 
-        None
+        // Get databyte
+        let data_port_data: u8;
+        unsafe {
+            data_port_data = self.data_port.inb();
+        }
+        self.code = data_port_data;
+        
+        // Translate Databyte, check if valid
+        let is_valid: bool = self.key_decoded();
+        if is_valid {
+            return Some(self.gather);
+        } else {
+            return None;
+        }
     }
 }
