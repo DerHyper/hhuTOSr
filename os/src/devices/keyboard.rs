@@ -253,63 +253,7 @@ impl Keyboard {
         }
     }
     
-    /// Poll the keyboard controller until a key is pressed.
-    /// Decode and return the key if it is complete.
-    pub fn key_hit(&mut self) -> Key {
-        let invalid: Key = Default::default();  // nicht explizit initialisierte Tasten sind ungueltig
-
-        // Check if databyte is set
-        let control_port_data: u8;
-        unsafe {
-            control_port_data = self.control_port.inb();
-        }
-        let databyte_is_set :bool = (control_port_data & KBD_OUTB) != 0;
-        if !databyte_is_set {
-            return invalid; // not set
-        }
-
-        // Check if databyte is from mouse
-        let databyte_is_from_mouse :bool = (control_port_data & KBD_AUXB) == 0;
-        if !databyte_is_from_mouse {
-            return invalid; // from mouse
-        }
-
-        // Get databyte
-        let data_port_data: u8;
-        unsafe {
-            data_port_data = self.data_port.inb();
-        }
-        self.code = data_port_data;
-        
-        // Translate Databyte, check if valid
-        let is_valid: bool = self.key_decoded();
-        if is_valid {
-            return self.gather;
-        } else {
-            return invalid;
-        }
-
-        /*****************************************************************************
-         * Funktion:        key_hit                                                  *
-         *---------------------------------------------------------------------------*
-         * Beschreibung:    Diese Methode soll einen Tastendruck zurueckliefern.     *
-         *                  Hierzu soll die Tastatur in einer Schleife "gepollt"     *
-         *                  werden, bis ein Zeichen eingegebn wurde.                 *
-         *                                                                           *
-         *                  Das Byte von der Tastatur soll in dem Attribut 'code'    *
-         *                  (siehe Keyboard.h) gespeichert werden. Die Dekodierung   *
-         *                  soll mithilfe der vorgegebenen Funktion 'key_decoded'    *
-         *                  erfolgen.                                                *
-         *                                                                           *
-         * Rückgabewert:    Wenn der Tastendruck abgeschlossen ist und ein Scancode, *
-         *                  sowie gegebenenfalls ein ASCII-Code emittelt werden      *
-         *                  konnte, werden diese in 'gather' (siehe Keyboard.h)      *
-         *                  zurueckgeliefert. Anderenfalls liefert key_hit () einen  *
-         *                  ungueltigen Wert zurueck, was mit Key::valid ()          *
-         *                  ueberprueft werden kann.                                 *
-         *****************************************************************************/
-
-    }
+    
     
     /// Set the repeat rate of the keyboard (determined by the speed and delay).
     /// 
