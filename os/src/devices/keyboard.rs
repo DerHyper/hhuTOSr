@@ -263,43 +263,43 @@ impl Keyboard {
     /// The delay determines how long a key must be pressed before the keyboard starts repeating it.
     /// Valid values are between 0 (minimum delay) and 3 (maximum delay).
     /// 0 = 250ms, 1 = 500ms, 2 = 750ms, 3 = 1000ms
-    pub fn set_repeat_rate(&mut self, speed: u8, delay: u8) {
+    pub fn set_repeat_rate(&mut self, speed: u8, delay: u8) { // TODO: Fix this function
 
-        // Wait until Inputpuffer is empty
-        while unsafe { self.control_port.inb() } & KBD_INPB != 0 {}
+        // // Wait until Inputpuffer is empty
+        // while unsafe { self.control_port.inb() } & KBD_INPB != 0 {}
 
-        // Configure repeat rate
-        let repeat_rate: u8 = speed & 0x1F;
-        let delay_time: u8 = delay & 0x3;
-        let output_data: u8 = repeat_rate | (delay_time << 5);
+        // // Configure repeat rate
+        // let repeat_rate: u8 = speed & 0x1F;
+        // let delay_time: u8 = delay & 0x3;
+        // let output_data: u8 = repeat_rate | (delay_time << 5);
 
-        // Send Request to Dataport
-        unsafe { self.data_port.outb(KBD_CMD_SET_SPEED); }
+        // // Send Request to Dataport
+        // unsafe { self.data_port.outb(KBD_CMD_SET_SPEED); }
         
-        // Wait for Response
-        while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
+        // // Wait for Response
+        // while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
 
-        // Check for ACK in Dataport
-        let data_response: u8 = unsafe{self.data_port.inb()};
-        if data_response != KBD_REPLY_ACK {
-            kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
-            return;
-        }
+        // // Check for ACK in Dataport
+        // let data_response: u8 = unsafe{self.data_port.inb()};
+        // if data_response != KBD_REPLY_ACK {
+        //     kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
+        //     return;
+        // }
 
-        // Send repeat_rate to Dataport
-        unsafe { self.data_port.outb(output_data); }
+        // // Send repeat_rate to Dataport
+        // unsafe { self.data_port.outb(output_data); }
 
-        // Wait for Response
-        while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
+        // // Wait for Response
+        // while unsafe { self.control_port.inb() } & KBD_OUTB == 0 {}
 
-        // Check for ACK in Dataport
-        let data_response: u8 = unsafe{self.data_port.inb()};
-        if data_response != KBD_REPLY_ACK {
-            kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
-            return;
-        }
+        // // Check for ACK in Dataport
+        // let data_response: u8 = unsafe{self.data_port.inb()};
+        // if data_response != KBD_REPLY_ACK {
+        //     kprintln!("Error: Could not set repeat_rate. Dataport did not send ACK.");
+        //     return;
+        // }
 
-        kprintln!("Info: Set repeat_rate to {}. with a delay of {}", speed, delay);
+        // kprintln!("Info: Set repeat_rate to {}. with a delay of {}", speed, delay);
 
 /*****************************************************************************
  * Funkion:         set_repeat_rate                                          *
