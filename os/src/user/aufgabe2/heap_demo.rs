@@ -3,7 +3,7 @@ use alloc::boxed::Box;
 use crate::kernel::allocator;
 use crate::keyboard;
 use crate::cga;
-
+use crate::library::input;
 
 pub fn run () {
     kprintln!("starting heap demo");
@@ -18,13 +18,7 @@ fn ask_for_input() {
     println!("Press a key to continue");
 
     // Wait for key press
-    let mut keyboard = keyboard::KEYBOARD.lock();
-    let invalid_key = Default::default();
-    let mut key = keyboard.key_hit();
-    while key == invalid_key{
-        key = keyboard.key_hit();
-    }
-
+    let input = input::getch();
     let mut cga = cga::CGA.lock();
     cga.clear();
 }

@@ -24,6 +24,7 @@ mod devices;
 mod kernel;
 mod user;
 mod consts;
+mod library;
 
 use core::arch::asm;
 use core::panic::PanicInfo;
@@ -43,7 +44,6 @@ use user::aufgabe1::keyboard_demo;
 use user::aufgabe2::heap_demo;
 use user::aufgabe2::sound_demo;
 
-
 fn aufgabe1() {
     text_demo::run();
     println!("");
@@ -53,10 +53,6 @@ fn aufgabe1() {
 fn aufgabe2() {
     heap_demo::run();
     sound_demo::run();
-}
-
-fn aufgabe3() {
-    
 }
 
 #[unsafe(no_mangle)]
@@ -71,9 +67,8 @@ pub extern "C" fn startup() {
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
     
-    //aufgabe1();
+    aufgabe1();
     //aufgabe2();
-    aufgabe3();
 
     loop{}
 }
