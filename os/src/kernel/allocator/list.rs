@@ -111,7 +111,6 @@ impl LinkedListAllocator {
         
         // Iterate over the list and find a free block
         while let Some(node) = current.take() { // Take the current node
-            kprintln!("   ... checking block: addr=0x{:x}, size={}", node.start_addr(), node.size);
             if LinkedListAllocator::check_block_for_alloc(node, size, align).is_ok() {
                 // Remove node from the list
                 kprintln!("   found free block: addr=0x{:x}, size={}", node.start_addr(), node.size);
@@ -166,24 +165,20 @@ impl LinkedListAllocator {
         println!("Dumping free memory list:");
         println!("   Heap start:   0x{:x}, heap end:   0x{:x}", self.heap_start, self.heap_end);
 
-        //for node in self.head.next.iter() {
-            //println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
-        //}
-
         // Get the head of the list
         let mut current = &mut self.head.next; // mutable borrow
-        // Itter
+        // Iterate over the list
         while let Some(node) = current.take() { // Take the current node
-            let next_ptr: *mut Option<&'static mut ListNode> = &mut node.next; // Get next
             println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr(), node.end_addr(), node.size);
+            let next_ptr: *mut Option<&'static mut ListNode> = &mut node.next; // Get next
+            *current = Some(node); // Put the node back into the list
+
             unsafe {
                 current = &mut *next_ptr; // Set current to next
             }
         }
         
         println!("");
-
-        unsafe {self.init()};
 
     }
 
