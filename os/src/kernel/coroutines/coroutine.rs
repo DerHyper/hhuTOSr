@@ -27,9 +27,30 @@ fn next_id() -> usize {
 #[unsafe(naked)]
 unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
     naked_asm!(
+        // Jump to the coroutine's stack pointer
+        "mov rsp, {stack_ptr}", 
 
-       /* Hier muss Code eingefuegt werden */
-
+        // Load processor state from the stack
+        "popf", // load rflags
+        "pop rbp", // = mov rbp, [rsp + 8 * 0]
+        "pop rdi", // = mov rdi, [rsp + 8 * 1]
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+        
+        // Return to the coroutine's entry function kickoff
+        "ret",
+        stack_ptr = in(reg) stack_ptr
     )
 }
 
@@ -39,9 +60,51 @@ unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
 #[unsafe(naked)]
 unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack: usize) {
     naked_asm!(
+        // Save processor state to the current coroutine's stack
+        "push r8", // save r8
+        "push r9", // save r9
+        "push r10", // save r10
+        "push r11", // save r11
+        "push r12", // save r12
+        "push r13", // save r13
+        "push r14", // save r14
+        "push r15", // save r15
+        "push rax", // save rax
+        "push rbx", // save rbx
+        "push rcx", // save rcx
+        "push rdx", // save rdx
+        "push rsi", // save rsi
+        "push rdi", // save rdi
+        "push rbp", // save rbp
+        "pushf", // save rflags
 
-       /* Hier muss Code eingefuegt werden */
+        // Save the current stack pointer, load the next stack pointer
+        "mov [rdi], rsp", 
+        "mov rsp, {next_stack}", 
 
+        // Load processor state from the stack
+        "popf", // load rflags
+        "pop rbp", // = mov rbp, [rsp + 8 * 0]
+        "pop rdi", // = mov rdi, [rsp + 8 * 1]
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+        
+        // Return to the coroutine's entry function kickoff
+        "ret",
+
+       in("rdi") current_stack_ptr, // Put the current stack pointer in rdi
+       next_stack = in(reg) next_stack
     )
 }
 
@@ -80,16 +143,19 @@ impl Coroutine {
     /// Once started, coroutines cannot be exited.
     /// May only be called once.
     pub fn start(&mut self) {
-        
-        /* Hier muss Code eingefuegt werden */
-        
+        unsafe {
+            coroutine_start(self.stack_ptr);
+        }
     }
 
     /// Switch to the next coroutine.
     pub fn switch(&mut self) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        unsafe {
+            coroutine_switch( 
+                &mut self.stack_ptr as *mut usize, 
+                self.next as usize
+            );
+        }
     }
     
     /// Get the id of the coroutine.
