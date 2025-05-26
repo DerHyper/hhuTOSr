@@ -25,43 +25,42 @@ fn next_id() -> usize {
 
 /// Low-level routine for starting a coroutine.
 #[naked]
-unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
-    unsafe {
-        naked_asm!(
-            // Jump to the coroutine's stack pointer
-            "mov rsp, rdi", // rdi = stack_ptr 
+#[allow(unsafe_op_in_unsafe_fn)]
+unsafe extern "C" fn coroutine_start() {
+    naked_asm!(
+        // Jump to the coroutine's stack pointer
+        "mov rsp, rdi", // rdi = stack_ptr 
 
-            // Load processor state from the stack
-            "popf", // load rflags
-            "pop rbp", // = mov rbp, [rsp + 8 * 0]
-            "pop rdi", // = mov rdi, [rsp + 8 * 1]
-            "pop rsi",
-            "pop rdx",
-            "pop rcx",
-            "pop rbx",
-            "pop rax",
-            "pop r15",
-            "pop r14",
-            "pop r13",
-            "pop r12",
-            "pop r11",
-            "pop r10",
-            "pop r9",
-            "pop r8",
-            
-            // Return to the coroutine's entry function kickoff
-            "ret"
-        )
-    }
+        // Load processor state from the stack
+        "popfq", // load rflags
+        "pop rbp", // = mov rbp, [rsp + 8 * 0]
+        "pop rdi", // = mov rdi, [rsp + 8 * 1]
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+                
+        // Return to the coroutine's entry function kickoff
+        "ret"
+    )
 }
 
 /// Low-level routine for switching to the next coroutine.
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the current coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next coroutine (the new rsp value).
 #[naked]
-unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack: usize) {
-    unsafe {
-        naked_asm!(
+#[allow(unsafe_op_in_unsafe_fn)]
+unsafe extern "C" fn coroutine_switch() {
+    naked_asm!(
             // Save processor state to the current coroutine's stack
             "push r8", // save r8
             "push r9",
@@ -78,14 +77,14 @@ unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack:
             "push rsi",
             "push rdi",
             "push rbp",
-            "pushf", // save rflags
+            "pushfq", // save rflags
 
-            // Save the current stack pointer, load the next stack pointer
+            // Save the current stack pointer to var, load the next stack pointer
             "mov [rdi], rsp", // rdi = current_stack_ptr
             "mov rsp, rsi",  // rsi = next_stack
 
             // Load processor state from the stack
-            "popf", // load rflags
+            "popfq", // load rflags
             "pop rbp", // = mov rbp, [rsp + 8 * 0]
             "pop rdi", // = mov rdi, [rsp + 8 * 1]
             "pop rsi",
@@ -105,7 +104,6 @@ unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack:
             // Return to the coroutine's entry function kickoff
             "ret"
         )
-    }
 }
 
 /// Represents a coroutine in the system.
@@ -144,16 +142,27 @@ impl Coroutine {
     /// May only be called once.
     pub fn start(&mut self) {
         unsafe {
-            coroutine_start(self.stack_ptr);
+            core::arch::asm!(
+                "mov rdi, {0}",     // stack_ptr → rdi (wird oben genutzt!)
+                "call {1}",         // call coroutine_start (ohne Parameter)
+                in(reg) self.stack_ptr,
+                sym coroutine_start,
+                options(noreturn)
+            );
         }
     }
 
     /// Switch to the next coroutine.
     pub fn switch(&mut self) {
         unsafe {
-            coroutine_switch( 
-                &mut self.stack_ptr as *mut usize,
-                self.next as usize
+            core::arch::asm!(
+                "mov rdi, {0}",     // &mut stack_ptr
+                "mov rsi, {1}",     // stack_ptr des nächsten
+                "call {2}",         // call coroutine_switch
+                in(reg) &mut self.stack_ptr as *mut usize,
+                in(reg) (*self.next).stack_ptr,
+                sym coroutine_switch,
+                options(noreturn)
             );
         }
     }
