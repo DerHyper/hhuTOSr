@@ -43,6 +43,8 @@ use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
 use user::aufgabe2::heap_demo;
 use user::aufgabe2::sound_demo;
+use user::aufgabe4::coroutine_demo;
+
 
 fn aufgabe1() {
     text_demo::run();
@@ -53,6 +55,10 @@ fn aufgabe1() {
 fn aufgabe2() {
     heap_demo::run();
     sound_demo::run();
+}
+
+fn aufgabe4() {
+    coroutine_demo::run();
 }
 
 #[unsafe(no_mangle)]
@@ -67,8 +73,9 @@ pub extern "C" fn startup() {
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
     
-    aufgabe1();
+    //aufgabe1();
     //aufgabe2();
+    aufgabe4();
 
     loop{}
 }
