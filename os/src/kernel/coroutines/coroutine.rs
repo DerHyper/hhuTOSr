@@ -24,88 +24,88 @@ fn next_id() -> usize {
 }
 
 /// Low-level routine for starting a coroutine.
-#[unsafe(naked)]
+#[naked]
 unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
-    naked_asm!(
-        // Jump to the coroutine's stack pointer
-        "mov rsp, {stack_ptr}", 
+    unsafe {
+        naked_asm!(
+            // Jump to the coroutine's stack pointer
+            "mov rsp, rdi", // rdi = stack_ptr 
 
-        // Load processor state from the stack
-        "popf", // load rflags
-        "pop rbp", // = mov rbp, [rsp + 8 * 0]
-        "pop rdi", // = mov rdi, [rsp + 8 * 1]
-        "pop rsi",
-        "pop rdx",
-        "pop rcx",
-        "pop rbx",
-        "pop rax",
-        "pop r15",
-        "pop r14",
-        "pop r13",
-        "pop r12",
-        "pop r11",
-        "pop r10",
-        "pop r9",
-        "pop r8",
-        
-        // Return to the coroutine's entry function kickoff
-        "ret",
-        stack_ptr = in(reg) stack_ptr
-    )
+            // Load processor state from the stack
+            "popf", // load rflags
+            "pop rbp", // = mov rbp, [rsp + 8 * 0]
+            "pop rdi", // = mov rdi, [rsp + 8 * 1]
+            "pop rsi",
+            "pop rdx",
+            "pop rcx",
+            "pop rbx",
+            "pop rax",
+            "pop r15",
+            "pop r14",
+            "pop r13",
+            "pop r12",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            
+            // Return to the coroutine's entry function kickoff
+            "ret"
+        )
+    }
 }
 
 /// Low-level routine for switching to the next coroutine.
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the current coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next coroutine (the new rsp value).
-#[unsafe(naked)]
+#[naked]
 unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack: usize) {
-    naked_asm!(
-        // Save processor state to the current coroutine's stack
-        "push r8", // save r8
-        "push r9", // save r9
-        "push r10", // save r10
-        "push r11", // save r11
-        "push r12", // save r12
-        "push r13", // save r13
-        "push r14", // save r14
-        "push r15", // save r15
-        "push rax", // save rax
-        "push rbx", // save rbx
-        "push rcx", // save rcx
-        "push rdx", // save rdx
-        "push rsi", // save rsi
-        "push rdi", // save rdi
-        "push rbp", // save rbp
-        "pushf", // save rflags
+    unsafe {
+        naked_asm!(
+            // Save processor state to the current coroutine's stack
+            "push r8", // save r8
+            "push r9",
+            "push r10",
+            "push r11",
+            "push r12",
+            "push r13",
+            "push r14",
+            "push r15",
+            "push rax",
+            "push rbx",
+            "push rcx",
+            "push rdx",
+            "push rsi",
+            "push rdi",
+            "push rbp",
+            "pushf", // save rflags
 
-        // Save the current stack pointer, load the next stack pointer
-        "mov [rdi], rsp", 
-        "mov rsp, {next_stack}", 
+            // Save the current stack pointer, load the next stack pointer
+            "mov [rdi], rsp", // rdi = current_stack_ptr
+            "mov rsp, rsi",  // rsi = next_stack
 
-        // Load processor state from the stack
-        "popf", // load rflags
-        "pop rbp", // = mov rbp, [rsp + 8 * 0]
-        "pop rdi", // = mov rdi, [rsp + 8 * 1]
-        "pop rsi",
-        "pop rdx",
-        "pop rcx",
-        "pop rbx",
-        "pop rax",
-        "pop r15",
-        "pop r14",
-        "pop r13",
-        "pop r12",
-        "pop r11",
-        "pop r10",
-        "pop r9",
-        "pop r8",
-        
-        // Return to the coroutine's entry function kickoff
-        "ret",
-
-       in("rdi") current_stack_ptr, // Put the current stack pointer in rdi
-       next_stack = in(reg) next_stack
-    )
+            // Load processor state from the stack
+            "popf", // load rflags
+            "pop rbp", // = mov rbp, [rsp + 8 * 0]
+            "pop rdi", // = mov rdi, [rsp + 8 * 1]
+            "pop rsi",
+            "pop rdx",
+            "pop rcx",
+            "pop rbx",
+            "pop rax",
+            "pop r15",
+            "pop r14",
+            "pop r13",
+            "pop r12",
+            "pop r11",
+            "pop r10",
+            "pop r9",
+            "pop r8",
+            
+            // Return to the coroutine's entry function kickoff
+            "ret"
+        )
+    }
 }
 
 /// Represents a coroutine in the system.
