@@ -152,7 +152,7 @@ impl Coroutine {
     pub fn switch(&mut self) {
         unsafe {
             coroutine_switch( 
-                &mut self.stack_ptr as *mut usize, 
+                &mut self.stack_ptr as *mut usize,
                 self.next as usize
             );
         }
@@ -165,9 +165,7 @@ impl Coroutine {
 
     /// Set the next pointer of the coroutine.
     pub fn set_next(&mut self, next: &mut Coroutine) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        self.next = next as *mut Coroutine;
     }
 
     /// Prepare the stack of a newly created coroutine in a way that it can be used
