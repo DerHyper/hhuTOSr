@@ -1,11 +1,18 @@
 use crate::devices::cga;
 use crate::kernel::coroutines::coroutine::{self, Coroutine};
 
+
+
 fn coroutine_loop(coroutine: &mut Coroutine) {
-    for i in 0..5 {
+    let mut i = 0;
+
+    loop {
         println!("Coroutine {}: iteration {}", coroutine.get_id(), i);
         coroutine.switch(); // Switch to the next coroutine
+        i += 1;
     }
+    
+    
 }
 
 pub fn run() {
