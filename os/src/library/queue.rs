@@ -70,8 +70,26 @@ impl<T> LinkedQueue<T> {
     pub fn remove<F>(&mut self, f: F) -> bool
     where F: Fn(&T) -> bool
     {
+        match &self.head {
+            None => return false, // Queue is empty, nothing to remove.
+            Some(value) => {
+                // Special case: if the head matches, dequeue it.
+                if f(&value.data) {
+                    self.dequeue();
+                    return true;
+                }
+            }
+        }
 
-        /* Hier muss Code eingefuegt werden */
+        let current = &mut self.head.as_mut().unwrap().next; // mutable borrow
+
+        while let Some(mut node) = current.take() {
+            // Check if next node matches the predicate.
+            if f(&node.data) {
+                *current = node.next.take();
+                return true;
+            }
+        }
 
         false
     }
