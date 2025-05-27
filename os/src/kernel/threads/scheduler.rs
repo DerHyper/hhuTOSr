@@ -112,7 +112,25 @@ impl Scheduler {
     /// Yield the CPU and switch to the next thread in the ready queue.
     pub fn yield_cpu(&self) {
 
-        /* Hier muss Code eingefuegt werden */
+        let mut state = self.state.lock();
+
+        // Check if there is a next thread to switch to.
+        if let Some(mut next_thread) = state.ready_queue.dequeue() {
+            if let Some(current) = state.active_thread.as_mut() {
+                unsafe{
+                    Thread::switch(&mut **current, &mut *next_thread)
+                };
+            }
+
+        } else { // switch to the idle thread if no other thread is ready
+            let mut idle = Thread::new(idle_thread);
+            if let Some(current) = state.active_thread.as_mut() {
+                unsafe{
+                    Thread::switch(&mut **current, &mut *idle)
+                };
+            }
+            state.active_thread = Some(idle);    
+        }
 
     }
 
