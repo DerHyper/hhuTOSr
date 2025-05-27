@@ -26,7 +26,7 @@ fn next_id() -> usize {
 /// Low-level routine for starting a coroutine.
 #[naked]
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "C" fn coroutine_start() {
+unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
     naked_asm!(
         // Jump to the coroutine's stack pointer
         "mov rsp, rdi", // rdi = stack_ptr 
@@ -59,7 +59,7 @@ unsafe extern "C" fn coroutine_start() {
 /// `next_stack` is the value of `stack_ptr` of the next coroutine (the new rsp value).
 #[naked]
 #[allow(unsafe_op_in_unsafe_fn)]
-unsafe extern "C" fn coroutine_switch() {
+unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack: usize) {
     naked_asm!(
             // Save processor state to the current coroutine's stack
             "push r8", // save r8
@@ -142,28 +142,14 @@ impl Coroutine {
     /// May only be called once.
     pub fn start(&mut self) {
         unsafe {
-            core::arch::asm!(
-                "mov rdi, {0}",     // stack_ptr → rdi (wird oben genutzt!)
-                "call {1}",         // call coroutine_start (ohne Parameter)
-                in(reg) self.stack_ptr,
-                sym coroutine_start,
-                options(noreturn)
-            );
+            coroutine_start(self.stack_ptr);
         }
     }
 
     /// Switch to the next coroutine.
     pub fn switch(&mut self) {
         unsafe {
-            core::arch::asm!(
-                "mov rdi, {0}",     // &mut stack_ptr
-                "mov rsi, {1}",     // stack_ptr des nächsten
-                "call {2}",         // call coroutine_switch
-                in(reg) &mut self.stack_ptr as *mut usize,
-                in(reg) (*self.next).stack_ptr,
-                sym coroutine_switch,
-                options(noreturn)
-            );
+            coroutine_switch(&mut self.stack_ptr as *mut usize, (*self.next).stack_ptr);
         }
     }
     
@@ -174,7 +160,7 @@ impl Coroutine {
 
     /// Set the next pointer of the coroutine.
     pub fn set_next(&mut self, next: &mut Coroutine) {
-        self.next = next as *mut Coroutine;
+        self.next = next;
     }
 
     /// Prepare the stack of a newly created coroutine in a way that it can be used
