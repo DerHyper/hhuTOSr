@@ -136,9 +136,8 @@ impl Scheduler {
 
     /// Kill the thread with the given ID by removing it from the ready queue.
     pub fn kill(&self, to_kill_id: usize) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        let fn_same_id =  |x :&Box<Thread>| (*x).get_id() == to_kill_id;
+        self.state.lock().ready_queue.remove(fn_same_id);
     }
 }
 
