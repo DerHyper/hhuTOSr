@@ -27,11 +27,32 @@ pub fn next_id() -> usize {
 
 /// Low-level routine for starting a thread.
 #[naked]
+#[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "C" fn thread_start(stack_ptr: usize) {
     naked_asm!(
+        // Jump to the threads's stack pointer
+        "mov rsp, rdi", // rdi = stack_ptr 
 
-        /* Hier muss Code eingefuegt werden */
-
+        // Load processor state from the stack
+        "popfq", // load rflags
+        "pop rbp", // = mov rbp, [rsp + 8 * 0]
+        "pop rdi", // = mov rdi, [rsp + 8 * 1]
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+                
+        // Return to the threads's entry function kickoff
+        "ret"
     )
 }
 
@@ -39,11 +60,51 @@ unsafe extern "C" fn thread_start(stack_ptr: usize) {
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the next coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next thread (the new rsp value).
 #[naked]
+#[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: usize) {
     naked_asm!(
+        // Save processor state to the current thread's stack
+        "push r8", // save r8
+        "push r9",
+        "push r10",
+        "push r11",
+        "push r12",
+        "push r13",
+        "push r14",
+        "push r15",
+        "push rax",
+        "push rbx",
+        "push rcx",
+        "push rdx",
+        "push rsi",
+        "push rdi",
+        "push rbp",
+        "pushfq", // save rflags
 
-        /* Hier muss Code eingefuegt werden */
+        // Save the current stack pointer to var, load the next stack pointer
+        "mov [rdi], rsp", // rdi = current_stack_ptr
+        "mov rsp, rsi",  // rsi = next_stack
 
+        // Load processor state from the stack
+        "popfq", // load rflags
+        "pop rbp", // = mov rbp, [rsp + 8 * 0]
+        "pop rdi", // = mov rdi, [rsp + 8 * 1]
+        "pop rsi",
+        "pop rdx",
+        "pop rcx",
+        "pop rbx",
+        "pop rax",
+        "pop r15",
+        "pop r14",
+        "pop r13",
+        "pop r12",
+        "pop r11",
+        "pop r10",
+        "pop r9",
+        "pop r8",
+
+        // Return to the thread's entry function kickoff
+        "ret"
     )
 }
 
@@ -85,17 +146,17 @@ impl Thread {
     /// This function is only once by the scheduler.
     /// The scheduler does further thread switching via `switch()`.
     pub fn start(&mut self) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        unsafe {
+            thread_start(self.stack_ptr);
+        }
     }
 
     /// Switch from the `current` thread to the `next` thread.
     /// This function is called by the scheduler to switch between threads.
     pub unsafe fn switch(current: *mut Thread, next: *mut Thread) {
-
-        /* Hier muss Code eingefuegt werden */
-
+        unsafe {
+            thread_switch(&mut (*current).stack_ptr, (*next).stack_ptr);
+        }
     }
 
     /// Get the ID of the thread.
