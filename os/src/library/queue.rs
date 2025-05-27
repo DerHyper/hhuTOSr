@@ -81,14 +81,19 @@ impl<T> LinkedQueue<T> {
             }
         }
 
-        let current = &mut self.head.as_mut().unwrap().next; // mutable borrow
+        let mut current = &mut self.head;
 
-        while let Some(mut node) = current.take() {
+        while let Some(node) = current.as_mut() {
             // Check if next node matches the predicate.
-            if f(&node.data) {
-                *current = node.next.take();
-                return true;
+            if let Some(next_node) = node.next.as_mut() {
+                if f(&next_node.data) {
+                    node.next = next_node.next.take();
+                    return true;
+                }
             }
+
+            // Move to the next node.
+            current = &mut node.next;
         }
 
         false
