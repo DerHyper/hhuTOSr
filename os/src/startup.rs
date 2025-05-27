@@ -37,6 +37,7 @@ use devices::keyboard; // shortcut for keyboard
 use kernel::cpu;
 use kernel::allocator;
 use kernel::interrupts::intdispatcher;
+use user::aufgabe4::queue_demo;
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 
@@ -59,7 +60,8 @@ fn aufgabe2() {
 }
 
 fn aufgabe4() {
-    coroutine_demo::run();
+    //coroutine_demo::run();
+    queue_demo::run(); // Test the queue implementation
 }
 
 #[unsafe(no_mangle)]
