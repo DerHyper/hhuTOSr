@@ -33,6 +33,9 @@ unsafe extern "C" fn thread_start(stack_ptr: usize) {
         // Jump to the threads's stack pointer
         "mov rsp, rdi", // rdi = stack_ptr 
 
+        // A4.4 unlock scheduler to not deadlock
+        "call unlock_scheduler",
+
         // Load processor state from the stack
         "popfq", // load rflags
         "pop rbp", // = mov rbp, [rsp + 8 * 0]
@@ -84,6 +87,9 @@ unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: us
         // Save the current stack pointer to var, load the next stack pointer
         "mov [rdi], rsp", // rdi = current_stack_ptr
         "mov rsp, rsi",  // rsi = next_stack
+
+        // A4.4 unlock scheduler to not deadlock
+        "call unlock_scheduler",
 
         // Load processor state from the stack
         "popfq", // load rflags
