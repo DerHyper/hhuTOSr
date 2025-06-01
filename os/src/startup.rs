@@ -37,7 +37,8 @@ use devices::keyboard; // shortcut for keyboard
 use kernel::cpu;
 use kernel::allocator;
 use kernel::interrupts::intdispatcher;
-use user::aufgabe4::queue_demo;
+use kernel::threads;
+
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 
@@ -46,6 +47,8 @@ use user::aufgabe1::keyboard_demo;
 use user::aufgabe2::heap_demo;
 use user::aufgabe2::sound_demo;
 use user::aufgabe4::coroutine_demo;
+use user::aufgabe4::queue_demo;
+use user::aufgabe4::thread_demo;
 
 
 fn aufgabe1() {
@@ -61,7 +64,8 @@ fn aufgabe2() {
 
 fn aufgabe4() {
     //coroutine_demo::run();
-    queue_demo::run(); // Test the queue implementation
+    //queue_demo::run(); // Test the queue implementation
+    thread_demo::run();
 }
 
 #[unsafe(no_mangle)]
@@ -75,10 +79,11 @@ pub extern "C" fn startup() {
     intdispatcher::INT_VECTORS.lock().init(); // Init Interrupt Vector Map
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
+    threads::scheduler::get_scheduler().schedule();
     
     //aufgabe1();
     //aufgabe2();
-    aufgabe4();
+    //aufgabe4();
 
     loop{}
 }
