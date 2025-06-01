@@ -79,11 +79,12 @@ pub extern "C" fn startup() {
     intdispatcher::INT_VECTORS.lock().init(); // Init Interrupt Vector Map
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
-    threads::scheduler::get_scheduler().schedule();
     
     //aufgabe1();
     //aufgabe2();
-    //aufgabe4();
+    aufgabe4();
+    threads::scheduler::get_scheduler().schedule();
+
 
     loop{}
 }

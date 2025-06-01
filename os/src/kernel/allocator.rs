@@ -25,7 +25,7 @@ pub mod bump;
 pub mod list;
 
 const HEAP_START: usize = 0x500000;
-const HEAP_SIZE: usize = 1024 * 1024 * 8; // 8 MiB heap size
+const HEAP_SIZE: usize = 1024 * 1024 * 32; // 8 MiB heap size
 
 // Define the allocator (which implements the 'GlobalAlloc' trait)
 #[global_allocator]
