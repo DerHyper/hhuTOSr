@@ -10,7 +10,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt::Display;
-use core::{fmt, ptr};
+use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::{Mutex, Once};
 use crate::kernel::threads::idle_thread::idle_thread;
@@ -115,15 +115,24 @@ impl Scheduler {
         let mut state = self.state.lock();
 
         // Check if there is a next thread to switch to.
-        if let Some(mut next_thread) = state.ready_queue.dequeue() {
-            // If yes, put current back into queue and pop out the next
+        // If yes, put current back into queue and pop out the next
+        if let Some(next_thread) = state.ready_queue.dequeue() {
+            
+            // active_thread not empty
             if let Some(mut current) = state.active_thread.take() {
+                
+                state.active_thread = Some(next_thread);
                 unsafe{
-                    Thread::switch(&mut *current, &mut *next_thread)
+                    let next = state.active_thread.as_mut().unwrap().as_mut();
+                    Thread::switch(&mut *current, &mut *next)
                 };
                 state.ready_queue.enqueue(current);
+
+            // active_thread empty
+            } else {
+                panic!();
             }
-            state.active_thread = Some(next_thread);
+            
 
         } else { // switch to the idle thread if no other thread is ready
             let mut idle = Thread::new(idle_thread);
