@@ -37,7 +37,6 @@ use devices::keyboard; // shortcut for keyboard
 use kernel::cpu;
 use kernel::allocator;
 use kernel::interrupts::intdispatcher;
-use kernel::threads;
 
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
@@ -83,7 +82,7 @@ pub extern "C" fn startup() {
     //aufgabe1();
     //aufgabe2();
     aufgabe4();
-    threads::scheduler::get_scheduler().schedule();
+    
 
 
     loop{}
