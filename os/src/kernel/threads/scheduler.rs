@@ -116,33 +116,31 @@ impl Scheduler {
 
         // Check if there is a next thread to switch to.
         // If yes, put current back into queue and pop out the next
-        if let Some(next_thread) = state.ready_queue.dequeue() {
+        if let Some(mut next_thread) = state.ready_queue.dequeue() {
             
             // active_thread not empty
-            if let Some(mut current) = state.active_thread.take() {
+            if let Some(mut current_thread) = state.active_thread.take() {
                 
+                // Pointer to thread in Box
+                let current_ptr = Box::<Thread>::as_mut_ptr(&mut current_thread); 
+                let next_ptr = Box::<Thread>::as_mut_ptr(&mut next_thread);
+
+                // Move Box to Active/Queue, thread does not move
                 state.active_thread = Some(next_thread);
+                state.ready_queue.enqueue(current_thread); 
+
                 unsafe{
-                    let next = state.active_thread.as_mut().unwrap().as_mut();
-                    Thread::switch(&mut *current, &mut *next)
+                    Thread::switch(current_ptr, next_ptr)
                 };
-                state.ready_queue.enqueue(current);
+                
 
             // active_thread empty
             } else {
                 panic!();
             }
-            
 
-        } else { // switch to the idle thread if no other thread is ready
-            let mut idle = Thread::new(idle_thread);
-            if let Some(mut current) = state.active_thread.take() {
-                unsafe{
-                    Thread::switch(&mut *current, &mut *idle)
-                };
-                state.ready_queue.enqueue(current);
-            }
-            state.active_thread = Some(idle);
+        } else { 
+            // Currently idle thread
         }
 
     }

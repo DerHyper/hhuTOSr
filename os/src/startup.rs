@@ -15,6 +15,7 @@
 #![allow(unused_macros)]
 #![feature(abi_x86_interrupt)] // needed for interrupts
 #![feature(naked_functions)] // needed for naked functions
+#![feature(box_as_ptr)]
 
 extern crate alloc;
 extern crate spin; // we need a mutex in devices::cga_print
