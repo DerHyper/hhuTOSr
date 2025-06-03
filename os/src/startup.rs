@@ -66,8 +66,8 @@ fn aufgabe2() {
 fn aufgabe4() {
     //coroutine_demo::run();
     //queue_demo::run(); // Test the queue implementation
-    //thread_demo::run();
-    hello_world_thread::run();
+    //hello_world_thread::run();
+    thread_demo::run();
 }
 
 #[unsafe(no_mangle)]
