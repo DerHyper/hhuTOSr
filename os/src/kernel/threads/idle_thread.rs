@@ -4,7 +4,7 @@ use crate::kernel::threads::thread::Thread;
 
 pub fn idle_thread() {
     loop {
-      println!("Idle...");
+      kprintln!("Idle...");
 		  get_scheduler().yield_cpu();
     }
 }
