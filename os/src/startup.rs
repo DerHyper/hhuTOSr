@@ -48,6 +48,7 @@ use user::aufgabe2::sound_demo;
 use user::aufgabe4::coroutine_demo;
 use user::aufgabe4::queue_demo;
 use user::aufgabe4::thread_demo;
+use user::aufgabe4::hello_world_thread;
 
 
 fn aufgabe1() {
@@ -64,7 +65,8 @@ fn aufgabe2() {
 fn aufgabe4() {
     //coroutine_demo::run();
     //queue_demo::run(); // Test the queue implementation
-    thread_demo::run();
+    //thread_demo::run();
+    hello_world_thread::run();
 }
 
 #[unsafe(no_mangle)]
