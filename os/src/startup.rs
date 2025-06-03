@@ -39,6 +39,7 @@ use kernel::cpu;
 use kernel::allocator;
 use kernel::interrupts::intdispatcher;
 
+use crate::devices::pit;
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 
@@ -67,7 +68,7 @@ fn aufgabe4() {
     //coroutine_demo::run();
     //queue_demo::run(); // Test the queue implementation
     //hello_world_thread::run();
-    thread_demo::run();
+    //thread_demo::run();
 }
 
 #[unsafe(no_mangle)]
@@ -81,7 +82,8 @@ pub extern "C" fn startup() {
     intdispatcher::INT_VECTORS.lock().init(); // Init Interrupt Vector Map
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
-    
+    pit::plugin(); // Init PIT
+
     //aufgabe1();
     //aufgabe2();
     aufgabe4();

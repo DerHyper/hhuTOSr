@@ -57,7 +57,12 @@ pub fn wait(ms: usize) {
 /// Register the timer interrupt handler.
 pub fn plugin() {
 
-    /* Hier muss Code eingefuegt werden */
+    let mut pic = pic::PIC.lock(); // Get PIC
+    pic.allow(pic::Irq::Timer); // Allow IRQ (PIT)
+
+    // Register TimerISR in intdispatcher
+    let timer_isr = Box::new(TimerISR{ interval_ms: 1 });
+    intdispatcher::INT_VECTORS.lock().register(intdispatcher::InterruptVector::Pit, timer_isr); 
 
 }
 
