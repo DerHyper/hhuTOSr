@@ -41,8 +41,8 @@ pub enum Color {
 pub const CGA_STD_ATTR: u8 = (Color::Black as u8) << 4 | (Color::LightRed as u8);
 
 const CGA_BASE_ADDR: *mut u8 = 0xb8000 as *mut u8;
-const CGA_ROWS: usize = 25;
-const CGA_COLUMNS: usize = 80;
+pub const CGA_ROWS: usize = 25;
+pub const CGA_COLUMNS: usize = 80;
 
 const CGA_INDEX_PORT: u16 = 0x3d4; // select register
 const CGA_DATA_PORT: u16 = 0x3d5;  // read/write register

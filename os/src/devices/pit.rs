@@ -37,6 +37,7 @@ static SYSTEM_TIME: AtomicUsize = AtomicUsize::new(0);
 
 /// Characters used for the spinner animation.
 static SPINNER_CHARS: &[char] = &['|', '/', '-', '\\'];
+const SPINNER_INTERVAL: usize = 1;
 
 /// Get the current system time in milliseconds.
 pub fn get_system_time() -> usize {
@@ -75,7 +76,40 @@ struct TimerISR {
 impl ISR for TimerISR {
     fn trigger(&self) {
 
-        /* Hier muss Code eingefuegt werden */
+        //kprintln!("   pit::trigger called! {}", get_system_time());
+        // Increment System Time 
+        SYSTEM_TIME.fetch_add(1, core::sync::atomic::Ordering::SeqCst); // Thread access is ordered with Sequential Consistenz (Very Strong)
+        let x = SPINNER_CHARS[1];
+        
+        // Check for spinner update  
+        let next_spinner_symbol: char;
+        if get_system_time() % (SPINNER_INTERVAL*4) == 0 {
+            next_spinner_symbol = SPINNER_CHARS[3]
+
+        } else if get_system_time() % (SPINNER_INTERVAL*3) == 0 {
+            next_spinner_symbol = SPINNER_CHARS[2]
+
+        } else if get_system_time() % (SPINNER_INTERVAL*2) == 0 {
+            next_spinner_symbol = SPINNER_CHARS[1]
+
+        } else if get_system_time() % SPINNER_INTERVAL == 0 {
+            next_spinner_symbol = SPINNER_CHARS[0]
+        
+        } else {
+            return // No Update needed
+        }
+
+        // Check for cga Access
+        let cga = CGA.try_lock();
+        if let Some(mut cga) = cga {
+
+            // Set Rotation Symbol
+            let pos = cga.getpos();
+            cga.print_byte_at_nowrapping(next_spinner_symbol as u8, CGA_COLUMNS-1, 0);
+            cga.setpos(pos.0, pos.1);
+        }
+
+        
 
     }
 }
