@@ -37,7 +37,7 @@ static SYSTEM_TIME: AtomicUsize = AtomicUsize::new(0);
 
 /// Characters used for the spinner animation.
 static SPINNER_CHARS: &[char] = &['|', '/', '-', '\\'];
-const SPINNER_INTERVAL: usize = 1;
+const SPINNER_INTERVAL: usize = 10;
 
 /// Get the current system time in milliseconds.
 pub fn get_system_time() -> usize {
@@ -64,6 +64,23 @@ pub fn plugin() {
     // Register TimerISR in intdispatcher
     let timer_isr = Box::new(TimerISR{ interval_ms: 1 });
     intdispatcher::INT_VECTORS.lock().register(intdispatcher::InterruptVector::Pit, timer_isr); 
+
+    // Set Timer Speed to 1 ms
+    // 7-6 = Chanal, 5-4 = Access Mode, 3-1 = Operating Mode, 0 = Binary Mode
+    // Chanal 0    , Low+High         , Mode 3 (Square)     , 16 Bit
+    let command = 0b00_11_011_0;
+    let ms_per_tick = NANOSECONDS_PER_TICK*1000;
+    unsafe {
+        IoPort::new(PORT_CTRL).outb(command);
+        IoPort::new(PORT_DATA0) .outb( (ms_per_tick & 0xFF) as u8); // Low
+        IoPort::new(PORT_DATA0) .outb((ms_per_tick >> 8) as u8); // High
+    }
+
+    // Init Timer
+    TIMER.call_once(|| {Timer { 
+        control_port: IoPort::new(PORT_CTRL), 
+        data_port0: IoPort::new(PORT_DATA0) 
+    }});
 
 }
 
