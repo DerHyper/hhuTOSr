@@ -37,6 +37,7 @@ static SYSTEM_TIME: AtomicUsize = AtomicUsize::new(0);
 
 /// Characters used for the spinner animation.
 static SPINNER_CHARS: &[char] = &['|', '/', '-', '\\'];
+static mut SPINNER_CHAR_CURRENT: char = '\\';
 const SPINNER_INTERVAL: usize = 250;
 
 /// Get the current system time in milliseconds.
@@ -100,18 +101,15 @@ impl ISR for TimerISR {
         
         // Check for spinner update  
         let next_spinner_symbol: char;
-        if get_system_time() % (SPINNER_INTERVAL*4) == 0 {
-            next_spinner_symbol = SPINNER_CHARS[3]
-
-        } else if get_system_time() % (SPINNER_INTERVAL*3) == 0 {
-            next_spinner_symbol = SPINNER_CHARS[2]
-
-        } else if get_system_time() % (SPINNER_INTERVAL*2) == 0 {
-            next_spinner_symbol = SPINNER_CHARS[1]
-
-        } else if get_system_time() % SPINNER_INTERVAL == 0 {
-            next_spinner_symbol = SPINNER_CHARS[0]
-        
+        if get_system_time() % SPINNER_INTERVAL == 0 {
+            // Iterrate over SPINNER_CHARS
+            let current_index = SPINNER_CHARS.iter().position(|&x| unsafe{x == SPINNER_CHAR_CURRENT}).unwrap();
+            let mut next_index = current_index + 1;
+            if current_index >= SPINNER_CHARS.iter().count()-1 {
+                next_index = 0;
+            } 
+            next_spinner_symbol = SPINNER_CHARS[next_index];
+            unsafe {SPINNER_CHAR_CURRENT = SPINNER_CHARS[next_index]};
         } else {
             return // No Update needed
         }
