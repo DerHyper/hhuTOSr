@@ -37,7 +37,7 @@ static SYSTEM_TIME: AtomicUsize = AtomicUsize::new(0);
 
 /// Characters used for the spinner animation.
 static SPINNER_CHARS: &[char] = &['|', '/', '-', '\\'];
-const SPINNER_INTERVAL: usize = 10;
+const SPINNER_INTERVAL: usize = 250;
 
 /// Get the current system time in milliseconds.
 pub fn get_system_time() -> usize {
@@ -69,7 +69,7 @@ pub fn plugin() {
     // 7-6 = Chanal, 5-4 = Access Mode, 3-1 = Operating Mode, 0 = Binary Mode
     // Chanal 0    , Low+High         , Mode 3 (Square)     , 16 Bit
     let command = 0b00_11_011_0;
-    let ms_per_tick = NANOSECONDS_PER_TICK*1000;
+    let ms_per_tick = TIMER_FREQ/1000;
     unsafe {
         IoPort::new(PORT_CTRL).outb(command);
         IoPort::new(PORT_DATA0) .outb( (ms_per_tick & 0xFF) as u8); // Low
