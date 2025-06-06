@@ -49,8 +49,10 @@ fn thread_entry_killer() {
 /// Prints Threads to CGA depending on thier id
 fn print_thread(i: i32) {
     let print_offset = 5 + scheduler::get_scheduler().get_active_tid();
-    cga::CGA.lock().setpos(5,print_offset);
-    println!("Thread [{}]: {}", scheduler::get_scheduler().get_active_tid(), i);
+    let mut cga_lock = cga::CGA.lock();
+    cga_lock.setpos(5,print_offset);
+
+    println_cga!(&cga_lock, "Thread [{}]: {}", scheduler::get_scheduler().get_active_tid(), i);
 }
 
 fn check_for_yield(i: i32) {
