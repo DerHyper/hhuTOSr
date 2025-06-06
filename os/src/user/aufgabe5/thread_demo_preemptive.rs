@@ -1,20 +1,21 @@
-use crate::devices::cga;
+use crate::devices::{cga, pit};
 use crate::kernel::threads::scheduler;
 use crate::kernel::threads::thread::{self, Thread};
 use crate::kernel::threads;
 
 static mut TARGET_ID_1 :usize = 0;
 static mut TARGET_ID_2 :usize = 0;
+static MAX_THREADLOOPS_UNTIL_YIELD :i32 = 10;
 
 fn thread_entry() {
     let mut i = 0;
-    let sched = scheduler::get_scheduler();
 
     // Loop indefinitely, printing the thread ID and a counter
     // position on the screen is determined by the thread ID
     loop {
         print_thread(i);
         i += 1;
+        check_for_yield(i);
     }
 }
 
@@ -22,11 +23,11 @@ fn thread_entry_killer() {
     let mut i = 0;
     let sched = scheduler::get_scheduler();
 
-    // Loop 1000 times, printing the thread ID and a counter
-    while i < 1000 {
+    // Loop 10000 times, printing the thread ID and a counter
+    while i < 10000 {
         print_thread(i);
-        sched.yield_cpu(); // Switch to the next thread
         i += 1;
+        check_for_yield(i);
     }
 
     // Kill other threads
@@ -35,11 +36,11 @@ fn thread_entry_killer() {
         sched.kill(TARGET_ID_2);
     }
 
-    // Loop 1000 times, printing the thread ID and a counter
-    while i < 2001 {
+    // Loop 20000 times, printing the thread ID and a counter
+    while i < 20001 {
         print_thread(i);
-        sched.yield_cpu(); // Switch to the next thread
         i += 1;
+        check_for_yield(i);
     }
 
     sched.exit(); // exit scheduler (whould happen anyway)
@@ -51,6 +52,15 @@ fn print_thread(i: i32) {
     cga::CGA.lock().setpos(5,print_offset);
     println!("Thread [{}]: {}", scheduler::get_scheduler().get_active_tid(), i);
 }
+
+fn check_for_yield(i: i32) {
+    if i%MAX_THREADLOOPS_UNTIL_YIELD == 0 
+    {
+        let sched = scheduler::get_scheduler();
+        sched.yield_cpu(); // other threads can get CGA access
+    }
+}
+
 
 pub fn run() {
     
