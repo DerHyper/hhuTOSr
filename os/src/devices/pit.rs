@@ -97,6 +97,8 @@ struct TimerISR {
 
 impl ISR for TimerISR {
     fn trigger(&self) {
+        // Unlock INT_VECTORS mutex to allow other interrupts
+        unsafe { intdispatcher::INT_VECTORS.force_unlock() }
 
         //kprintln!("   pit::trigger called! {}", get_system_time());
         // Increment System Time 

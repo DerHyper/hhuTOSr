@@ -113,8 +113,9 @@ impl IntVectors {
     pub fn register(&mut self, vector: InterruptVector, isr: Box<dyn ISR>) {
 
         cpu::disable_int();
+        cpu::disable_int_nested();
         self.map[vector as usize] = Some(isr); // Add ISR at index of caller
-
+        cpu::enable_int_nested(true);
         cpu::enable_int();
 
     }
