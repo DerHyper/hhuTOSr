@@ -17,6 +17,7 @@ use crate::kernel::threads::idle_thread::idle_thread;
 use crate::kernel::threads::thread;
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
+use crate::kernel::allocator;
 
 /// Global scheduler instance
 static SCHEDULER: Once<Scheduler> = Once::new();
@@ -118,6 +119,11 @@ impl Scheduler {
         // If yes, put current back into queue and pop out the next
         if let Some(mut next_thread) = state.ready_queue.dequeue() {
             
+            // check if allocator can be used
+            if allocator::is_locked() {
+                return
+            }
+
             // active_thread not empty
             if let Some(mut current_thread) = state.active_thread.take() {
                 

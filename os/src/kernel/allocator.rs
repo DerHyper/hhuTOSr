@@ -59,6 +59,11 @@ pub fn dump_free_list() {
     ALLOCATOR.lock().dump_free_list();
 }
 
+/// Check if allocator is currently locked
+pub fn is_locked() -> bool {
+    ALLOCATOR.inner.is_locked()
+}
+
 /// A wrapper around `spin::Mutex` to allow for trait implementations.
 /// Required for implementing `GlobalAlloc` in `bump.rs` and `list.rs`.
 pub struct Locked<A> {
