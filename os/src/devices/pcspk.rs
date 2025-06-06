@@ -10,6 +10,7 @@
 #![allow(dead_code)]
 
 use spin::Mutex;
+use crate::devices::pit;
 use crate::kernel::cpu;
 use crate::kernel::cpu::IoPort;
 
@@ -176,19 +177,7 @@ impl Speaker {
     /// This means that the counter will count down from 1193 to 0 and then reload itself.
     /// Counting from 1193 to 0 takes 1ms.
     fn delay(&mut self, duration: usize) {
-        let mut last = self.read_counter();
-        let mut time_passed = 0;
-
-        while time_passed < duration {
-            let current = self.read_counter();
-
-            // Ckech if the counter has been reloaded
-            if current > last {
-                time_passed += 1;
-            }
-
-            last = current;
-        }
+        pit::wait(duration);
     }
 }
 

@@ -85,8 +85,8 @@ pub extern "C" fn startup() {
     pit::plugin(); // Init PIT
 
     //aufgabe1();
-    //aufgabe2();
-    aufgabe4();
+    aufgabe2();
+    //aufgabe4();
     
 
 

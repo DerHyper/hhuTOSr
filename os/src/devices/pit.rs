@@ -47,8 +47,12 @@ pub fn get_system_time() -> usize {
 
 /// Wait for a specified number of milliseconds using the system time.
 pub fn wait(ms: usize) {
-
-    /* Hier muss Code eingefuegt werden */
+    let start_time = get_system_time();
+    let mut current_waiting_time :usize = 0;
+    while current_waiting_time < ms {
+        let current_time = get_system_time();
+        current_waiting_time = current_time - start_time;
+    }
 
 }
 
