@@ -18,7 +18,8 @@ use crate::kernel::interrupts::{intdispatcher, pic};
 use crate::kernel::interrupts::intdispatcher::InterruptVector;
 use crate::kernel::interrupts::isr::ISR;
 use crate::kernel::interrupts::pic::Irq;
-use crate::kernel::threads::scheduler::get_scheduler;
+use crate::kernel::threads::scheduler::{get_scheduler, Scheduler};
+use crate::kernel::threads::scheduler;
 
 // Ports
 const PORT_CTRL: u16 = 0x43;
@@ -106,32 +107,35 @@ impl ISR for TimerISR {
         let x = SPINNER_CHARS[1];
         
         // Check for spinner update  
-        let next_spinner_symbol: char;
         if get_system_time() % SPINNER_INTERVAL == 0 {
-            // Iterrate over SPINNER_CHARS
-            let current_index = SPINNER_CHARS.iter().position(|&x| unsafe{x == SPINNER_CHAR_CURRENT}).unwrap();
-            let mut next_index = current_index + 1;
-            if current_index >= SPINNER_CHARS.iter().count()-1 {
-                next_index = 0;
-            } 
-            next_spinner_symbol = SPINNER_CHARS[next_index];
-            unsafe {SPINNER_CHAR_CURRENT = SPINNER_CHARS[next_index]};
+            update_spinner();
         } else {
             return // No Update needed
         }
 
-        // Check for cga Access
-        let cga = CGA.try_lock();
-        if let Some(mut cga) = cga {
+        scheduler::get_scheduler().yield_cpu();
+    }
+}
 
-            // Set Rotation Symbol
-            let pos = cga.getpos();
-            cga.print_byte_at_nowrapping(next_spinner_symbol as u8, CGA_COLUMNS-1, 0);
-            cga.setpos(pos.0, pos.1);
-        }
+fn update_spinner() {
+    // Iterrate over SPINNER_CHARS
+    let current_index = SPINNER_CHARS.iter().position(|&x| unsafe{x == SPINNER_CHAR_CURRENT}).unwrap();
+    let mut next_index = current_index + 1;
+    if current_index >= SPINNER_CHARS.iter().count()-1 {
+        next_index = 0;
+    }
 
-        
+    let next_spinner_symbol = SPINNER_CHARS[next_index];
+    unsafe {SPINNER_CHAR_CURRENT = SPINNER_CHARS[next_index]};
 
+    // Check for cga Access
+    let cga = CGA.try_lock();
+    if let Some(mut cga) = cga {
+
+        // Set Rotation Symbol
+        let pos = cga.getpos();
+        cga.print_byte_at_nowrapping(next_spinner_symbol as u8, CGA_COLUMNS-1, 0);
+        cga.setpos(pos.0, pos.1);
     }
 }
 
