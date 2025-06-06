@@ -46,6 +46,7 @@ pub unsafe extern "C" fn unlock_scheduler() {
 struct SchedulerState {
     active_thread: Option<Box<Thread>>,
     ready_queue: LinkedQueue<Box<Thread>>,
+    initialized: bool,
 }
 
 /// Represents the scheduler.
@@ -61,6 +62,7 @@ impl Scheduler {
         let state = SchedulerState {
             active_thread: Some(Thread::new(idle_thread)),
             ready_queue: LinkedQueue::new(),
+            initialized: false,
         };
         
         Scheduler { state:  Mutex::new(state) }
@@ -77,6 +79,7 @@ impl Scheduler {
     /// This function must only be called once.
     pub fn schedule(&self) {
         let mut state = self.state.lock();
+        state.initialized = true;
 
         // The active thread is never None, since we must at least have the idle thread.
         state.active_thread.as_mut().unwrap().start();
@@ -113,7 +116,17 @@ impl Scheduler {
     /// Yield the CPU and switch to the next thread in the ready queue.
     pub fn yield_cpu(&self) {
 
-        let mut state = self.state.lock();
+        // Check if state can be locked
+        let state = self.state.try_lock();
+        if state.is_none() {
+            return
+        }
+
+        // Check if scheduler was initialized
+        let mut state  = state.unwrap();
+        if !state.initialized {
+            return
+        }
 
         // Check if there is a next thread to switch to.
         // If yes, put current back into queue and pop out the next
