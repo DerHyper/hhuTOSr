@@ -17,7 +17,7 @@ use crate::kernel::threads::idle_thread::idle_thread;
 use crate::kernel::threads::thread;
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
-use crate::kernel::allocator;
+use crate::kernel::{allocator, cpu};
 
 /// Global scheduler instance
 static SCHEDULER: Once<Scheduler> = Once::new();
@@ -183,18 +183,26 @@ impl Scheduler {
     /// which will enable interrupts again and resume the scheduler.
     pub fn prepare_block(&self) -> (Box<Thread>, bool) {
 
-        /* Hier muss Code eingefuegt werden */
-        let mock_thread = Thread::new(idle_thread);
-        return (mock_thread, false);
+        let int_was_enabled = cpu::disable_int_nested();
+        // The active thread is never None, take it and put it back in `switch_from_blocked_thread()`
+        let current_thread = self.state.lock().active_thread.take().unwrap(); 
+        return (current_thread, false);
 
     }
 
     /// Complete a blocking operation begun with `prepare_block()`.
     /// This resumes the scheduler and switches to the next thread in the ready queue.
     pub unsafe fn switch_from_blocked_thread(&self, blocked_thread: *mut Thread, interrupts_enabled: bool) {
+        
+        // Put back blocked_thread into active_thread
+        let blocked_thread_box = unsafe { Box::from_raw(blocked_thread) };
+        self.state.lock().active_thread = Some(blocked_thread_box);
+        
+        // Enable Interrupts
+        cpu::enable_int_nested(interrupts_enabled);
 
-        /* Hier muss Code eingefuegt werden */
-
+        // Switch Thread
+        self.yield_cpu();
     }
 }
 
