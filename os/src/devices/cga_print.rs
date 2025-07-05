@@ -68,8 +68,8 @@ macro_rules! print_cga {
 }
 
 macro_rules! println_cga {
-    ($cga:expr, $fmt:expr) => ($cga, print!(concat!($fmt, "\n")));
-    ($cga:expr, $fmt:expr, $($arg:tt)*) => ($cga, print!(concat!($fmt, "\n"), $($arg)*));
+    ($cga:expr, $fmt:expr) => (print_cga!($cga, concat!($fmt, "\n")));
+    ($cga:expr, $fmt:expr, $($arg:tt)*) => (print_cga!($cga, concat!($fmt, "\n"), $($arg)*));
 }
 
 /// Helper function of print macros (must be public)

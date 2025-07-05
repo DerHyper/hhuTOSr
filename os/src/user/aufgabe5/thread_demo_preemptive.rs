@@ -52,7 +52,7 @@ fn print_thread(i: i32) {
     let mut cga_lock = cga::CGA.lock();
     cga_lock.setpos(5,print_offset);
 
-    println_cga!(&cga_lock, "Thread [{}]: {}", scheduler::get_scheduler().get_active_tid(), i);
+    println_cga!(&mut cga_lock, "Thread [{}]: {}", scheduler::get_scheduler().get_active_tid(), i);
 }
 
 fn check_for_yield(i: i32) {
