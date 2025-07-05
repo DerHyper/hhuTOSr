@@ -184,6 +184,8 @@ impl Scheduler {
     pub fn prepare_block(&self) -> (Box<Thread>, bool) {
 
         /* Hier muss Code eingefuegt werden */
+        let mock_thread = Thread::new(idle_thread);
+        return (mock_thread, false);
 
     }
 
