@@ -3,9 +3,9 @@ use core::arch::asm;
 use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
-use core::sync::atomic::AtomicBool;
+use core::sync::atomic::{AtomicBool, Ordering};
 use crate::kernel::cpu;
-use crate::kernel::threads::scheduler::get_scheduler;
+use crate::kernel::threads::scheduler::{self, get_scheduler};
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
 use crate::library::spinlock::Spinlock;
@@ -50,7 +50,21 @@ impl<T> Mutex<T> {
     /// so it can try to acquire the lock again.
     pub fn lock(&self) -> MutexGuard<T> {
 
-        /* Hier muss Code eingefuegt werden */
+        // if self.is_locked() {
+        //     // Dequeue current Thread from scheduler and add it to wait_queue
+        //     let blocked_thread = scheduler::get_scheduler().prepare_block();
+        //     self.wait_queue.lock().enqueue(blocked_thread.0);
+
+        //     // unsafe {
+        //     //     scheduler::get_scheduler().switch_from_blocked_thread(sched.0, sched.1);
+        //     // }
+        // } else {
+        //     self.lock.swap(true, Ordering::SeqCst);
+            
+        //     // Call Current Thread
+
+
+        // }
 
         MutexGuard { lock: self }
     }
@@ -58,9 +72,8 @@ impl<T> Mutex<T> {
     /// Check if the lock is currently held.
     pub fn is_locked(&self) -> bool {
 
-        /* Hier muss Code eingefuegt werden */
-        
-        false
+        // Check if locked using strict ordering load on Atomic Bool
+        return self.lock.load(Ordering::SeqCst);
     }
 
     /// Check if the wait queue is currently locked.
