@@ -183,10 +183,12 @@ impl Scheduler {
     /// which will enable interrupts again and resume the scheduler.
     pub fn prepare_block(&self) -> (Box<Thread>, bool) {
 
+        // Disable Interrupts
         let int_was_enabled = cpu::disable_int_nested();
-        // The active thread is never None, take it and put it back in `switch_from_blocked_thread()`
+
+        // Take and return active Thread
         let current_thread = self.state.lock().active_thread.take().unwrap(); 
-        return (current_thread, false);
+        return (current_thread, int_was_enabled);
 
     }
 
@@ -194,15 +196,21 @@ impl Scheduler {
     /// This resumes the scheduler and switches to the next thread in the ready queue.
     pub unsafe fn switch_from_blocked_thread(&self, blocked_thread: *mut Thread, interrupts_enabled: bool) {
         
-        // Put back blocked_thread into active_thread
-        let blocked_thread_box = unsafe { Box::from_raw(blocked_thread) };
-        self.state.lock().active_thread = Some(blocked_thread_box);
-        
+        // Get to next Thread in Ready Queue
+        let next = self.state.lock().ready_queue.dequeue();
+        let mut next_thread;
+        match next {
+            Some(thread) => next_thread = thread,
+            None => next_thread = Thread::new(idle_thread)
+        }
+
+        // Switch to next Thread in Ready Queue
+        unsafe {
+            Thread::switch(blocked_thread, &mut *next_thread);
+        }
+
         // Enable Interrupts
         cpu::enable_int_nested(interrupts_enabled);
-
-        // Switch Thread
-        self.yield_cpu();
     }
 }
 
