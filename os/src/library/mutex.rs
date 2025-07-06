@@ -49,23 +49,36 @@ impl<T> Mutex<T> {
     /// Once the lock is available, the next thread in the `wait_queue` will be woken up
     /// so it can try to acquire the lock again.
     pub fn lock(&self) -> MutexGuard<T> {
+        
+        // Check in scheduler initialized, if not, spinlock
+        if !scheduler::get_scheduler().is_initialized() {
+            // Bussy-Polling
+            while self.is_locked() { 
+                unsafe{ asm!("pause"); }
+            }
 
-        // if self.is_locked() {
-        //     // Dequeue current Thread from scheduler and add it to wait_queue
-        //     let blocked_thread = scheduler::get_scheduler().prepare_block();
-        //     self.wait_queue.lock().enqueue(blocked_thread.0);
+            // Lock
+            self.lock.store(true, Ordering::SeqCst);
+            return MutexGuard { lock: self };
+        }
 
-        //     // unsafe {
-        //     //     scheduler::get_scheduler().switch_from_blocked_thread(sched.0, sched.1);
-        //     // }
-        // } else {
-        //     self.lock.swap(true, Ordering::SeqCst);
-            
-        //     // Call Current Thread
+        // Mutex
+        if self.is_locked() {
+            // Dequeue current Thread from scheduler and add it to wait_queue
+            let mut blocked_thread = scheduler::get_scheduler().prepare_block();
+            let thread_ptr = Box::as_mut_ptr(&mut blocked_thread.0);
+            { 
+                self.wait_queue.lock().enqueue(blocked_thread.0);
+            } // Own scope because switch_from_blocked_thread might not finish before new lock() call
 
+            // Switch to next thread in scheduler
+            unsafe {
+                scheduler::get_scheduler().switch_from_blocked_thread(thread_ptr, blocked_thread.1);
+            }
+        }
 
-        // }
-
+        // Thread Waiting
+        self.lock.swap(true, Ordering::SeqCst);
         MutexGuard { lock: self }
     }
     

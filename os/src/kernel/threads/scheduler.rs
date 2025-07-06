@@ -176,6 +176,10 @@ impl Scheduler {
         self.state.is_locked()
     }
 
+    pub fn is_initialized(&self) -> bool {
+        self.state.lock().initialized
+    }
+
     /// Prepare the current thread for blocking.
     /// This functions disables interrupts and return the current thread,
     /// as well as the return value from `cpu::disable_int_nested()`.
