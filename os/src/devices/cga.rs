@@ -8,7 +8,7 @@
    ║ Author: Michael Schoetter, Univ. Duesseldorf, 6.2.2024                  ║
    ╚═════════════════════════════════════════════════════════════════════════╝
 */
-use crate::library::mutex::Mutex;
+use crate::library::spinlock::Spinlock as Mutex;
 use core::fmt::Write;
 use crate::kernel::cpu as cpu;
 
