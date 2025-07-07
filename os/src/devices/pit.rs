@@ -12,7 +12,7 @@ use core::sync::atomic::AtomicUsize;
 use spin::Once;
 use crate::devices::cga;
 use crate::devices::cga::{Color, CGA, CGA_COLUMNS, CGA_ROWS};
-use crate::kernel::cpu;
+use crate::kernel::{allocator, cpu};
 use crate::kernel::cpu::IoPort;
 use crate::kernel::interrupts::{intdispatcher, pic};
 use crate::kernel::interrupts::intdispatcher::InterruptVector;
@@ -101,13 +101,20 @@ impl ISR for TimerISR {
         // Unlock INT_VECTORS mutex to allow other interrupts
         unsafe { intdispatcher::INT_VECTORS.force_unlock() }
 
-        //kprintln!("   pit::trigger called! {}", get_system_time());
         // Increment System Time 
         SYSTEM_TIME.fetch_add(1, core::sync::atomic::Ordering::SeqCst); // Thread access is ordered with Sequential Consistenz (Very Strong)
         let x = SPINNER_CHARS[1];
         
         // Check for spinner update  
         if get_system_time() % SPINNER_INTERVAL == 0 {
+            // Check locks
+            if  scheduler::get_scheduler().is_locked()
+                || allocator::is_locked()
+                || CGA.is_locked() 
+            {
+                return
+            }
+
             update_spinner();
         } else {
             return // No Update needed
