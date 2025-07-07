@@ -5,7 +5,7 @@ use core::ops::{Deref, DerefMut};
 use core::ptr;
 use core::sync::atomic::{AtomicBool, Ordering};
 use crate::kernel::cpu;
-use crate::kernel::threads::scheduler::{self, get_scheduler};
+use crate::kernel::threads::scheduler::{self, get_scheduler, Scheduler};
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
 use crate::library::spinlock::Spinlock;
@@ -38,9 +38,14 @@ impl<T> Mutex<T> {
     /// Try to acquire the lock once without blocking.
     pub fn try_lock(&self) -> Option<MutexGuard<T>> {
 
-        /* Hier muss Code eingefuegt werden */
+        if self.is_locked() {
+            return None
+        }
 
-        None
+        // Lock
+        self.lock.swap(true, Ordering::SeqCst);
+        let mutex_lock = MutexGuard { lock: self };
+        Some(mutex_lock)
     }
 
     /// Acquire the lock, blocking if necessary until it is available.
@@ -98,7 +103,14 @@ impl<T> Mutex<T> {
     /// If there are threads waiting for the lock, the next thread in the wait queue is woken up.
     pub fn unlock(&self) {
 
-        /* Hier muss Code eingefuegt werden */
+        // If thread is waiting for lock, add it back to the scheduler
+        if let Some(next_thread) = self.wait_queue.lock().dequeue() {
+            scheduler::get_scheduler().ready(next_thread);
+        
+        // If no thread is waiting, unlock
+        } else {
+            self.lock.swap(false, Ordering::SeqCst);
+        }
 
     }
     
@@ -106,7 +118,7 @@ impl<T> Mutex<T> {
     /// This should only be used in exceptional cases.
     pub unsafe fn force_unlock(&self) {
 
-        /* Hier muss Code eingefuegt werden */
+        self.lock.swap(false, Ordering::SeqCst);
 
     }
 }
