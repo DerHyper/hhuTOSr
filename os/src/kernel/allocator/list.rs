@@ -64,7 +64,6 @@ impl LinkedListAllocator {
 
     /// Initialize the allocator with the heap bounds given in the constructor.
     pub unsafe fn init(&mut self) {
-        kprintln!("list-allocator: init");
 
         // Add empty head
         let head = ListNode::new(0);
@@ -80,14 +79,12 @@ impl LinkedListAllocator {
         
         self.head.next = Some(unsafe{&mut (*empty_node)});
         //unsafe {self.add_free_block(self.heap_start, size)}
-        kprintln!("list-allocator: init done");
     }
 
     /// Adds the given free memory block 'addr' to the front of the free list.
     unsafe fn add_free_block(&mut self, addr: usize, size: usize) {
         // Current_Head ist an stelle 0x5... und new_note_addr ist auch an stelle 0x5... 
         // Dadurch wird das Original verändert und eine REferenz auf sich selbst gespeichert
-        kprintln!("list-allocator: add_free_block: addr=0x{:x}, size={}", addr, size);
 
         // Get current head
         let current_head = self.head.next.take();
@@ -105,7 +102,6 @@ impl LinkedListAllocator {
 
     /// Search a free block with the given size and alignment and remove it from the list.
     fn find_free_block(&mut self, size: usize, align: usize) -> Option<&'static mut ListNode> {
-        kprintln!("list-allocator: find_free_block: size={}, align={}", size, align);
         // Get the head of the list
         let mut current = &mut self.head.next; // mutable borrow
         
@@ -113,7 +109,6 @@ impl LinkedListAllocator {
         while let Some(node) = current.take() { // Take the current node
             if LinkedListAllocator::check_block_for_alloc(node, size, align).is_ok() {
                 // Remove node from the list
-                kprintln!("   found free block: addr=0x{:x}, size={}", node.start_addr(), node.size);
                 *current = node.next.take(); // Override current with next
                 return Some(node);
             } else {
@@ -125,13 +120,11 @@ impl LinkedListAllocator {
                 }
             }
         }
-        kprintln!("   found no free block");
         None
     }
 
     /// Check if the given block is large enough for an allocation with `size` and `align`.
     fn check_block_for_alloc(block: &ListNode, size: usize, align: usize) -> Result<(),()> {
-        kprintln!("list-allocator: check_block_for_alloc: size={}, align={}", size, align);
 
         // Check if the block is aligned
         let start = block.start_addr();
@@ -183,13 +176,11 @@ impl LinkedListAllocator {
     }
 
     pub unsafe fn alloc(&mut self, layout: Layout) -> *mut u8 {
-        kprintln!("list-alloc: size={}, align={}", layout.size(), layout.align());
         let (size, align) = LinkedListAllocator::size_align(layout);
 
         // check for block
         let block_link = self.find_free_block(size, align);
         let block = match block_link { Some(v) => v, none => {
-            kprintln!("   no free block found");
             return ptr::null_mut();
         }};
 
@@ -206,7 +197,6 @@ impl LinkedListAllocator {
     }
 
     pub unsafe fn dealloc(&mut self, ptr: *mut u8, layout: Layout) {
-        kprintln!("list-dealloc: size={}, align={}", layout.size(), layout.align());
 
         let (size, _) = LinkedListAllocator::size_align(layout);
 
