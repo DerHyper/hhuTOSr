@@ -13,8 +13,8 @@ use nolock::queues::mpmc::bounded::scq::{Receiver, Sender};
    ╚═════════════════════════════════════════════════════════════════════════╝
 */
 
-use spin::{Mutex, Once};
-
+use spin::Once;
+use crate::library::mutex::Mutex;
 use crate::kernel::cpu as cpu;
 use crate::devices::key as key;
 use crate::devices::key::Key;
