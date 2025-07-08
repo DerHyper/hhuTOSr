@@ -14,7 +14,7 @@ use crate::devices::serial::{ComBaseAddress, ComPort};
 
 /// The global writer that can used as an interface from other modules.
 /// It is threadsafe by using 'Mutex'.
-pub static WRITER: Mutex<Writer> = Mutex::new(Writer::new());
+pub static WRITER: spin::Mutex<Writer> = spin::Mutex::new(Writer::new());
 
 /// Writer for writing formatted strings to the CGA screen.
 pub struct Writer {

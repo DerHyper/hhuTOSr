@@ -51,4 +51,4 @@ impl fmt::Write for ComPort {
 }
 
 // Standard com-port for kernel output via kprint! and kprintln!
-pub static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(ComBaseAddress::Com1));
+pub static COM1: spin::Mutex<ComPort> = spin::Mutex::new(ComPort::new(ComBaseAddress::Com1));
