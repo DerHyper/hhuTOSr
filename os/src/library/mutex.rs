@@ -63,7 +63,7 @@ impl<T> Mutex<T> {
             }
 
             // Lock
-            self.lock.store(true, Ordering::SeqCst);
+            self.lock.store(true, Ordering::Release);
             return MutexGuard { lock: self };
         }
 
@@ -83,7 +83,7 @@ impl<T> Mutex<T> {
         }
 
         // Thread Waiting
-        self.lock.swap(true, Ordering::SeqCst);
+        self.lock.store(true, Ordering::Release);
         MutexGuard { lock: self }
     }
     
@@ -91,7 +91,7 @@ impl<T> Mutex<T> {
     pub fn is_locked(&self) -> bool {
 
         // Check if locked using strict ordering load on Atomic Bool
-        return self.lock.load(Ordering::SeqCst);
+        return self.lock.load(Ordering::Acquire);
     }
 
     /// Check if the wait queue is currently locked.
@@ -109,7 +109,7 @@ impl<T> Mutex<T> {
         
         // If no thread is waiting, unlock
         } else {
-            self.lock.swap(false, Ordering::SeqCst);
+            self.lock.store(false, Ordering::SeqCst);
         }
 
     }
@@ -118,7 +118,7 @@ impl<T> Mutex<T> {
     /// This should only be used in exceptional cases.
     pub unsafe fn force_unlock(&self) {
 
-        self.lock.swap(false, Ordering::SeqCst);
+        self.lock.store(false, Ordering::SeqCst);
 
     }
 }

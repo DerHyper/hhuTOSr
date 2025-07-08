@@ -39,9 +39,16 @@ use kernel::cpu;
 use kernel::allocator;
 use kernel::interrupts::intdispatcher;
 
+use devices::pci::get_pci_bus;
+use crate::devices::lfb::init_lfb;
+use crate::devices::pci::Command;
 use crate::devices::pit;
+use crate::kernel::cpu::IoPort;
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
+use crate::kernel::multiboot::FramebufferType;
+use crate::kernel::multiboot::MultibootInfo;
+use crate::user::aufgabe7::graphic_demo;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -82,7 +89,7 @@ fn aufgabe6() {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn startup() {
+pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     kprintln!("Welcome to hhuTOS!");
 
     allocator::init(); // Init memory management
