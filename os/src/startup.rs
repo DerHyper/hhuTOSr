@@ -52,6 +52,7 @@ use user::aufgabe4::queue_demo;
 use user::aufgabe4::thread_demo;
 use user::aufgabe4::hello_world_thread;
 use user::aufgabe5::thread_demo_preemptive;
+use user::aufgabe6::thread_demo_timed;
 
 
 fn aufgabe1() {
@@ -76,6 +77,10 @@ fn aufgabe5() {
     thread_demo_preemptive::run();
 }
 
+fn aufgabe6() {
+    thread_demo_timed::run();
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn startup() {
     kprintln!("Welcome to hhuTOS!");
@@ -92,7 +97,8 @@ pub extern "C" fn startup() {
     //aufgabe1();
     //aufgabe2();
     //aufgabe4();
-    aufgabe5();
+    //aufgabe5();
+    aufgabe6();
 
 
     loop{}
