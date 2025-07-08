@@ -1,5 +1,5 @@
 use core::fmt;
-use spin::Mutex;
+use crate::library::mutex::Mutex;
 use crate::kernel::cpu;
 use crate::kernel::cpu::IoPort;
 

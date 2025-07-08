@@ -16,7 +16,7 @@ extern crate spin;
 use crate::kernel::cpu;
 use crate::kernel::interrupts::InterruptStackFrame;
 use alloc::{boxed::Box, vec, vec::Vec};
-use spin::Mutex;
+use crate::library::spinlock::Spinlock as Mutex;
 use crate::kernel::interrupts::idt::IDT_SIZE;
 use crate::kernel::interrupts::isr::ISR;
 

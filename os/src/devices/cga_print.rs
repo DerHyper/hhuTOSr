@@ -9,7 +9,7 @@
 */
 use core::fmt;
 use core::fmt::Write;
-use spin::Mutex;
+use crate::library::mutex::Mutex;
 use crate::devices::cga;
 use crate::devices::cga::CGA;
 

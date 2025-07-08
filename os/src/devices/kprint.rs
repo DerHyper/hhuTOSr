@@ -9,7 +9,7 @@
 use crate::devices::serial;
 use core::fmt;
 use core::fmt::Write;
-use spin::Mutex;
+use crate::library::mutex::Mutex;
 use crate::devices::serial::{ComBaseAddress, ComPort};
 
 /// The global writer that can used as an interface from other modules.

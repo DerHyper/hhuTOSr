@@ -12,7 +12,7 @@
    ║ Author: Michael Schoetter, Univ. Duesseldorf, 7.3.2022                  ║
    ╚═════════════════════════════════════════════════════════════════════════╝
  */
-use spin::Mutex;
+use crate::library::mutex::Mutex;
 use crate::kernel::cpu as cpu;
 use crate::kernel::cpu::IoPort;
 
