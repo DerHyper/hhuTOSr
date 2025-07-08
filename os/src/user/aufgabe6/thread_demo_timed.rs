@@ -12,8 +12,8 @@ fn thread_entry() {
     // Loop 100_000 times, printing the thread ID and a counter
     while i < 100_000 {
         let running_time = pit::get_system_time() - start_time;
-        print_thread(i, running_time);
         i += 1;
+        print_thread(i, running_time);
         check_for_yield(i);
     }
 
@@ -26,7 +26,7 @@ fn print_thread(i: i32, time: usize) {
     let mut cga_lock = cga::CGA.lock();
     cga_lock.setpos(5,print_offset);
 
-    println_cga!(&mut cga_lock, "Thread [{}]: {:>6} <{}ms>", scheduler::get_scheduler().get_active_tid(), i, time);
+    println_cga!(&mut cga_lock, "Thread [{}]: {:>6} <{:0>6}ms>", scheduler::get_scheduler().get_active_tid(), i, time);
 }
 
 fn check_for_yield(i: i32) {
