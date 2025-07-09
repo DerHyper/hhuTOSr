@@ -51,6 +51,7 @@ use crate::kernel::multiboot::FramebufferType;
 use crate::kernel::multiboot::MultibootInfo;
 use crate::library::input;
 use crate::user::aufgabe7::graphic_demo;
+use crate::user::aufgabe7::pong;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -196,17 +197,7 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 }
 
 fn show_startscreen(){
-    println!("Welcome to hhuTOS!");
-    println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
-    println!("1 - Text demo ");
-    println!("2 - Sound demo ");
-    println!("3 - Keyboard demo ");
-    println!("4 - Interrupt demo ");
-    println!("5 - Thread demo ");
-    println!("6 - Scheduler demo ");
-    println!("7 - Memory demo ");
-    println!("8 - Mutex demo ");
-    println!("");
+    print_startscreen();
 
     let methods = [
         text_demo::run, 
@@ -216,7 +207,8 @@ fn show_startscreen(){
         thread_demo_preemptive::run,
         thread_demo_preemptive::run, // TODO: 6 Scheduler
         heap_demo::run,
-        thread_demo_timed::run
+        thread_demo_timed::run,
+        pong::run
         ];
 
     // Wait for key press
@@ -240,7 +232,28 @@ fn show_startscreen(){
         // Clean screen and call Method
         { cga::CGA.lock().clear(); }
         methods[index-1]();
+
+        // Return
+        println!("\nPress any key to continue.");
+        input::getch();
+        print_startscreen();
     }
+}
+
+fn print_startscreen() {
+    { cga::CGA.lock().clear(); }
+    println!("Welcome to hhuTOS!");
+    println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
+    println!("1 - Text demo ");
+    println!("2 - Sound demo ");
+    println!("3 - Keyboard demo ");
+    println!("4 - Interrupt demo ");
+    println!("5 - Thread demo ");
+    println!("6 - Scheduler demo ");
+    println!("7 - Memory demo ");
+    println!("8 - Mutex demo ");
+    println!("9 - Pong demo ");
+    println!("");
 }
 
 #[panic_handler]
