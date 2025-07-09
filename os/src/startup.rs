@@ -30,6 +30,7 @@ mod library;
 
 use core::arch::asm;
 use core::panic::PanicInfo;
+use core::usize;
 
 use devices::cga; // shortcut for cga
 use devices::cga_print; // used to import code needed by println! 
@@ -48,6 +49,7 @@ use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 use crate::kernel::multiboot::FramebufferType;
 use crate::kernel::multiboot::MultibootInfo;
+use crate::library::input;
 use crate::user::aufgabe7::graphic_demo;
 
 use user::aufgabe1::text_demo;
@@ -181,25 +183,64 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
                 graphic_demo::run();
             }
             FramebufferType::Text => {
-    //aufgabe1();
-    //aufgabe2();
-    //aufgabe4();
-    //aufgabe5();
-    aufgabe6();
-}
-}
-} else {
-// No framebuffer info available -> Probably CGA mode
-    //aufgabe1();
-    //aufgabe2();
-    //aufgabe4();
-    //aufgabe5();
-    aufgabe6();
+                show_startscreen()
+            }
+        }
+    } else {
+        // No framebuffer info available -> Probably CGA mode
+        show_startscreen()
 
-}
-
+    }
 
     loop{}
+}
+
+fn show_startscreen(){
+    println!("Welcome to hhuTOS!");
+    println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
+    println!("1 - Text demo ");
+    println!("2 - Sound demo ");
+    println!("3 - Keyboard demo ");
+    println!("4 - Interrupt demo ");
+    println!("5 - Thread demo ");
+    println!("6 - Scheduler demo ");
+    println!("7 - Memory demo ");
+    println!("8 - Mutex demo ");
+    println!("");
+
+    let methods = [
+        text_demo::run, 
+        sound_demo::run,
+        keyboard_demo::run,
+        keyboard_demo::run, // TODO: 4 - Interrupt demo 
+        thread_demo_preemptive::run,
+        thread_demo_preemptive::run, // TODO: 6 Scheduler
+        heap_demo::run,
+        thread_demo_timed::run
+        ];
+
+    // Wait for key press
+    loop{
+
+        // Check if number
+        let input = input::getch();
+        let index = input.to_digit(10);
+        if index.is_none() {
+            println!("{} not a number.", input);
+            continue;
+        }
+
+        // Check if within range
+        let index = index.unwrap() as usize;
+        if index < 1 || index > methods.len() {
+            println!("{} not within range.", index);
+            continue;
+        }
+
+        // Clean screen and call Method
+        { cga::CGA.lock().clear(); }
+        methods[index-1]();
+    }
 }
 
 #[panic_handler]
