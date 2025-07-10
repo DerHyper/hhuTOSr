@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 use crate::kernel::allocator;
 use crate::keyboard;
@@ -7,11 +8,17 @@ use crate::library::input;
 
 pub fn run () {
     kprintln!("starting heap demo");
-    let n_texts: usize = 2;
+    let n_texts: usize = 4;
 
     demo_alloc_box(1,n_texts);
     ask_for_input();
-    demo_oversized_alloc_box(2,n_texts);
+    demo_dealloc_box(2,n_texts);
+    ask_for_input();
+    demo_alloc_vec(3, n_texts);
+    ask_for_input();
+    demo_dealloc_vec(3, n_texts);
+    println!("\n*** END OF DEMO ***");
+
 }
 
 fn ask_for_input() {
@@ -28,6 +35,7 @@ fn demo_alloc_box(cur_n: usize, max_n: usize) {
     println!("Heap Demo {}/{}: Allocate 2 structs unsing Box::new", cur_n, max_n);
     println!("=================================================\n");
 
+    allocator::init();
     allocator::dump_free_list();
 
     struct Test {
@@ -43,24 +51,38 @@ fn demo_alloc_box(cur_n: usize, max_n: usize) {
     allocator::dump_free_list();
 }
 
-fn demo_oversized_alloc_box(cur_n: usize, max_n: usize) {
+fn demo_dealloc_box(cur_n: usize, max_n: usize) {
     kprintln!("[START DEMO {}]",cur_n);
-    println!("Heap Demo {}/{}: Allocate 2 structs unsing Box::new",cur_n, max_n);
+    println!("Heap Demo {}/{}: The 2 structs where deallocated, because they went out of scope",cur_n, max_n);
     println!("=================================================\n");
 
     allocator::dump_free_list();
+}
 
-    // Save Structs in Heap
-    #[repr(C)]
-    struct Dummy64([u8; 64]);
-    let a = Box::new(Dummy64([0u8; 64]));
-    let b = Box::new(Dummy64([0u8; 64]));
-    let c = Box::new(Dummy64([0u8; 64]));
+fn demo_alloc_vec(cur_n: usize, max_n: usize) {
+    kprintln!("[START DEMO {}]",cur_n);
+    println!("Heap Demo {}/{}: Allocate a Vec for storing 3 Structs",cur_n, max_n);
+    println!("=================================================\n");
 
-    kprintln!("[DROPPING B]");
-    drop(b);
+    println!("Allocate Vec");
+    let mut test = Vec::new();
+    
+    println!("Allocate 3 Structs using Box::new\n");
+    struct Test {
+        a: u64,
+        b: u64,
+    }
+    test.push(Box::new(Test { a: 1, b: 1}));
+    test.push(Box::new(Test { a: 2, b: 2}));
+    test.push(Box::new(Test { a: 3, b: 3}));
 
-    println!("Added Dummy structs:\n   [a] [Deleted b] [c]\n");
+    allocator::dump_free_list();
+}
+
+fn demo_dealloc_vec(cur_n: usize, max_n: usize) {
+    kprintln!("[START DEMO {}]",cur_n);
+    println!("Heap Demo {}/{}: Vec will go out of scope",cur_n, max_n);
+    println!("=================================================\n");
 
     allocator::dump_free_list();
 }
