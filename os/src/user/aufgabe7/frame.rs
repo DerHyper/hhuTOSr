@@ -1,4 +1,4 @@
-use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::PlayerBar};
+use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::Ball, player::PlayerBar}};
 
 const BAR: char = 0xDB as char; // '█' in Code page 437
 const SPACE: char = ' ';
@@ -28,5 +28,10 @@ impl Frame {
         for y in player.upper_bar_end()..player.lower_bar_end()+1 {
             self.frame[y as usize][player.x as usize] = BAR;
         }
+    }
+
+    /// Draw the ball
+    pub fn draw_ball(&mut self, ball: &Ball) {
+        self.frame[ball.y as usize][ball.x as usize] = BALL;
     }
 }

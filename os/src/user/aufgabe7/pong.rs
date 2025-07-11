@@ -2,8 +2,8 @@ use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
 use crate::devices::cga;
 use crate::user::aufgabe7::player::{self, PlayerBar};
 use crate::user::aufgabe7::frame::{self, Frame};
+use crate::user::aufgabe7::ball::{self, Ball};
 use crate::library::input;
-
 
 const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
@@ -11,21 +11,33 @@ const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const BAR_LENGTH: u16 = 5;
 
+// pub static mut player_1: PlayerBar = PlayerBar::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
+// pub static mut player_2: PlayerBar = PlayerBar::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
+// pub static mut ball: Ball = Ball::new((CGA_ROWS/2) as u16, (CGA_COLUMNS/2) as u16);
+
+
 pub fn run() {
     let mut frame = Frame::new();
     let mut player_1 = PlayerBar::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
     let mut player_2 = PlayerBar::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
+    let mut ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
+    ball.set_movement(1, 1);
 
     loop {
         
         run_player_input(&mut player_1, &mut player_2);
+        move_ball(&mut ball, &mut player_1, &mut player_2);
         
-        update_frame(&mut frame, &player_1, &player_2);
+        update_frame(&mut frame, &player_1, &player_2, &mut ball);
     }
     
 }
 
-fn run_player_input(player_1: &mut PlayerBar,player_2: &mut PlayerBar) {
+fn move_ball(ball: &mut Ball, mut player_1: &mut PlayerBar, mut player_2: &mut PlayerBar) {
+    ball.move_step(&mut player_1, &mut player_2);
+}
+
+fn run_player_input(player_1: &mut PlayerBar, player_2: &mut PlayerBar) {
     let last_key = input::try_getch();
     if let Some(key) = last_key {
         match key.to_ascii_uppercase() {
@@ -39,9 +51,10 @@ fn run_player_input(player_1: &mut PlayerBar,player_2: &mut PlayerBar) {
 }
 
 /// Calculates and prints a new frame that shows the current game state
-fn update_frame(frame: &mut Frame, player_1: &PlayerBar, player_2: &PlayerBar) {
+fn update_frame(frame: &mut Frame, player_1: &PlayerBar, player_2: &PlayerBar, ball: &Ball) {
     *frame = Frame::new();
-    frame.draw_player(player_1);
-    frame.draw_player(player_2);
+    frame.draw_player(&player_1);
+    frame.draw_player(&player_2);
+    frame.draw_ball(&ball);
     frame.print_frame();
 }
