@@ -203,9 +203,7 @@ fn show_startscreen(){
         text_demo::run, 
         sound_demo::run,
         keyboard_demo::run,
-        keyboard_demo::run, // TODO: 4 - Interrupt demo 
         thread_demo_preemptive::run,
-        thread_demo_preemptive::run, // TODO: 6 Scheduler
         heap_demo::run,
         thread_demo_timed::run,
         pong::run
@@ -247,12 +245,10 @@ fn print_startscreen() {
     println!("1 - Text demo ");
     println!("2 - Sound demo ");
     println!("3 - Keyboard demo ");
-    println!("4 - Interrupt demo ");
-    println!("5 - Thread demo ");
-    println!("6 - Scheduler demo ");
-    println!("7 - Memory demo ");
-    println!("8 - Mutex demo ");
-    println!("9 - Pong demo ");
+    println!("4 - Thread demo ");
+    println!("5 - Memory demo ");
+    println!("6 - Mutex demo ");
+    println!("7 - Pong demo ");
     println!("");
 }
 
