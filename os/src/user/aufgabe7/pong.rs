@@ -1,20 +1,26 @@
 use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
 use crate::devices::cga;
+use crate::user::aufgabe7::player::{self, PlayerBar};
+use crate::user::aufgabe7::frame::{self, Frame};
+use crate::devices::keyboard;
 
-fn print_frame(frame : [[char;CGA_COLUMNS];CGA_ROWS]) {
-    let mut cga_lock = cga::CGA.lock();
-    for y in 0..CGA_ROWS {
-        for x in 0..CGA_COLUMNS {
-            cga_lock.print_byte_at_nowrapping(frame[y][x] as u8, x, y);
-        }
-    }
-    
-}
+const LEFT_SIDE: u16 = 0;
+const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
+const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
+const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
+const BAR_LENGTH: u16 = 5;
 
 pub fn run() {
-    let bar_char = 0xDB as char; // '█' in Code page 437
-    let space_char = ' ';
-    let ball_char = 0x09 as char; // '○' in Code page 437
-    let mut frame = [[bar_char; CGA_COLUMNS];CGA_ROWS];
-    print_frame(frame);
+    loop {
+        let mut frame = Frame::new();
+        let player_1 = PlayerBar::new(LEFT_SIDE, Y_MIDDLE, BAR_LENGTH);
+        frame.draw_player(player_1);
+        frame.print_frame();
+        let last_key = keyboard::get_key_buffer().get_last_key();
+        if last_key.is_none() {
+            continue;
+        }
+        
+    }
+    
 }
