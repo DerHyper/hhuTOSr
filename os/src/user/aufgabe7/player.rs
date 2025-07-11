@@ -10,13 +10,20 @@ pub struct PlayerBar {
 
 impl PlayerBar {
     pub const fn new(x: u16, y: u16, length: u16) -> PlayerBar {
-        PlayerBar {x, y, length, min_y: 0, max_y: CGA_ROWS as u16}
+        PlayerBar {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16}
     }
 
     pub fn up(&mut self)
     {
-        if self.y-(self.length/2) > 1 {
+        if self.upper_bar_end() > self.min_y {
             self.y = self.y-1;
+        }
+    }
+
+    pub fn down(&mut self)
+    {
+        if self.lower_bar_end() < self.max_y {
+            self.y = self.y+1;
         }
     }
 

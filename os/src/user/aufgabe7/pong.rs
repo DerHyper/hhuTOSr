@@ -29,6 +29,7 @@ fn run_player_input(player_1: &mut PlayerBar) {
     if let Some(key) = last_key {
         match key.to_ascii_uppercase() {
             'W' => player_1.up(),
+            'S' => player_1.down(),
             _=>()
         }
     }
