@@ -13,31 +13,35 @@ const BAR_LENGTH: u16 = 5;
 
 pub fn run() {
     let mut frame = Frame::new();
-    let mut player_1 = PlayerBar::new(LEFT_SIDE, Y_MIDDLE, BAR_LENGTH);
+    let mut player_1 = PlayerBar::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
+    let mut player_2 = PlayerBar::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
 
     loop {
         
-        run_player_input(&mut player_1);
+        run_player_input(&mut player_1, &mut player_2);
         
-        update_frame(&mut frame, &player_1);
+        update_frame(&mut frame, &player_1, &player_2);
     }
     
 }
 
-fn run_player_input(player_1: &mut PlayerBar) {
+fn run_player_input(player_1: &mut PlayerBar,player_2: &mut PlayerBar) {
     let last_key = input::try_getch();
     if let Some(key) = last_key {
         match key.to_ascii_uppercase() {
             'W' => player_1.up(),
             'S' => player_1.down(),
+            'I' => player_2.up(),
+            'K' => player_2.down(),
             _=>()
         }
     }
 }
 
 /// Calculates and prints a new frame that shows the current game state
-fn update_frame(frame: &mut Frame, player_1: &PlayerBar) {
+fn update_frame(frame: &mut Frame, player_1: &PlayerBar, player_2: &PlayerBar) {
     *frame = Frame::new();
     frame.draw_player(player_1);
+    frame.draw_player(player_2);
     frame.print_frame();
 }
