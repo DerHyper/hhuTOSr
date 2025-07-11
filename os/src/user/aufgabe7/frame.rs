@@ -24,7 +24,7 @@ impl Frame {
     }
 
     /// Draw the bar of a player inside the frame
-    pub fn draw_player(&mut self, mut player: PlayerBar) {
+    pub fn draw_player(&mut self, player: &PlayerBar) {
         for y in player.upper_bar_end()..player.lower_bar_end()+1 {
             self.frame[y as usize][player.x as usize] = BAR;
         }

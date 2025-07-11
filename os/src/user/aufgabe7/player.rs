@@ -20,12 +20,12 @@ impl PlayerBar {
         }
     }
 
-    pub fn upper_bar_end(&mut self) -> u16
+    pub fn upper_bar_end(&self) -> u16
     {
         self.y - (self.length/2)
     }
 
-    pub fn lower_bar_end(&mut self) -> u16
+    pub fn lower_bar_end(&self) -> u16
     {
         self.y + (self.length/2)
     }
