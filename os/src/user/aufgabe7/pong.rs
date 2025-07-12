@@ -30,9 +30,16 @@ pub fn run() {
     let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
     let mut ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
     ball.set_movement(1, 1);
-
-
     let mut last_frame_time =  pit::get_system_time();
+
+    // Show Start Screen
+    draw_frame(&mut frame, &player_1, &player_2, &mut ball);
+    write_pong();
+    
+    while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
+        unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
+    };
+    
 
     loop {
         if !check_next_frame_time(&mut last_frame_time) {
@@ -43,6 +50,43 @@ pub fn run() {
         run_pipeline(&mut player_1, &mut player_2, &mut ball);
         
         draw_frame(&mut frame, &player_1, &player_2, &mut ball);
+    }
+    
+}
+
+fn write_pong() {
+    // Write Pong
+    let pong_str = [
+        " _____   ____  _   _  _____", 
+        "|  __ \\ / __ \\| \\ | |/ ____|",
+        "| |__) | |  | |  \\| | |  __ ",
+        "|  ___/| |  | | . ` | | |_ |",
+        "| |    | |__| | |\\  | |__| |",
+        "|_|     \\____/|_| \\_|\\_____|"
+        ]; // Big by Glenn Chappell 4/93 -- based on Standard
+
+    let pong_start_x = (CGA_COLUMNS-pong_str[0].len())/2;
+    let pong_start_y = 5;
+
+    for y in 0..pong_str.len() {
+        cga::CGA.lock().setpos(pong_start_x, pong_start_y+y);
+        println!("{}",pong_str[y]);
+    }
+
+    // Write instructions
+    let instructions = [
+        "Player 1: press 'W' and 'S' to move",
+        "Player 2: press 'I' and 'K' to move",
+        "",
+        "Press 'W' to start!"
+    ];
+    
+    let text_start_y = pong_start_y + pong_str.len() + 3;
+
+    for y in 0..instructions.len() {
+        let text_start_x = (CGA_COLUMNS-instructions[y].len())/2;
+        cga::CGA.lock().setpos(text_start_x, text_start_y+y);
+        println!("{}",instructions[y]);
     }
     
 }
