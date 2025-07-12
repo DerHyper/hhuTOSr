@@ -1,16 +1,17 @@
 use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
 
-pub struct PlayerBar {
+pub struct Player {
     pub x: u16,
     pub y: u16,
     pub length: u16,
     pub min_y: u16,
-    pub max_y: u16
+    pub max_y: u16,
+    pub points: u16
 }
 
-impl PlayerBar {
-    pub const fn new(x: u16, y: u16, length: u16) -> PlayerBar {
-        PlayerBar {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16}
+impl Player {
+    pub const fn new(x: u16, y: u16, length: u16) -> Player {
+        Player {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16, points: 0}
     }
 
     /// Moves the bar up by one step (-1, scine y is 0 at top of screen)
@@ -46,5 +47,10 @@ impl PlayerBar {
         let is_inside_x_range = other_x == self.x; // Bar is 1 dimensional
         let is_inside_y_range = other_y <= self.lower_bar_end() && other_y >= self.upper_bar_end();
         return is_inside_x_range && is_inside_y_range;
+    }
+
+    /// Adds a point to the players score
+    pub fn score_point(&mut self) {
+        self.points = self.points+1;
     }
 }

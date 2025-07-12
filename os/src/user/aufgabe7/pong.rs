@@ -2,7 +2,7 @@ use core::arch::asm;
 
 use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
 use crate::devices::{cga, pit};
-use crate::user::aufgabe7::player::{self, PlayerBar};
+use crate::user::aufgabe7::player::{self, Player};
 use crate::user::aufgabe7::frame::{self, Frame};
 use crate::user::aufgabe7::ball::{self, Ball};
 use crate::library::input;
@@ -12,6 +12,8 @@ const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
 const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const BAR_LENGTH: u16 = 5;
+const STD_BALL_SPEED_X: i16 = 1;
+const STD_BALL_SPEED_Y: i16 = 1;
 
 const MS_BETWEEN_FRAMES: usize = 33;
 
@@ -23,8 +25,8 @@ const MS_BETWEEN_FRAMES: usize = 33;
 pub fn run() {
     // Init Game Objects
     let mut frame = Frame::new();
-    let mut player_1 = PlayerBar::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
-    let mut player_2 = PlayerBar::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
+    let mut player_1 = Player::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
+    let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
     let mut ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
     ball.set_movement(1, 1);
 
@@ -55,26 +57,34 @@ fn check_next_frame_time(last_frame_time: &mut usize) -> bool {
 }
 
 /// Runs the pyhsics and event pipeline 
-fn run_pipeline(player_1: &mut PlayerBar, player_2: &mut PlayerBar, ball: &mut Ball) {
+fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
     run_player_input(player_1, player_2);
     move_ball(ball, player_1, player_2);
-    check_ball_hit_goal(ball);
+    check_ball_hit_goal(ball, player_1, player_2);
 }
 
+/// Checks if goal was hit, if so, update player score
+fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
+    // Player 2 scored goal
+    if ball.x == 0 {
+        ball.set_position((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
+        ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+        player_2.score_point();
 
-fn check_ball_hit_goal(ball: &mut Ball) {
-    if ball.x == 0 || ball.x == (CGA_COLUMNS-1) as u16 {
-        *ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
-        ball.set_movement(1, 1);
+    // Player 1 scored goal
+    } else if ball.x == (CGA_COLUMNS-1) as u16 {
+        ball.set_position((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
+        ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+        player_1.score_point();
     }
 }
 
 
-fn move_ball(ball: &mut Ball, mut player_1: &mut PlayerBar, mut player_2: &mut PlayerBar) {
+fn move_ball(ball: &mut Ball, mut player_1: &mut Player, mut player_2: &mut Player) {
     ball.move_step(&mut player_1, &mut player_2);
 }
 
-fn run_player_input(player_1: &mut PlayerBar, player_2: &mut PlayerBar) {
+fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
     let last_key = input::try_getch();
     if let Some(key) = last_key {
         match key.to_ascii_uppercase() {
@@ -88,10 +98,11 @@ fn run_player_input(player_1: &mut PlayerBar, player_2: &mut PlayerBar) {
 }
 
 /// Calculates and prints a new frame that shows the current game state
-fn draw_frame(frame: &mut Frame, player_1: &PlayerBar, player_2: &PlayerBar, ball: &Ball) {
+fn draw_frame(frame: &mut Frame, player_1: &Player, player_2: &Player, ball: &Ball) {
     *frame = Frame::new();
     frame.draw_player(&player_1);
     frame.draw_player(&player_2);
+    frame.draw_score(&player_1, &player_2);
     frame.draw_ball(&ball);
     frame.print_frame();
 }

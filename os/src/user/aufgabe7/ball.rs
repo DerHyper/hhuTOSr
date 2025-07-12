@@ -1,4 +1,4 @@
-use crate::{devices::cga::{CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::PlayerBar};
+use crate::{devices::cga::{CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::Player};
 
 pub struct Ball {
     pub x: u16,
@@ -26,7 +26,7 @@ impl Ball {
         }
     }
 
-    pub fn move_step(&mut self, mut player_1: &mut PlayerBar, mut player_2: &mut PlayerBar)
+    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player)
     {
         self.check_collision(&mut player_1, &mut player_2);
         self.y = (self.y as i16 + self.movement_y) as u16;
@@ -39,7 +39,12 @@ impl Ball {
         self.movement_y = new_y;
     }
 
-    fn check_collision(&mut self, player_1: &mut PlayerBar, player_2: &mut PlayerBar) {
+    pub fn set_position(&mut self, x: u16, y: u16) {
+        self.y = y;
+        self.x = x;
+    }
+
+    fn check_collision(&mut self, player_1: &mut Player, player_2: &mut Player) {
         // Check collision with border
         let next_y = (self.y as i16 + self.movement_y) as u16;
         if next_y >= self.max_y {

@@ -1,8 +1,11 @@
-use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::Ball, player::PlayerBar}};
+use core::char;
+
+use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::Ball, player::{self, Player}}};
 
 const BAR: char = 0xDB as char; // '█' in Code page 437
 const SPACE: char = ' ';
 const BALL: char = 0x09 as char; // '○' in Code page 437
+const SCORE_Y_BUFFER: usize = 1; // Distance between opper screen edge and score
 
 pub struct Frame {
     frame : [[char; CGA_COLUMNS]; CGA_ROWS]
@@ -24,7 +27,7 @@ impl Frame {
     }
 
     /// Draw the bar of a player inside the frame
-    pub fn draw_player(&mut self, player: &PlayerBar) {
+    pub fn draw_player(&mut self, player: &Player) {
         for y in player.upper_bar_end()..player.lower_bar_end()+1 {
             self.frame[y as usize][player.x as usize] = BAR;
         }
@@ -33,5 +36,25 @@ impl Frame {
     /// Draw the ball
     pub fn draw_ball(&mut self, ball: &Ball) {
         self.frame[ball.y as usize][ball.x as usize] = BALL;
+    }
+    
+    pub fn draw_score(&mut self, player_1: &Player, player_2: &Player) {
+        // draw p1 score
+        if player_1.points < 100 {
+            let p1_points_tens = char::from_digit((player_1.points/10) as u32, 10).unwrap();
+            let p1_points_ones = char::from_digit((player_1.points%10) as u32, 10).unwrap();
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-2] = p1_points_tens;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-1] = p1_points_ones;
+        }
+
+        self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2] = '-';
+        
+        // draw p2 score
+        if player_2.points < 100 {
+            let p2_points_tens = char::from_digit((player_2.points/10) as u32, 10).unwrap();
+            let p2_points_ones = char::from_digit((player_2.points%10) as u32, 10).unwrap();
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+1] = p2_points_tens;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+2] = p2_points_ones;
+        }
     }
 }
