@@ -1,4 +1,5 @@
 use crate::{devices::cga::{CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::Player};
+use crate::user::aufgabe7::sound_fx;
 
 pub struct Ball {
     pub x: u16,
@@ -49,6 +50,7 @@ impl Ball {
         let next_y = (self.y as i16 + self.movement_y) as u16;
         if next_y >= self.max_y {
             self.flip_y();
+            sound_fx::play_collision_border();
         }
 
         // Check collition with bar
@@ -58,6 +60,7 @@ impl Ball {
             player_2.is_colliding(next_x, next_y);
         if collides_with_player {
             self.flip_x();
+            sound_fx::play_collision_player();
         }
     }
     

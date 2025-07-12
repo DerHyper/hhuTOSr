@@ -6,6 +6,7 @@ use crate::user::aufgabe7::player::{self, Player};
 use crate::user::aufgabe7::frame::{self, Frame};
 use crate::user::aufgabe7::ball::{self, Ball};
 use crate::library::input;
+use crate::user::aufgabe7::sound_fx;
 
 const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
@@ -70,12 +71,14 @@ fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Pl
         ball.set_position((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
         player_2.score_point();
+        sound_fx::play_score_point();
 
     // Player 1 scored goal
     } else if ball.x == (CGA_COLUMNS-1) as u16 {
         ball.set_position((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
         player_1.score_point();
+        sound_fx::play_score_point();
     }
 }
 
