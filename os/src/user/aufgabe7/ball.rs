@@ -61,6 +61,6 @@ impl Ball {
     }
 
     fn flip_x(&mut self) {
-        self.movement_y = -self.movement_y;
+        self.movement_x = -self.movement_x;
     }
 }

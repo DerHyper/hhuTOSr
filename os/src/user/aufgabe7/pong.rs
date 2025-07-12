@@ -54,10 +54,19 @@ fn check_next_frame_time(last_frame_time: &mut usize) -> bool {
     true
 }
 
-// Runs the pyhsics pipeline 
+/// Runs the pyhsics and event pipeline 
 fn run_pipeline(player_1: &mut PlayerBar, player_2: &mut PlayerBar, ball: &mut Ball) {
     run_player_input(player_1, player_2);
     move_ball(ball, player_1, player_2);
+    check_ball_hit_goal(ball);
+}
+
+
+fn check_ball_hit_goal(ball: &mut Ball) {
+    if ball.x == 0 || ball.x == (CGA_COLUMNS-1) as u16 {
+        *ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
+        ball.set_movement(1, 1);
+    }
 }
 
 
