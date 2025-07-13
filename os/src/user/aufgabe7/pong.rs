@@ -22,6 +22,12 @@ const MS_BETWEEN_FRAMES: usize = 33;
 
 /// Starts the game
 pub fn run() {
+    loop {
+        run_game_interation();
+    }
+}
+
+fn run_game_interation() {
     // Init Game Objects
     let mut frame = Frame::new();
     let mut player_1 = Player::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
@@ -32,12 +38,12 @@ pub fn run() {
     // Show Start Screen
     draw_frame(&mut frame, &player_1, &player_2, &mut ball);
     show_start_screen();
-    
+        
     // wait for start input
     while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
-    
+        
     // Game loop
     let mut last_frame_time =  pit::get_system_time();
     while !is_game_end(&player_1, &player_2) {
@@ -47,21 +53,48 @@ pub fn run() {
         }
 
         run_pipeline(&mut player_1, &mut player_2, &mut ball);
-        
+    
         draw_frame(&mut frame, &player_1, &player_2, &mut ball);
     }
-    
+        
     // Show End Screen
-    show_end_screen();
+    show_end_screen(&mut player_1, &mut player_2);
 
-    // wait for start input
-    while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
+    // wait for restart input
+    while !input::getch().eq_ignore_ascii_case(&'R') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
 }
 
-fn show_end_screen() {
-    todo!()
+fn show_end_screen(player_1: &Player, player_2: &Player) {
+    // Write winner
+    let player_1_str = [                                                
+        "_____ _                    ___      _ _ _ _         ",
+        "|  _  | |___ _ _ ___ ___   |_  |    | | | |_|___ ___ ",
+        "|   __| | .'| | | -_|  _|   _| |_   | | | | |   |_ -|",
+        "|__|  |_|__,|_  |___|_|    |_____|  |_____|_|_|_|___|",
+        "            |___|                                    "
+    ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
+
+    let player_2_str = [                                                
+        "_____ _                    ___    _ _ _ _         ",
+        "|  _  | |___ _ _ ___ ___   |_  |  | | | |_|___ ___ ",
+        "|   __| | .'| | | -_|  _|  |  _|  | | | | |   |_ -|",
+        "|__|  |_|__,|_  |___|_|    |___|  |_____|_|_|_|___|",
+        "            |___|                                  "
+    ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
+
+    let player_offset_y = 6;
+    if player_1.points > player_2.points {
+        cga::CGA.lock().print_centered_block(&player_1_str, player_offset_y);
+    } else {
+        cga::CGA.lock().print_centered_block(&player_2_str, player_offset_y);
+    }
+
+    // Call to action Restart
+    let cta_str = ["Press 'R' to restart!"];
+    let cta_offset_y = player_offset_y + player_1_str.len() + 4;
+    cga::CGA.lock().print_centered_block(&cta_str, cta_offset_y);
 }
 
 /// Returns true if one player has won
