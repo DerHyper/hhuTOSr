@@ -8,11 +8,13 @@ use crate::user::aufgabe7::ball::{self, Ball};
 use crate::library::input;
 use crate::user::aufgabe7::sound_fx;
 
+const MIN_WINNING_POINTS: u16 = 11;
+const BAR_LENGTH: u16 = 5;
+
 const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
 const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
-const BAR_LENGTH: u16 = 5;
 const STD_BALL_SPEED_X: i16 = 1;
 const STD_BALL_SPEED_Y: i16 = 1;
 
@@ -38,7 +40,7 @@ pub fn run() {
     
     // Game loop
     let mut last_frame_time =  pit::get_system_time();
-    loop {
+    while !is_game_end(&player_1, &player_2) {
         if !check_next_frame_time(&mut last_frame_time) {
             unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
             continue; // Bussy-Polling
@@ -48,6 +50,23 @@ pub fn run() {
         
         draw_frame(&mut frame, &player_1, &player_2, &mut ball);
     }
+    
+    // Show End Screen
+    show_end_screen();
+
+    // wait for start input
+    while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
+        unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
+    };
+}
+
+fn show_end_screen() {
+    todo!()
+}
+
+/// Returns true if one player has won
+fn is_game_end(player_1: &Player, player_2: &Player) -> bool {
+    return player_1.points >= MIN_WINNING_POINTS || player_2.points >= MIN_WINNING_POINTS;
 }
 
 /// Write PONG at the screen together with instructions
@@ -60,15 +79,9 @@ fn show_start_screen() {
         "|  ___/| |  | | . ` | | |_ |",
         "| |    | |__| | |\\  | |__| |",
         "|_|     \\____/|_| \\_|\\_____|"
-        ]; // Big by Glenn Chappell 4/93 -- based on Standard
-
-    let pong_start_x = (CGA_COLUMNS-pong_str[0].len())/2;
-    let pong_start_y = 5;
-
-    for y in 0..pong_str.len() {
-        cga::CGA.lock().setpos(pong_start_x, pong_start_y+y);
-        println!("{}",pong_str[y]);
-    }
+    ]; // Big by Glenn Chappell 4/93 -- based on Standard
+    let pong_offset_y = 5;
+    cga::CGA.lock().print_centered_block(&pong_str, pong_offset_y);
 
     // Write instructions
     let instructions = [
@@ -77,15 +90,8 @@ fn show_start_screen() {
         "",
         "Press 'W' to start!"
     ];
-    
-    let text_start_y = pong_start_y + pong_str.len() + 3;
-
-    for y in 0..instructions.len() {
-        let text_start_x = (CGA_COLUMNS-instructions[y].len())/2;
-        cga::CGA.lock().setpos(text_start_x, text_start_y+y);
-        println!("{}",instructions[y]);
-    }
-    
+    let instruction_offset_y = pong_offset_y + pong_str.len() + 3;
+    cga::CGA.lock().print_centered_block(&instructions, instruction_offset_y);
 }
 
 /// Returns true if enugh time has elapsed to draw a new frame
