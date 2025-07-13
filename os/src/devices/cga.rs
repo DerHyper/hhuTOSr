@@ -251,6 +251,14 @@ impl CGA {
 
         result
     }
+
+    pub fn print_centered_block(&mut self, lines: &[&'static str], y_offset: usize) {
+        for y in 0..lines.len() {
+            let x_offset = (CGA_COLUMNS-lines[y].len())/2;
+            self.setpos(x_offset, y_offset+y);
+            println_cga!(self, "{}",lines[y]);
+        }
+    }
 }
 
 impl Write for CGA {
