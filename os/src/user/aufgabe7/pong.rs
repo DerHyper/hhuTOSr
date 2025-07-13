@@ -16,8 +16,8 @@ const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
 const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
-const STD_BALL_SPEED_X: f32 = 1.;
-const STD_BALL_SPEED_Y: f32 = 0.5;
+const STD_BALL_SPEED_X: f32 = 0.5;
+const STD_BALL_SPEED_Y: f32 = 0.25;
 const RESET_TIME_AFTER_GOAL: usize = 700;
 
 const MS_BETWEEN_FRAMES: usize = 33;

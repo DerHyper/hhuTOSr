@@ -1,7 +1,7 @@
 use crate::{devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit}, user::aufgabe7::player::Player};
 use crate::user::aufgabe7::sound_fx;
 
-const RANDOM_START_RANGE_Y: u16 = 5;
+const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.1;
 
 /// 1 Letter big ball that moves over the screen
 pub struct Ball {
@@ -70,6 +70,7 @@ impl Ball {
             player_2.is_colliding(next_x, next_y);
         if collides_with_player {
             self.flip_x();
+            self.increase_speed();
             sound_fx::play_collision_player();
         }
     }
@@ -98,6 +99,11 @@ impl Ball {
         if random_range(0, 2) == 0{
             self.flip_y();
         }
+    }
+    
+    fn increase_speed(&mut self) {
+        self.movement_x = self.movement_x * BALL_SPEEDUP_MULTIPLICATOR;
+        self.movement_y = self.movement_y * BALL_SPEEDUP_MULTIPLICATOR;
     }
 }
 
