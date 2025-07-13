@@ -18,11 +18,7 @@ const STD_BALL_SPEED_Y: i16 = 1;
 
 const MS_BETWEEN_FRAMES: usize = 33;
 
-// pub static mut player_1: PlayerBar = PlayerBar::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
-// pub static mut player_2: PlayerBar = PlayerBar::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
-// pub static mut ball: Ball = Ball::new((CGA_ROWS/2) as u16, (CGA_COLUMNS/2) as u16);
-
-
+/// Starts the game
 pub fn run() {
     // Init Game Objects
     let mut frame = Frame::new();
@@ -30,17 +26,18 @@ pub fn run() {
     let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
     let mut ball = Ball::new((CGA_COLUMNS/2) as u16, (CGA_ROWS/2) as u16);
     ball.set_movement(1, 1);
-    let mut last_frame_time =  pit::get_system_time();
 
     // Show Start Screen
     draw_frame(&mut frame, &player_1, &player_2, &mut ball);
-    write_pong();
+    show_start_screen();
     
+    // wait for start input
     while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
     
-
+    // Game loop
+    let mut last_frame_time =  pit::get_system_time();
     loop {
         if !check_next_frame_time(&mut last_frame_time) {
             unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
@@ -51,10 +48,10 @@ pub fn run() {
         
         draw_frame(&mut frame, &player_1, &player_2, &mut ball);
     }
-    
 }
 
-fn write_pong() {
+/// Write PONG at the screen together with instructions
+fn show_start_screen() {
     // Write Pong
     let pong_str = [
         " _____   ____  _   _  _____", 
@@ -126,11 +123,12 @@ fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Pl
     }
 }
 
-
+/// Move ball by one step
 fn move_ball(ball: &mut Ball, mut player_1: &mut Player, mut player_2: &mut Player) {
     ball.move_step(&mut player_1, &mut player_2);
 }
 
+/// Poll player input, chance input accordingly
 fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
     let last_key = input::try_getch();
     if let Some(key) = last_key {

@@ -38,6 +38,7 @@ impl Frame {
         self.frame[ball.y as usize][ball.x as usize] = BALL;
     }
     
+    /// Draw the score near the top of the screen
     pub fn draw_score(&mut self, player_1: &Player, player_2: &Player) {
         // draw p1 score
         if player_1.points < 100 {

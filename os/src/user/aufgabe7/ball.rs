@@ -1,6 +1,7 @@
 use crate::{devices::cga::{CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::Player};
 use crate::user::aufgabe7::sound_fx;
 
+/// 1 Letter big ball that moves over the screen
 pub struct Ball {
     pub x: u16,
     pub y: u16,
@@ -14,6 +15,7 @@ pub struct Ball {
 }
 
 impl Ball {
+    /// Creates a new ball
     pub const fn new(x: u16, y: u16) -> Ball {
         Ball {
             x: x, 
@@ -27,6 +29,8 @@ impl Ball {
         }
     }
 
+    /// Move the ball by one step, flipping the direction if colliding with other object.
+    /// Movement direction is definded in `movement_x` and `movement_y`.
     pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player)
     {
         self.check_collision(&mut player_1, &mut player_2);
@@ -34,17 +38,21 @@ impl Ball {
         self.x = (self.x as i16 + self.movement_x) as u16;
     }
 
+    /// Sets `movement_x` and `movement_y`. Move will be fulfilled after calling `move_step()`.
     pub fn set_movement(&mut self, new_x: i16, new_y: i16)
     {
         self.movement_x = new_x;
         self.movement_y = new_y;
     }
 
+    /// Sets `x` and `y`.
     pub fn set_position(&mut self, x: u16, y: u16) {
         self.y = y;
         self.x = x;
     }
 
+    /// Checks if ball would clip inside a border/object in the next movement step.
+    /// If that would happen, flip the movement.
     fn check_collision(&mut self, player_1: &mut Player, player_2: &mut Player) {
         // Check collision with border
         let next_y = (self.y as i16 + self.movement_y) as u16;
@@ -64,10 +72,12 @@ impl Ball {
         }
     }
     
+    /// Invert `movement_y`
     fn flip_y(&mut self) {
         self.movement_y = -self.movement_y;
     }
 
+    /// Invert `movement_x`
     fn flip_x(&mut self) {
         self.movement_x = -self.movement_x;
     }

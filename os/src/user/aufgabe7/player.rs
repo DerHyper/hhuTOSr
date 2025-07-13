@@ -1,5 +1,6 @@
 use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
 
+/// Player, which is represented on the screen as a bar
 pub struct Player {
     pub x: u16,
     pub y: u16,
@@ -10,6 +11,7 @@ pub struct Player {
 }
 
 impl Player {
+    /// Creates a new player
     pub const fn new(x: u16, y: u16, length: u16) -> Player {
         Player {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16, points: 0}
     }
