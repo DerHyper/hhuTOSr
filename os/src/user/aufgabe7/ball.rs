@@ -86,14 +86,24 @@ impl Ball {
 
     /// Returns a random number within the y range
     pub fn get_random_start_y() -> f32 {
-        let rand_within_range = random_range(0, CGA_ROWS);
+        let rand_within_range = random_range(0, CGA_ROWS) as f32;
         return rand_within_range;
+    }
+
+    /// Returns a random number within the y range
+    pub fn randomize_movement_direction(&mut self) {
+        if random_range(0, 2) == 0{
+            self.flip_x();
+        }
+        if random_range(0, 2) == 0{
+            self.flip_y();
+        }
     }
 }
 
 /// Generates pseudo random number `range_max`
 /// Needed because `rand` cannot be used, as it requires std.
-fn random_range(range_min: usize, range_max: usize) -> f32 {
+fn random_range(range_min: usize, range_max: usize) -> usize {
     let time = pit::get_system_time();
 
     // Mixing
@@ -101,7 +111,7 @@ fn random_range(range_min: usize, range_max: usize) -> f32 {
     random_number ^= random_number<<12;
     random_number ^= random_number>>27;
         
-    let rand_within_range = (range_min+(random_number%(range_max-range_min))) as f32;
+    let rand_within_range = range_min+(random_number%(range_max-range_min));
     rand_within_range
 }
 

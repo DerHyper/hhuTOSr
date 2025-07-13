@@ -18,6 +18,7 @@ const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const STD_BALL_SPEED_X: f32 = 1.;
 const STD_BALL_SPEED_Y: f32 = 0.5;
+const RESET_TIME_AFTER_GOAL: usize = 700;
 
 const MS_BETWEEN_FRAMES: usize = 33;
 
@@ -151,15 +152,20 @@ fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Pl
     if ball.x < (LEFT_SIDE as f32) {
         ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+        ball.randomize_movement_direction();
         player_2.score_point();
         sound_fx::play_score_point();
+        pit::wait(RESET_TIME_AFTER_GOAL);
 
     // Player 1 scored goal
     } else if ball.x > (RIGHT_SIDE as f32) {
         ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+        ball.randomize_movement_direction();
         player_1.score_point();
         sound_fx::play_score_point();
+        pit::wait(RESET_TIME_AFTER_GOAL);
+
     }
 }
 
