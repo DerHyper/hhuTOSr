@@ -1,10 +1,11 @@
 use core::char;
 
-use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::Ball, player::{self, Player}}};
+use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::{self, Ball}, player::{self, Player}}};
 
 const BAR: char = 0xDB as char; // '█' in Code page 437
 const SPACE: char = ' ';
-const BALL: char = 0x09 as char; // '○' in Code page 437
+// const BALL: char = 0x09 as char; // '○' in Code page 437
+const BALL: char = 0xDB as char; // '█' in Code page 437
 const SCORE_Y_BUFFER: usize = 1; // Distance between opper screen edge and score
 
 pub struct Frame {
@@ -35,7 +36,9 @@ impl Frame {
 
     /// Draw the ball
     pub fn draw_ball(&mut self, ball: &Ball) {
-        self.frame[ball.y as usize][ball.x as usize] = BALL;
+        let y = ball::round(ball.y);
+        let x = ball::round(ball.x);
+        self.frame[y][x] = BALL;
     }
     
     /// Draw the score near the top of the screen

@@ -5,6 +5,7 @@ pub struct Player {
     pub x: u16,
     pub y: u16,
     pub length: u16,
+    pub thickness: f32,
     pub min_y: u16,
     pub max_y: u16,
     pub points: u16
@@ -12,8 +13,8 @@ pub struct Player {
 
 impl Player {
     /// Creates a new player
-    pub const fn new(x: u16, y: u16, length: u16) -> Player {
-        Player {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16, points: 0}
+    pub const fn new(x: u16, y: u16, length: u16, thickness: f32 ) -> Player {
+        Player {x, y, length, min_y: 0, max_y: (CGA_ROWS-1) as u16, points: 0, thickness}
     }
 
     /// Moves the bar up by one step (-1, scine y is 0 at top of screen)
@@ -45,14 +46,22 @@ impl Player {
     }
 
     /// Returns true, if the other coordinates are within the bar 
-    pub fn is_colliding(&self, other_x: u16, other_y: u16) -> bool {
-        let is_inside_x_range = other_x == self.x; // Bar is 1 dimensional
-        let is_inside_y_range = other_y <= self.lower_bar_end() && other_y >= self.upper_bar_end();
+    pub fn is_colliding(&self, other_x: f32, other_y: f32) -> bool {
+        let is_inside_x_range = other_x <= self.right_bar_end() && other_x >= self.left_bar_end();
+        let is_inside_y_range = other_y <= self.lower_bar_end() as f32 && other_y >= self.upper_bar_end() as f32;
         return is_inside_x_range && is_inside_y_range;
     }
 
     /// Adds a point to the players score
     pub fn score_point(&mut self) {
         self.points = self.points+1;
+    }
+    
+    fn right_bar_end(&self) -> f32 {
+        self.x as f32 + (self.thickness/2.)
+    }
+    
+    fn left_bar_end(&self) -> f32 {
+        self.x as f32 - (self.thickness/2.)
     }
 }

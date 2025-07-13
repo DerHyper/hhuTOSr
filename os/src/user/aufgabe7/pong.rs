@@ -10,13 +10,14 @@ use crate::user::aufgabe7::sound_fx;
 
 const MIN_WINNING_POINTS: u16 = 11;
 const BAR_LENGTH: u16 = 5;
+const BAR_THICKNESS: f32 = 1.;
 
 const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
 const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
-const STD_BALL_SPEED_X: i16 = 1;
-const STD_BALL_SPEED_Y: i16 = 1;
+const STD_BALL_SPEED_X: f32 = 1.;
+const STD_BALL_SPEED_Y: f32 = 0.5;
 
 const MS_BETWEEN_FRAMES: usize = 33;
 
@@ -30,10 +31,10 @@ pub fn run() {
 fn run_game_interation() {
     // Init Game Objects
     let mut frame = Frame::new();
-    let mut player_1 = Player::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH);
-    let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH);
-    let mut ball = Ball::new((CGA_COLUMNS/2) as u16, Ball::get_random_start_y());
-    ball.set_movement(1, 1);
+    let mut player_1 = Player::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH, BAR_THICKNESS);
+    let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH, BAR_THICKNESS);
+    let mut ball = Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
+    ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
 
     // Show Start Screen
     draw_frame(&mut frame, &player_1, &player_2, &mut ball);
@@ -147,15 +148,15 @@ fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
 /// Checks if goal was hit, if so, update player score
 fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
     // Player 2 scored goal
-    if ball.x == 0 {
-        ball.set_position((CGA_COLUMNS/2) as u16, Ball::get_random_start_y());
+    if ball.x < (LEFT_SIDE as f32) {
+        ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
         player_2.score_point();
         sound_fx::play_score_point();
 
     // Player 1 scored goal
-    } else if ball.x == (CGA_COLUMNS-1) as u16 {
-        ball.set_position((CGA_COLUMNS/2) as u16, Ball::get_random_start_y());
+    } else if ball.x > (RIGHT_SIDE as f32) {
+        ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
         ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
         player_1.score_point();
         sound_fx::play_score_point();
