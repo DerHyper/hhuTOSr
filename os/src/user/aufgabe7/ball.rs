@@ -1,5 +1,7 @@
-use crate::{devices::cga::{CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::player::Player};
+use crate::{devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit}, user::aufgabe7::player::Player};
 use crate::user::aufgabe7::sound_fx;
+
+const RANDOM_START_RANGE_Y: u16 = 5;
 
 /// 1 Letter big ball that moves over the screen
 pub struct Ball {
@@ -80,5 +82,19 @@ impl Ball {
     /// Invert `movement_x`
     fn flip_x(&mut self) {
         self.movement_x = -self.movement_x;
+    }
+
+    /// Generates pseudo random number
+    /// `rand` cannot be used because it requires std
+    pub fn get_random_start_y() -> u16 {
+        let time = pit::get_system_time();
+
+        // Mixing
+        let mut random_number = time.wrapping_mul(0x123456789); 
+        random_number ^= random_number<<12;
+        random_number ^= random_number>>27;
+        
+        let rand_within_range = (random_number%CGA_ROWS) as u16;
+        return rand_within_range;
     }
 }
