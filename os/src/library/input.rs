@@ -12,7 +12,7 @@ pub fn getch() -> char {
 
 /// Get key press and return the character if it is a valid ASCII character.
 pub fn try_getch() -> Option<char> {
-   let mut key = keyboard::get_key_buffer().get_last_key();
+   let key = keyboard::get_key_buffer().get_last_key();
    if key.is_none() {
       return None;
    }

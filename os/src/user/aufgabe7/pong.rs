@@ -29,6 +29,7 @@ pub fn run() {
     }
 }
 
+/// Starts a new itteration of the game. 
 fn run_game_interation() {
     // Init Game Objects
     let mut frame = Frame::new();
@@ -150,23 +151,22 @@ fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
 fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
     // Player 2 scored goal
     if ball.x < (LEFT_SIDE as f32) {
-        ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
-        ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
-        ball.randomize_movement_direction();
-        player_2.score_point();
-        sound_fx::play_score_point();
-        pit::wait(RESET_TIME_AFTER_GOAL);
+        ball_hit_goal(ball, player_2);
 
     // Player 1 scored goal
     } else if ball.x > (RIGHT_SIDE as f32) {
-        ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
-        ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
-        ball.randomize_movement_direction();
-        player_1.score_point();
-        sound_fx::play_score_point();
-        pit::wait(RESET_TIME_AFTER_GOAL);
-
+        ball_hit_goal(ball, player_1);
     }
+}
+
+/// Call if ball hit a goal, resets ball, scores player score and plays sound effect
+fn ball_hit_goal(ball: &mut Ball, player: &mut Player) {
+    ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
+    ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+    ball.randomize_movement_direction();
+    player.score_point();
+    sound_fx::play_score_point();
+    pit::wait(RESET_TIME_AFTER_GOAL);
 }
 
 /// Move ball by one step
