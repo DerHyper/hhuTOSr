@@ -149,11 +149,11 @@ fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
 /// Checks if goal was hit, if so, update player score
 fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
     // Player 2 scored goal
-    if ball.x < (LEFT_SIDE as f32) {
+    if ball.x < (LEFT_SIDE as f32) -0.1 {
         ball_hit_goal(ball, player_2);
 
     // Player 1 scored goal
-    } else if ball.x > (RIGHT_SIDE as f32) {
+    } else if ball.x > (RIGHT_SIDE as f32) +0.1 {
         ball_hit_goal(ball, player_1);
     }
 }
