@@ -16,7 +16,7 @@ pub fn run () {
     ask_for_input();
     demo_alloc_vec(3, n_texts);
     ask_for_input();
-    demo_dealloc_vec(3, n_texts);
+    demo_dealloc_vec(4, n_texts);
     println!("\n*** END OF DEMO ***");
 
 }
@@ -32,7 +32,7 @@ fn ask_for_input() {
 
 fn demo_alloc_box(cur_n: usize, max_n: usize) {
     kprintln!("[START DEMO {}]",cur_n);
-    println!("Heap Demo {}/{}: Allocate 2 structs unsing Box::new", cur_n, max_n);
+    println!("Heap Demo {}/{}: Allocate 2 Structs using Box::new", cur_n, max_n);
     println!("=================================================\n");
 
     allocator::init();
@@ -46,14 +46,14 @@ fn demo_alloc_box(cur_n: usize, max_n: usize) {
     let test2 = Test { a: 3, b: 4 };
 
     let heap: Box<[Test;2]> = Box::new([test1, test2]);
-    println!("Added structs:\n   test1: a={}, b={}\n   test2: a={}, b={}\n", heap[0].a, heap[0].b, heap[1].a, heap[1].b);
+    println!("Added Structs:\n   test1: a={}, b={}\n   test2: a={}, b={}\n", heap[0].a, heap[0].b, heap[1].a, heap[1].b);
 
     allocator::dump_free_list();
 }
 
 fn demo_dealloc_box(cur_n: usize, max_n: usize) {
     kprintln!("[START DEMO {}]",cur_n);
-    println!("Heap Demo {}/{}: The 2 structs where deallocated, because they went out of scope",cur_n, max_n);
+    println!("Heap Demo {}/{}: The 2 Structs where deallocated, because they went out of scope",cur_n, max_n);
     println!("=================================================\n");
 
     allocator::dump_free_list();

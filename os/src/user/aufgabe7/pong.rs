@@ -120,8 +120,8 @@ fn show_start_screen() {
 
     // Write instructions
     let instructions = [
-        "Player 1: press 'W' and 'S' to move",
-        "Player 2: press 'I' and 'K' to move",
+        "Player 1: Press 'W' and 'S' to move",
+        "Player 2: Press 'I' and 'K' to move",
         "",
         "Press 'W' to start!"
     ];
