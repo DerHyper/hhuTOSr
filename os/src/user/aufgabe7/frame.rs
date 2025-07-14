@@ -6,6 +6,7 @@ const BAR: char = 0xDB as char; // '█' in Code page 437
 const SPACE: char = ' ';
 // const BALL: char = 0x09 as char; // '○' in Code page 437
 const BALL: char = 0xDB as char; // '█' in Code page 437
+const DIVIDER_LINE: char = '|';
 const SCORE_Y_BUFFER: usize = 1; // Distance between opper screen edge and score
 
 pub struct Frame {
@@ -47,18 +48,23 @@ impl Frame {
         if player_1.points < 100 {
             let p1_points_tens = char::from_digit((player_1.points/10) as u32, 10).unwrap();
             let p1_points_ones = char::from_digit((player_1.points%10) as u32, 10).unwrap();
-            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-2] = p1_points_tens;
-            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-1] = p1_points_ones;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-3] = p1_points_tens;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2-2] = p1_points_ones;
         }
-
-        self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2] = '-';
         
         // draw p2 score
         if player_2.points < 100 {
             let p2_points_tens = char::from_digit((player_2.points/10) as u32, 10).unwrap();
             let p2_points_ones = char::from_digit((player_2.points%10) as u32, 10).unwrap();
-            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+1] = p2_points_tens;
-            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+2] = p2_points_ones;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+2] = p2_points_tens;
+            self.frame[SCORE_Y_BUFFER][CGA_COLUMNS/2+3] = p2_points_ones;
+        }
+    }
+
+    pub(crate) fn draw_middle_line(&mut self) {
+        let x = CGA_COLUMNS/2;
+        for y in 0..CGA_ROWS {
+            self.frame[y][x] = DIVIDER_LINE;
         }
     }
 }

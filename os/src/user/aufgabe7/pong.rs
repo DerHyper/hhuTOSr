@@ -39,7 +39,6 @@ fn run_game_interation() {
     ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
 
     // Show Start Screen
-    draw_frame(&mut frame, &player_1, &player_2, &mut ball);
     show_start_screen();
         
     // wait for start input
@@ -191,6 +190,7 @@ fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
 /// Calculates and prints a new frame that shows the current game state
 fn draw_frame(frame: &mut Frame, player_1: &Player, player_2: &Player, ball: &Ball) {
     *frame = Frame::new();
+    frame.draw_middle_line();
     frame.draw_player(&player_1);
     frame.draw_player(&player_2);
     frame.draw_score(&player_1, &player_2);
