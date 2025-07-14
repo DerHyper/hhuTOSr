@@ -1,7 +1,7 @@
 use crate::{devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit}, user::aufgabe7::player::Player};
 use crate::user::aufgabe7::sound_fx;
 
-const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.1;
+const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
 
 /// 1 Letter big ball that moves over the screen
 pub struct Ball {
