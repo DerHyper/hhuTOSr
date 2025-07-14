@@ -40,6 +40,9 @@ fn run_game_interation() {
 
     // Show Start Screen
     show_start_screen();
+
+    // Hide cursor
+    cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
         
     // wait for start input
     while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
