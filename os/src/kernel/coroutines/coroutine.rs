@@ -24,7 +24,7 @@ fn next_id() -> usize {
 }
 
 /// Low-level routine for starting a coroutine.
-#[naked]
+#[unsafe(naked)]
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
     naked_asm!(
@@ -57,7 +57,7 @@ unsafe extern "C" fn coroutine_start(stack_ptr: usize) {
 /// Low-level routine for switching to the next coroutine.
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the current coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next coroutine (the new rsp value).
-#[naked]
+#[unsafe(naked)]
 #[allow(unsafe_op_in_unsafe_fn)]
 unsafe extern "C" fn coroutine_switch(current_stack_ptr: *mut usize, next_stack: usize) {
     naked_asm!(

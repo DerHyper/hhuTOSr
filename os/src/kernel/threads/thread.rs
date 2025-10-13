@@ -28,7 +28,7 @@ pub fn next_id() -> usize {
 }
 
 /// Low-level routine for starting a thread.
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn thread_start(stack_ptr: usize) {
     naked_asm!(
         "mov rsp, rdi", // Switch stack
@@ -58,7 +58,7 @@ unsafe extern "C" fn thread_start(stack_ptr: usize) {
 /// Low-level routine for switching to the next thread.
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the next coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next thread (the new rsp value).
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: usize, next_stack_end: usize) {
     naked_asm!(
         // Save all registers of the current thread on its stack
@@ -114,7 +114,7 @@ unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: us
     )
 }
 
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn thread_user_start(stack_ptr: usize) {
     naked_asm!(
         "mov rsp, rdi", // Switch stack
