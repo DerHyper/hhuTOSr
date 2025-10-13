@@ -1,58 +1,34 @@
-; ╔═════════════════════════════════════════════════════════════════════════╗
-; ║ Module: boot                                                            ║
-; ╟─────────────────────────────────────────────────────────────────────────╢
-; ║ Descr.: grub loads our image at the address 1 MB and switches to 32 bit ║
-; ║         protected mode and jumps to the first function 'start' in this  ║
-; ║         file. We switch to 64 bit long mode and call 'startup', the     ║
-; ║         first rust function.                                            ║
-; ╟─────────────────────────────────────────────────────────────────────────╢
-; ║ Author: Michael Schoettner, Univ. Duesseldorf, 26.2.2023                ║
-; ╚═════════════════════════════════════════════════════════════════════════╝
-
 ;
-;   Konstanten
+; File: boot.asm
+;
+; Description: Entry point for the operating system. The bootloader (GRUB)
+;              has already switched to 32-bit protected mode. The function
+;              '_start' is called by the bootloader as it hands off control
+;              to the OS. This code sets up a stack, the Global Descriptor Table (GDT),
+;              initializes paging with an identity (1:1) mapping and switches
+;              to 64-bit long mode before entering Rust code by calling 'startup'.
+;
+; Author: Michael Schoettner, Heinrich Heine University Duesseldorf, 30.10.2023
 ;
 
-; Auskommentieren, um im Grafikmodus zu booten
-%define TEXT_MODE 
+; Comment out to boot in graphical mode
+%define TEXT_MODE
 
- 
-; Lade-Adresse des Kernels, muss mit der Angabe in 'sections' konsistent sein!
+; Load address of the kernel (1 MiB - Must be consistent with the linker script)
 KERNEL_START: equ 0x100000
 
-
-; Stack fuer die main-Funktion
+; Stack size
 STACKSIZE: equ 65536
 
-; 254 GB maximale RAM-Groesse fuer die Seitentabelle
+; Maximum supported RAM size (used to set up initial page tables)
 MAX_MEM: equ 254
 
-; Speicherplatz fuer die Seitentabelle
-[GLOBAL pagetable_start]
-pagetable_start:  equ 0x103000    ; 1 MB + 12 KB
+; Memory for page tables
+[GLOBAL _pagetable_start]
+_pagetable_start:  equ 0x103000 ; 1 MiB + 12 KB
 
-[GLOBAL pagetable_end]
-pagetable_end:  equ 0x200000      ;  = 2 MB
-
-;
-;   System
-;
-
-; Von uns bereitgestellte Funktionen
-[GLOBAL start]
-[GLOBAL idt]
-
-; C-Funktion die am Ende des Assembler-Codes aufgerufen werden
-[EXTERN startup]
-
-
-; Vom Compiler bereitgestellte Adressen
-[EXTERN ___BSS_START__]
-[EXTERN ___BSS_END__]
-
-; In 'sections' definiert
-[EXTERN ___KERNEL_DATA_START__]
-[EXTERN ___KERNEL_DATA_END__]
+[GLOBAL _pagetable_end]
+_pagetable_end:  equ 0x200000 ;  = 2 MB
 
 ; Multiboot constants
 MULTIBOOT_HEADER_MAGIC:           equ 0x1BADB002
@@ -61,267 +37,288 @@ MULTIBOOT_HEADER_TAG_OPTIONAL:    equ 1
 MULTIBOOT_HEADER_TAG_FRAMEBUFFER: equ 5
 MULTIBOOT_HEADER_TAG_END:         equ 0
 
-MULTIBOOT_MEMORY_INFO	equ	1<<1
-MULTIBOOT_GRAPHICS_INFO equ 1<<2
+MULTIBOOT_MEMORY_INFO equ 1 << 1
+MULTIBOOT_GRAPHICS_INFO equ 1 << 2
 
-MULTIBOOT_HEADER_FLAGS	equ	MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPHICS_INFO
-MULTIBOOT_HEADER_CHKSUM	equ	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+MULTIBOOT_HEADER_FLAGS equ MULTIBOOT_MEMORY_INFO | MULTIBOOT_GRAPHICS_INFO
+MULTIBOOT_HEADER_CHKSUM equ -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 
 %ifdef TEXT_MODE
-   MULTIBOOT_GRAPHICS_MODE    equ 1
-   MULTIBOOT_GRAPHICS_WIDTH   equ 80
-   MULTIBOOT_GRAPHICS_HEIGHT  equ 25
-   MULTIBOOT_GRAPHICS_BPP     equ 0
-
+    MULTIBOOT_GRAPHICS_MODE    equ 1
+    MULTIBOOT_GRAPHICS_WIDTH   equ 80
+    MULTIBOOT_GRAPHICS_HEIGHT  equ 25
+    MULTIBOOT_GRAPHICS_BPP     equ 0
 %else
-   MULTIBOOT_GRAPHICS_MODE   equ 0
-   MULTIBOOT_GRAPHICS_WIDTH  equ 800
-   MULTIBOOT_GRAPHICS_HEIGHT equ 600
-   MULTIBOOT_GRAPHICS_BPP    equ 32
+    MULTIBOOT_GRAPHICS_MODE   equ 0
+    MULTIBOOT_GRAPHICS_WIDTH  equ 800
+    MULTIBOOT_GRAPHICS_HEIGHT equ 600
+    MULTIBOOT_GRAPHICS_BPP    equ 32
 %endif
+
+; Exported symbols (for linking with Rust code)
+[GLOBAL _get_tss_address] ; Function to get the address of the TSS
+[GLOBAL _tss_set_rsp0] ; Function to set the kernel stack pointer (rsp0) in the TSS
+[EXTERN startup] ; Entry point in Rust code
+
+; External symbols from the linker script
+[EXTERN ___BSS_START__]
+[EXTERN ___BSS_END__]
+[EXTERN ___KERNEL_DATA_START__]
+[EXTERN ___KERNEL_DATA_END__]
 
 [SECTION .text]
 
 ;
-;   System-Start, Teil 1 (im 32-bit Protected Mode)
+; Boot Part 1 (in 32-bit Protected Mode)
 ;
-;   Initialisierung von GDT und Seitentabelle und Wechsel in den 64-bit
-;   Long Mode.
+; Initialize GDT and page tables, then switch to 64-bit Long Mode.
 ;
 
 [BITS 32]
 
-multiboot_header:
-	align  4
+; Multiboot header (contains information for the bootloader)
+_multiboot_header:
+    align  4
+    dd MULTIBOOT_HEADER_MAGIC
+    dd MULTIBOOT_HEADER_FLAGS
+    dd -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+    dd _multiboot_header
+    dd (___KERNEL_DATA_START__   - KERNEL_START)
+    dd (___KERNEL_DATA_END__     - KERNEL_START)
+    dd (___BSS_END__             - KERNEL_START)
+    dd (startup                  - KERNEL_START)
+    dd MULTIBOOT_GRAPHICS_MODE
+    dd MULTIBOOT_GRAPHICS_WIDTH
+    dd MULTIBOOT_GRAPHICS_HEIGHT
+    dd MULTIBOOT_GRAPHICS_BPP
+
+; Entry point called by the bootloader
+_start:
+    cli ; Disable interrupts
+    lgdt [_gdt_descriptor] ; Load the GDT
+
+    ; Set data segment registers
+    mov eax, (3 << 3) ; Third entry in GDT = Data segment (Index starts at third bit, so we shift left by 3)
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Set up stack
+    mov ss, ax ; Stack segment = Data segment
+    mov esp, _init_stack + STACKSIZE ; Let ESP point to the top of the stack
+
+    ; Store multiboot info address (passed by bootloader in EBX)
+    mov [_multiboot_addr], ebx
+
+    ; Long jump sets code segment register (index 1 = 32-bit code segment)
+    jmp (1 << 3) : _init_longmode ; First entry in GDT = Code segment (Index starts at third bit, so we shift left by 3)
 
 ;
-;   Multiboot-Header zum Starten mit GRUB oder QEMU (ohne BIOS)
+;  Switch to 64-bit long mode
 ;
-	dd MULTIBOOT_HEADER_MAGIC
-	dd MULTIBOOT_HEADER_FLAGS
-	dd -(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
-	dd multiboot_header   
-	dd (___KERNEL_DATA_START__   - KERNEL_START)
-	dd (___KERNEL_DATA_END__     - KERNEL_START)
-	dd (___BSS_END__        - KERNEL_START)
-	dd (startup             - KERNEL_START)
-	dd MULTIBOOT_GRAPHICS_MODE
-	dd MULTIBOOT_GRAPHICS_WIDTH
-	dd MULTIBOOT_GRAPHICS_HEIGHT
-	dd MULTIBOOT_GRAPHICS_BPP
+_init_longmode:
+    ; Enable address extension (PAE) in CR4
+    mov eax, cr4
+    or eax, 1 << 5
+    mov cr4, eax
 
-;  GRUB Einsprungspunkt
-start:
-	cld              ; GCC-kompilierter Code erwartet das so
-	cli              ; Interrupts ausschalten
-	lgdt   [gdt_80]  ; Neue Segmentdeskriptoren setzen
+    ; Setup page tables for identity mapping
+    call   _setup_paging
 
-	; Globales Datensegment
-	mov    eax, 3 * 0x8
-	mov    ds, ax
-	mov    es, ax
-	mov    fs, ax
-	mov    gs, ax
+    ; Activate long mode (still in 32-bit compatibility mode)
+    mov ecx, 0x0C0000080 ; Choose EFER (Extended Feature Enable Register) as model specific register
+    rdmsr ; Read current value of EFER
+    or eax, 1 << 8 ; LME (Long Mode Enable)
+    wrmsr ; Write back to EFER
 
-	; Stack festlegen
-	mov    ss, ax
-	mov    esp, init_stack+STACKSIZE
-   
-	; Sichere Adresse der Multiboot-Struktur (ist in EBX)
-	; da wird den Inhalt erst im 64 Bit Mode wieder herunterholen
-	; muessen wir 8 Bytes 'pushen'
-    push   0
-    push   ebx
+    ; Activate paging in CR0
+    mov eax, cr0
+    or eax, 1 << 31
+    mov cr0, eax
 
-	jmp    init_longmode
-
+    ; Long jump to 64-bit code segment -> Leave 32-bit compatibility mode
+    jmp (2 << 3) : _longmode_start ; Second entry in GDT = 64-bit code segment (Index starts at third bit, so we shift left by 3)
 
 ;
-;  Umschalten in den 64 Bit Long-Mode
+; Set up a provisional page table with 2 MB page size that maps the first 'MAX_MEM' GiB
+; directly to physical memory. This is necessary because a functioning page table
+; is required for long mode. The system must not have more memory at the moment.
 ;
-init_longmode:
-	; Adresserweiterung (PAE) aktivieren
-	mov    eax, cr4
-	or     eax, 1 << 5
-	mov    cr4, eax
+_setup_paging:
+    ; PML4 (Page Map Level 4 / First Level)
+    mov eax, _pdp
+    or eax, 0xf
+    mov dword [_pml4 + 0], eax
+    mov dword [_pml4 + 4], 0
 
-	; Seitentabelle anlegen (Ohne geht es nicht)
-	call   setup_paging
+    ; PDPE (Page-Directory-Pointer Entry / Second level)
+    mov eax, _pd
+    or eax, 0x7 ; Address of first table with flags (present, rw, user)
+    mov ecx, 0
+_fill_tables2:
+    cmp ecx, MAX_MEM ; Reference 'MAX_MEM' tables with 512 entries each
+    je _fill_tables2_done
+    mov dword [_pdp + 8 * ecx + 0], eax
+    mov dword [_pdp + 8 * ecx + 4], 0
+    add eax, 0x1000 ; Each table is 4 KiB in size
+    inc ecx
+    ja _fill_tables2
+_fill_tables2_done:
 
-	; Long-Mode (fürs erste noch im Compatibility-Mode) aktivieren
-	mov    ecx, 0x0C0000080 ; EFER (Extended Feature Enable Register) auswaehlen
-	rdmsr
-	or     eax, 1 << 8 ; LME (Long Mode Enable)
-	wrmsr
+    ; PDE (Page Directory Entry / Third level)
+    mov eax, 0x0 | 0x87 ; Start address byte 0..3 (=0) + flags (present, rw, user, page size = 2 MB)
+    mov ebx, 0 ; Start address byte 4..7 (=0)
+    mov ecx, 0
+_fill_tables3:
+    cmp    ecx, 512 * MAX_MEM ; Fill 'MAX_MEM' tables with 512 entries each
+    je     _fill_tables3_done
+    mov    dword [_pd + 8 * ecx + 0], eax ; Low bytes
+    mov    dword [_pd + 8 * ecx + 4], ebx ; High bytes
+    add    eax, 0x200000 ; 2 MB je Seite
+    adc    ebx, 0 ; Overflow? -> Increment high bytes
+    inc    ecx
+    ja     _fill_tables3
+_fill_tables3_done:
 
-	; Paging aktivieren
-	mov    eax, cr0
-	or     eax, 1 << 31
-	mov    cr0, eax
-
-	; Sprung ins 64 Bit-Codesegment -> Long-Mode wird vollständig aktiviert
-	jmp    2 * 0x8 : longmode_start
-
-
-;
-;   Anlegen einer (provisorischen) Seitentabelle mit 2 MB Seitengröße, die die
-;   ersten MAX_MEM GB direkt auf den physikalischen Speicher abbildet.
-;   Dies ist notwendig, da eine funktionierende Seitentabelle für den Long-Mode
-;   vorausgesetzt wird. Mehr Speicher darf das System im Moment nicht haben.
-;
-setup_paging:
-	; PML4 (Page Map Level 4 / 1. Stufe)
-	mov    eax, pdp
-	or     eax, 0xf
-	mov    dword [pml4+0], eax
-	mov    dword [pml4+4], 0
-
-	; PDPE (Page-Directory-Pointer Entry / 2. Stufe) für aktuell 16GB
-	mov    eax, pd
-	or     eax, 0x7           ; Adresse der ersten Tabelle (3. Stufe) mit Flags.
-	mov    ecx, 0
-fill_tables2:
-	cmp    ecx, MAX_MEM       ; MAX_MEM Tabellen referenzieren
-	je     fill_tables2_done
-	mov    dword [pdp + 8*ecx + 0], eax
-	mov    dword [pdp + 8*ecx + 4], 0
-	add    eax, 0x1000        ; Die Tabellen sind je 4kB groß
-	inc    ecx
-	ja     fill_tables2
-fill_tables2_done:
-
-	; PDE (Page Directory Entry / 3. Stufe)
-	mov    eax, 0x0 | 0x87    ; Startadressenbyte 0..3 (=0) + Flags
-	mov    ebx, 0             ; Startadressenbyte 4..7 (=0)
-	mov    ecx, 0
-fill_tables3:
-	cmp    ecx, 512*MAX_MEM   ; MAX_MEM Tabellen mit je 512 Einträgen füllen
-	je     fill_tables3_done
-	mov    dword [pd + 8*ecx + 0], eax ; low bytes
-	mov    dword [pd + 8*ecx + 4], ebx ; high bytes
-	add    eax, 0x200000      ; 2 MB je Seite
-	adc    ebx, 0             ; Overflow? -> Hohen Adressteil inkrementieren
-	inc    ecx
-	ja     fill_tables3
-fill_tables3_done:
-
-	; Basiszeiger auf PML4 setzen
-	mov    eax, pml4
-	mov    cr3, eax
-	ret
+    ; Load PML4 (First level page table) into CR3
+    mov    eax, _pml4
+    mov    cr3, eax
+    ret
 
 ;
-;   System-Start, Teil 2 (im 64-bit Long-Mode)
+; Boot part 2 (in 64-bit Long Mode)
 ;
-;   Das BSS-Segment wird gelöscht und die IDT die PICs initialisiert.
-;   Anschließend werden die Konstruktoren der globalen C++-Objekte und
-;   schließlich main() ausgeführt.
+; The BSS segment is cleared and the TSS is initialized.
+; Finally, 'startup' in Rust code is called.
 ;
-longmode_start:
+
 [BITS 64]
-    ; zuvor gesicherter Zeiger auf multiboot infos vom Stack holen und
-    ; in 'multiboot_info_address' sichern. Durch die Konstruktoren wird 
-    ; der Stack manipuliert, daher muessen wir das gleich hier machen
-    pop    rax  
-    mov    [multiboot_info_address], rax
-    
-	; BSS löschen
-	mov    rdi, ___BSS_START__
-clear_bss:
-	mov    byte [rdi], 0
-	inc    rdi
-	cmp    rdi, ___BSS_END__
-	jne    clear_bss
 
-;	fninit         ; FPU aktivieren
-	
-    mov    rdi, [multiboot_info_address] ; 1. Parameter wird in rdi uebergeben
-	call   startup ; multiboot infos auslesen und 'main' aufrufen
-	
-	cli            ; Hier sollten wir nicht hinkommen
-	hlt
+_longmode_start:
 
+    ; Clear BSS
+    mov    rdi, ___BSS_START__
+_clear_bss:
+    mov    byte [rdi], 0
+    inc    rdi
+    cmp    rdi, ___BSS_END__
+    jne    _clear_bss
 
+   ; Set TSS base address in GDT entry
+   call _tss_set_base_address
 
+   ; Set kernel stack in TSS (rsp0)
+    mov rdi, _init_stack.end
+   call _tss_set_rsp0
+
+   ; Load TSS register with the TSS descriptor
+
+   ;
+   ; Hier muss Code eingefuegt werden
+   ;
+
+   ; Call startup with multiboot info address as parameter
+    xor rax, rax
+    mov dword eax, _multiboot_addr
+    mov rdi, [rax] ; First parameter is passed in RDI
+    call startup ; Call Rust code
+
+    ; We should never return here
+    cli ; Disable interrupts
+    hlt ; Stop execution
+
+; Set TSS base address in GDT entry
+_tss_set_base_address:
 ;
-; Kurze Verzögerung für in/out-Befehle
+; Hier muss Code eingefuegt werden
 ;
-delay:
-	jmp    .L2
-.L2:
-	ret
+ret
 
 
+; Set kernel stack (rsp0) in TSS
+; First Parameter -> RDI = Pointer to kernel stack
+_tss_set_rsp0:
 ;
-; Funktionen für den C++ Compiler. Diese Label müssen für den Linker
-; definiert sein; da bei OOStuBS keine Freigabe des Speichers erfolgt, können
-; die Funktionen aber leer sein.
+; Hier muss Code eingefuegt werden
 ;
-__cxa_pure_virtual: ; "virtual" Methode ohne Implementierung aufgerufen
-;_ZdlPv:             ; void operator delete(void*)
-;_ZdlPvj:            ; void operator delete(void*, unsigned int) fuer g++ 6.x
-;_ZdlPvm:            ; void operator delete(void*, unsigned long) fuer g++ 6.x
-	ret
+ret
 
+; Get address of the TSS
+_get_tss_address:
+    mov rax, _tss
+    ret
 
 [SECTION .data]
 
+; Global Descriptor Table (GDT) with 4 entries:
 ;
-; Segment-Deskriptoren
-;
-gdt:
-	dw  0,0,0,0   ; NULL-Deskriptor
+; 0: NULL descriptor (always required)
+; 1: 32-Bit kernel code segment (only needed for booting)
+; 2: 64-Bit kernel code segment
+; 3: 64-Bit kernel data segment
+_gdt:
+    ; NULL descriptor (always required)
+    dw  0, 0, 0, 0
 
-	; 32-Bit-Codesegment-Deskriptor
-	dw  0xFFFF    ; 4Gb - (0x100000*0x1000 = 4Gb)
-	dw  0x0000    ; base address=0
-	dw  0x9A00    ; code read/exec
-	dw  0x00CF    ; granularity=4096, 386 (+5th nibble of limit)
+    ; 32-Bit kernel code segment (only needed for booting)
+    dw  0xFFFF    ; Limit [00:15] = 4 GiB (0x100000 * 0x1000 = 4 GiB)
+    dw  0x0000    ; Base  [00:15] = 0
+    dw  0x9A00    ; Base  [16:23] = 0, code read/exec, DPL = 0, present
+    dw  0x00CF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
 
-	; 64-Bit-Codesegment-Deskriptor
-	dw  0xFFFF    ; 4Gb - (0x100000*0x1000 = 4Gb)
-	dw  0x0000    ; base address=0
-	dw  0x9A00    ; code read/exec
-	dw  0x00AF    ; granularity=4096, 386 (+5th nibble of limit), Long-Mode
+    ; 64-Bit kernel code segment
+    dw  0xFFFF    ; Limit [00:15] = 4 GiB (0x100000 * 0x1000 = 4 GiB)
+    dw  0x0000    ; Base  [00:15] = 0
+    dw  0x9A00    ; Base  [16:23] = 0, code read/exec, DPL = 0, present
+    dw  0x00AF    ; Limit [16:19], granularity = 4096, 386, Long-Mode, base [24:31]
 
-	; Datensegment-Deskriptor
-	dw  0xFFFF    ; 4Gb - (0x100000*0x1000 = 4Gb)
-	dw  0x0000    ; base address=0
-	dw  0x9200    ; data read/write
-	dw  0x00CF    ; granularity=4096, 386 (+5th nibble of limit)
+    ; 64-Bit kernel data segment
+    dw  0xFFFF    ; Limit [00:15] = 4 GiB (0x100000 * 0x1000 = 4 GiB)
+    dw  0x0000    ; Base  [00:15] = 0
+    dw  0x9200    ; Base  [16:23] = 0, data read/write, DPL = 0, present
+    dw  0x00CF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
 
-gdt_80:
-	dw  4*8 - 1   ; GDT Limit=24, 4 GDT Eintraege - 1
-	dq  gdt       ; Adresse der GDT
+; GDT descriptor for LGDT instruction
+_gdt_descriptor:
+    align 16
+    dw  4 * 8 - 1 ; GDT limit = 31 (4 entries of 8 bytes each)
+    dq  _gdt ; Address of GDT
 
-multiboot_info_address:
-	dq  0
+; Address of the multiboot information structure is stored here during boot
+_multiboot_addr:
+    dq 0
+
+; Task state segment (TSS)
+; 104 Byte without IO bitmap
+; (See https://stackoverflow.com/questions/54876039/creating-a-proper-task-state-segment-tss-structure-with-and-without-an-io-bitm)
+_tss:
+    times 100 db 0
+    dw 0
+    dw 0x68 ; IO bitmap offset (no IO bitmap, so set to size of TSS 0x68 = 104)
 
 [SECTION .bss]
 
-global init_stack:data (init_stack.end - init_stack)
-init_stack:
-	resb STACKSIZE
+; Kernel stack
+global _init_stack:data (_init_stack.end - _init_stack)
+_init_stack:
+    resb STACKSIZE
 .end:
 
-
-;
-; Speicher fuer Page-Tables
-;
+; Page tables
 [SECTION .global_pagetable]
 
-[GLOBAL pml4]
-[GLOBAL pdp]
-[GLOBAL pd]
+[GLOBAL _pml4]
+[GLOBAL _pdp]
+[GLOBAL _pd]
 
-pml4:
+_pml4:
+    align 4096
     times 4096 db 0
-	alignb 4096
 
-pd:
-    times MAX_MEM*4096 db 0
-	alignb 4096
+_pd:
+    align 4096
+    times MAX_MEM * 4096 db 0
 
-pdp:
-    times MAX_MEM*8 db 0    ; 254*8 = 2032
-
+_pdp:
+    times MAX_MEM * 8 db 0    ; 254 * 8 = 2032
