@@ -56,9 +56,9 @@ fn print_thread(i: i32) {
 pub fn run() {
     
     // Create Therads
-    let thread1 = Thread::new(thread_entry);
-    let thread2 = Thread::new(thread_entry);
-    let thread3 = Thread::new(thread_entry_killer);
+    let thread1 = Thread::new_user_thread(thread_entry);
+    let thread2 = Thread::new_user_thread(thread_entry);
+    let thread3 = Thread::new_user_thread(thread_entry_killer);
 
     // Set threads to be killed
     unsafe {

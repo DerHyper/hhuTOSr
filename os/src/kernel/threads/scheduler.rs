@@ -61,7 +61,7 @@ impl Scheduler {
     /// and an idle thread as the active thread.
     pub fn new() -> Self {
         let state = SchedulerState {
-            active_thread: Some(Thread::new(idle_thread)),
+            active_thread: Some(Thread::new_kernel_thread(idle_thread)),
             ready_queue: LinkedQueue::new(),
             initialized: false,
         };
@@ -206,7 +206,7 @@ impl Scheduler {
         let mut next_thread;
         match next {
             Some(thread) => next_thread = thread,
-            None => next_thread = Thread::new(idle_thread)
+            None => next_thread = Thread::new_kernel_thread(idle_thread)
         }
 
         // Switch to next Thread in Ready Queue
