@@ -279,10 +279,22 @@ _gdt:
     dw  0x9200    ; Base  [16:23] = 0, data read/write, DPL = 0, present
     dw  0x00CF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
 
+    ; 64-Bit user code segment
+    dw  0xFFFF    ; Limit [00:15] = 4 GiB (0x100000 * 0x1000 = 4 GiB)
+    dw  0x0000    ; Base  [00:15] = 0
+    dw  0xFA00    ; Base  [16:23] = 0, code read/exec, DPL = 3, present
+    dw  0x00AF    ; Limit [16:19], granularity = 4096, 386, Long-Mode, base [24:31]
+
+    ; 64-Bit user data segment
+    dw  0xFFFF    ; Limit [00:15] = 4 GiB (0x100000 * 0x1000 = 4 GiB)
+    dw  0x0000    ; Base  [00:15] = 0
+    dw  0xF200    ; Base  [16:23] = 0, data read/write, DPL = 3, present
+    dw  0x00CF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
+
 ; GDT descriptor for LGDT instruction
 _gdt_descriptor:
     align 16
-    dw  4 * 8 - 1 ; GDT limit = 31 (4 entries of 8 bytes each)
+    dw  6 * 8 - 1 ; GDT limit = 31 (6 entries of 8 bytes each)
     dq  _gdt ; Address of GDT
 
 ; Address of the multiboot information structure is stored here during boot
