@@ -213,10 +213,8 @@ _clear_bss:
    call _tss_set_rsp0
 
    ; Load TSS register with the TSS descriptor
-
-   ;
-   ; Hier muss Code eingefuegt werden
-   ;
+    mov ax, 0x30 ; Get GDT-Selektor for TSSD
+    ltr ax 
 
    ; Call startup with multiboot info address as parameter
     xor rax, rax
@@ -230,18 +228,36 @@ _clear_bss:
 
 ; Set TSS base address in GDT entry
 _tss_set_base_address:
-;
-; Hier muss Code eingefuegt werden
-;
+    
+    ; Get TSS and TSSD Addresses
+    lea rax, [_tss]
+    lea rdi, [_tss_descriptor]
+
+    ; Copy TSS Base Address into TSSD
+    mov word [rdi], ax    ; Base [0:15]
+    shr rax, 16
+
+    mov byte [rdi+2], al  ; Base [16:23]
+    shr rax, 8
+
+    mov byte [rdi+5], al  ; Base [24:31]
+    shr rax, 8
+
+    mov dword [rdi+6], eax; Base [32:63]
+
 ret
 
 
 ; Set kernel stack (rsp0) in TSS
 ; First Parameter -> RDI = Pointer to kernel stack
 _tss_set_rsp0:
-;
-; Hier muss Code eingefuegt werden
-;
+
+    ; Get TSS Address
+    lea rax, [_tss]
+
+    ; Copy kernel stack pointer to (rsp0) in TSS
+    mov [rax+4], rdi
+    
 ret
 
 ; Get address of the TSS
@@ -251,12 +267,16 @@ _get_tss_address:
 
 [SECTION .data]
 
-; Global Descriptor Table (GDT) with 4 entries:
+; Global Descriptor Table (GDT) with 7 entries:
 ;
 ; 0: NULL descriptor (always required)
 ; 1: 32-Bit kernel code segment (only needed for booting)
 ; 2: 64-Bit kernel code segment
 ; 3: 64-Bit kernel data segment
+; 4: 64-Bit user code segment
+; 5: 64-Bit user data segment
+; 6: 128-Bit Task State Segment
+
 _gdt:
     ; NULL descriptor (always required)
     dw  0, 0, 0, 0
@@ -291,10 +311,19 @@ _gdt:
     dw  0xF200    ; Base  [16:23] = 0, data read/write, DPL = 3, present
     dw  0x00CF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
 
+    ; 128-Bit Task State Segment (TSS)
+    dw  0x0067    ; Limit [00:15] = (Size of TSS - 1, 0x68 - 1)
+_tss_descriptor:
+    dw  0x0000    ; Base  [00:15] = Placeholder for TSS base address 
+    dw  0x8900    ; Base  [16:23] = 0, 64-bit TSS (Available), System-Segment, DPL = 0, present
+    dw  0x00AF    ; Limit [16:19], granularity = 4096, 386, base [24:31]
+    dd  0x00000000; Base  [00:31] = Placeholder for TSS base address 
+    dd  0x00000000; Reserved
+
 ; GDT descriptor for LGDT instruction
 _gdt_descriptor:
     align 16
-    dw  6 * 8 - 1 ; GDT limit = 31 (6 entries of 8 bytes each)
+    dw  (6 * 8 + 1 * 16) - 1 ; GDT limit = 63 (6 entries of 8 bytes each, 1 entry of 16 bytes)
     dq  _gdt ; Address of GDT
 
 ; Address of the multiboot information structure is stored here during boot
