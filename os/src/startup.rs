@@ -63,7 +63,7 @@ use user::aufgabe4::thread_demo;
 use user::aufgabe4::hello_world_thread;
 use user::aufgabe5::thread_demo_preemptive;
 use user::aufgabe6::thread_demo_timed;
-
+use user::aufgabe8::user_threads;
 
 fn aufgabe1() {
     text_demo::run();
@@ -103,7 +103,6 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
     pit::plugin(); // Init PIT
-
 
     kprintln!("Scanning PCI bus");
     for device in get_pci_bus().iter() {
@@ -197,45 +196,48 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 }
 
 fn show_startscreen(){
-    print_startscreen();
+    // TODO: Remove and add to methods, once kernel Methods work
+    user_threads::thread_test();
 
-    let methods = [
-        text_demo::run, 
-        sound_demo::run,
-        keyboard_demo::run,
-        thread_demo_preemptive::run,
-        heap_demo::run,
-        thread_demo_timed::run,
-        pong::run
-        ];
+    // print_startscreen();
 
-    // Wait for key press
-    loop{
+    // let methods = [
+    //     text_demo::run, 
+    //     sound_demo::run,
+    //     keyboard_demo::run,
+    //     thread_demo_preemptive::run,
+    //     heap_demo::run,
+    //     thread_demo_timed::run,
+    //     pong::run
+    //     ];
 
-        // Check if number
-        let input = input::getch();
-        let index = input.to_digit(10);
-        if index.is_none() {
-            println!("{} not a number.", input);
-            continue;
-        }
+    // // Wait for key press
+    // loop{
 
-        // Check if within range
-        let index = index.unwrap() as usize;
-        if index < 1 || index > methods.len() {
-            println!("{} not within range.", index);
-            continue;
-        }
+    //     // Check if number
+    //     let input = input::getch();
+    //     let index = input.to_digit(10);
+    //     if index.is_none() {
+    //         println!("{} not a number.", input);
+    //         continue;
+    //     }
 
-        // Clean screen and call Method
-        { cga::CGA.lock().clear(); }
-        methods[index-1]();
+    //     // Check if within range
+    //     let index = index.unwrap() as usize;
+    //     if index < 1 || index > methods.len() {
+    //         println!("{} not within range.", index);
+    //         continue;
+    //     }
 
-        // Return
-        println!("\nPress any key to continue.");
-        input::getch();
-        print_startscreen();
-    }
+    //     // Clean screen and call Method
+    //     { cga::CGA.lock().clear(); }
+    //     methods[index-1]();
+
+    //     // Return
+    //     println!("\nPress any key to continue.");
+    //     input::getch();
+    //     print_startscreen();
+    // }
 }
 
 fn print_startscreen() {
@@ -249,6 +251,7 @@ fn print_startscreen() {
     println!("5 - Memory demo ");
     println!("6 - Mutex demo ");
     println!("7 - Pong demo ");
+    println!("8 - Kernel vs. User Threads ");
     println!("");
 }
 
