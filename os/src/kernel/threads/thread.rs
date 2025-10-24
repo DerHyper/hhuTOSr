@@ -271,9 +271,12 @@ impl Thread {
         // User stack top
         let rsp = Thread::get_top_of_stack(&self.user_stack) as u64;
         
+        // Self Thread stack:
+        let rdi = self as *const Thread as u64;
+        
         // Interrupt stack frame Layout expected by thread_user_start.
         let mut stack_frame: [u64; 6] = [0; 6];
-        stack_frame[0] = 0; // Dummy
+        stack_frame[0] = rdi; // Self stack
         stack_frame[1] = rip; // kickoff_user_thread
         stack_frame[2] = CS;
         stack_frame[3] = RFLAGS;
