@@ -256,11 +256,6 @@ impl Thread {
     /// the thread continues in user mode in the function 'kickoff_user_thread'.
     fn switch_to_usermode(&mut self) {
 
-        // unsafe extern "C" {
-        //     //fn thread_user_start(stack_ptr: usize);
-        //     //fn kickoff_user_thread(); // Entry point in user mode
-        // }
-
         // Segment Register Selector Code & Data
         // Selector = index(GDT) * size in byte | RPL
         const CS: u64 = 4*8 | 3; 
@@ -286,6 +281,8 @@ impl Thread {
         stack_frame[5] = SS;
 
         unsafe {thread_user_start(stack_frame.as_ptr() as usize)};
+
+        // thread_user_start will not be exited 
 
     }
 
