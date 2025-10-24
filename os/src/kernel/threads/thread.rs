@@ -256,9 +256,36 @@ impl Thread {
     /// the thread continues in user mode in the function 'kickoff_user_thread'.
     fn switch_to_usermode(&mut self) {
 
-        /*
-         * Hier muss Code eingefuegt werden.
-         */
+        // unsafe extern "C" {
+        //     //fn thread_user_start(stack_ptr: usize);
+        //     //fn kickoff_user_thread(); // Entry point in user mode
+        // }
+
+        // Segment Register Selector Code & Data
+        // Selector = index(GDT) * size in byte | RPL
+        const CS: u64 = 4*8 | 3; 
+        const SS: u64 = 5*8 | 3;
+
+        // RFLAGS
+        // Interrupt Flag | Reserved (Always 1)
+        const RFLAGS: u64 = 0b10_0000_0010; 
+
+        // Usermode start address
+        let rip = Thread::kickoff_user_thread as u64;
+
+        // User stack top
+        let rsp = Thread::get_top_of_stack(&self.user_stack) as u64;
+        
+        // Interrupt stack frame Layout expected by thread_user_start.
+        let mut stack_frame: [u64; 6] = [0; 6];
+        stack_frame[0] = 0; // Dummy
+        stack_frame[1] = rip; // kickoff_user_thread
+        stack_frame[2] = CS;
+        stack_frame[3] = RFLAGS;
+        stack_frame[4] = rsp; // user stack
+        stack_frame[5] = SS;
+
+        unsafe {thread_user_start(stack_frame.as_ptr() as usize)};
 
     }
 
