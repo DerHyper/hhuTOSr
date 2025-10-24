@@ -132,11 +132,7 @@ pub struct Thread {
     id: usize,
     is_kernel_thread: bool,
     kernel_stack: Vec<u64>,
-
-    /*
-     * Hier muss Code eingefuegt werden.
-     */
-
+    user_stack: Vec<u64>,
     stack_ptr: usize, // Pointer on the stack to the saved context
     entry: fn(),
 }
@@ -151,16 +147,17 @@ impl Thread {
         }
 
         // Allocate memory for the user stack and initialize it to zero
-        /*
-         * Hier muss Code eingefuegt werden.
-         */
+        let mut user_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
+        for _ in 0..user_stack.capacity() {
+            user_stack.push(0);
+        }
 
         // Set the stack pointer to the top of the stack
         let stack_ptr = ptr::from_ref(&kernel_stack[kernel_stack.capacity() - 1]) as usize;
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, stack_ptr, entry }
+            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -169,11 +166,28 @@ impl Thread {
     }
 
     pub fn new_user_thread(entry: fn()) -> Box<Thread> {
-        let mut thread = Self::new_kernel_thread(entry);
+        // Allocate memory for the kernel stack and initialize it to zero
+        let mut kernel_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
+        for _ in 0..kernel_stack.capacity() {
+            kernel_stack.push(0);
+        }
 
-        /*
-         * Hier muss Code eingefuegt werden.
-         */
+        // Allocate memory for the user stack and initialize it to zero
+        let mut user_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
+        for _ in 0..user_stack.capacity() {
+            user_stack.push(0);
+        }
+
+        // Set the stack pointer to the top of the stack
+        let stack_ptr = ptr::from_ref(&user_stack[user_stack.capacity() - 1]) as usize;
+
+        // Create a new thread object
+        let mut thread = Box::new(
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry }
+        );
+
+        // Prepare the stack for the thread so it can be started via `thread_start()`
+        thread.prepare_kernel_stack();
 
         thread
     }
