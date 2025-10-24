@@ -270,7 +270,7 @@ impl Thread {
 
         // User stack top
         let rsp = Thread::get_top_of_stack(&self.user_stack) as u64;
-        
+
         // Self Thread stack:
         let rdi = self as *const Thread as u64;
         
@@ -311,9 +311,7 @@ impl Thread {
     /// At this point, the thread is in user mode (Ring 3) and its entry function is called.
     fn kickoff_user_thread(&self) {
 
-        /*
-         * Hier muss Code eingefuegt werden.
-         */
+        (self.entry)();
 
         loop {} // User threads may currently not exit
     }
