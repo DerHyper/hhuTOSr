@@ -2,6 +2,7 @@ use core::arch::asm;
 use core::ptr;
 use spin::once::Once;
 use crate::kernel::interrupts::intdispatcher::int_disp;
+use crate::kernel::syscalls::syscall_dispatcher::syscall_disp;
 use crate::kernel::interrupts::InterruptStackFrame;
 
 /// Static instance of the Interrupt Descriptor Table (IDT).
@@ -150,7 +151,7 @@ macro_rules! interrupt_handler {
 impl Idt {
     /// Create a new IDT with all entries set to the default handler `int_disp()`.
     pub fn new() -> Idt {
-        Idt {
+        let mut idt = Idt  {
             entries: [
                 interrupt_handler!(0x00, int_disp),
                 interrupt_handler!(0x01, int_disp),
@@ -409,7 +410,11 @@ impl Idt {
                 interrupt_handler!(0xfe, int_disp),
                 interrupt_handler!(0xff, int_disp),
             ]
-        }
+        };
+
+        // Set Trap Gate on Vektor 0x80
+        idt.set_entry(0x80, IdtEntry::syscall_gate(syscall_disp));
+        idt
     }
 
     /// Overwrite an entry in the IDT with a new IDT entry.
