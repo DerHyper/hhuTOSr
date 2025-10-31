@@ -80,9 +80,21 @@ impl IdtEntry {
     /// Create a new IDT entry for a trap gate at the given offset.
     /// This is used for system calls, which should be accessible from user mode (DPL=3).
     const fn new_trap_gate(offset: u64) -> IdtEntry {
-        /*
-         * Hier muss Code eingefuegt werden.
-         */
+        
+        let present = 1; // 1 = valid
+        let dpl = 3; // CPU privilege level
+        let gate_type = 0x1_111; // 64-bit _ Trap Gate
+        let ist = 0; // Interrupt Stack Table not used
+        let new_options: u16 = (present << 15) | (dpl << 13) | (gate_type << 8) | ist;
+
+        IdtEntry {
+            offset_low: (offset & 0xFFFF) as u16,
+            selector: 16 as u16, // second entry in the GDT
+            options: new_options as u16, // = P, DPL, 0, Gate Type, Reserved, IST
+            offset_mid: ((offset & 0xFFFF_0000) >> 16) as u16,
+            offset_high: ((offset & 0xFFFF_FFFF_0000_0000) >> 32) as u32,
+            reserved: 0 as u32,
+        }
     }
 
     /// Create a new IDT entry for an interrupt handler function.
