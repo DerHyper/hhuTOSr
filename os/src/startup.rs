@@ -64,6 +64,7 @@ use user::aufgabe4::hello_world_thread;
 use user::aufgabe5::thread_demo_preemptive;
 use user::aufgabe6::thread_demo_timed;
 use user::aufgabe8::user_threads;
+use user::aufgabe9::syscall_demo;
 
 fn aufgabe1() {
     text_demo::run();
@@ -197,7 +198,7 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 
 fn show_startscreen(){
     // TODO: Remove and add to methods, once kernel Methods work
-    user_threads::thread_test();
+    syscall_demo::syscall_test();
 
     // print_startscreen();
 
