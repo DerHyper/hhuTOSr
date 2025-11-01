@@ -84,7 +84,7 @@ impl IdtEntry {
         
         let present = 1; // 1 = valid
         let dpl = 3; // CPU privilege level
-        let gate_type = 0x1_111; // 64-bit _ Trap Gate
+        let gate_type = 0b1_111; // 64-bit _ Trap Gate
         let ist = 0; // Interrupt Stack Table not used
         let new_options: u16 = (present << 15) | (dpl << 13) | (gate_type << 8) | ist;
 
