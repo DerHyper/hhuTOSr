@@ -15,6 +15,7 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE};
 use crate::kernel::cpu;
+use crate::kernel::syscalls::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
 unsafe extern "C" {
@@ -313,7 +314,7 @@ impl Thread {
 
         (self.entry)();
 
-        loop {} // User threads may currently not exit
+        usr_thread_exit();
     }
 
     /// Get a pointer to the top of the given stack.
