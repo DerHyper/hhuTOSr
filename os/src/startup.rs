@@ -104,6 +104,11 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
     pit::plugin(); // Init PIT
+    
+    // Copy multiboot into on stack, because it lies in physical memory that might get reused after initializing the physical memory allocator
+    let multiboot_info = *multiboot_info;
+    kprintln!("Initializing physical memory allocator");
+    multiboot_info.init_phys_memory_allocator();
 
     kprintln!("Scanning PCI bus");
     for device in get_pci_bus().iter() {
