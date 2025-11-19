@@ -5,3 +5,5 @@ pub const STACK_ENTRY_SIZE: usize = 8;
 
 pub const HEAP_START: usize = 0x800000;            // 8 MB -> max image size = 7 MB 
 pub const HEAP_SIZE: usize  = 16 * 1024 * 1024;    // 16 MB heap size
+/// Size of a physical page frame (4 KiB)
+pub const PAGE_FRAME_SIZE: usize = 0x1000;
