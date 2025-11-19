@@ -139,6 +139,7 @@ impl PfListAllocator {
         /*
          * Hier muss Code eingefuegt werden
          */
+        Option::None
     }
 
     /// Free a previously allocated block of 'num_frames' physical frames starting at 'addr'.
