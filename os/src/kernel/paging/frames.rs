@@ -137,24 +137,46 @@ impl PfListAllocator {
     /// If no suitable block is found, returns None.
     pub unsafe fn alloc_block(&mut self, num_frames: usize) -> Option<PhysAddr> {
         
-        if (self.head.size == PAGE_FRAME_SIZE*num_frames)
-        {
-            let addr = self.head.start_addr();
-            if let Some(next_node) = self.head.next.take() {
-                self.head = PfListNode {
-                    size: next_node.size,
-                    next: next_node.next.take(),
-                };
+        let mut current_block = &mut self.head.next;
+        let search_size = PAGE_FRAME_SIZE*num_frames;
+
+        // Iterate over the list and find a free block
+        while let Some(node) = current_block.take() {
+
+            // Found free block
+            if node.size == search_size {
+                
+                let addr = node.start_addr();
+                *current_block = node.next.take();
+                fill_block_with_zeros(node);
+                return Some(addr);
+            
+            // Found oversized free block
+            } else if node.size > search_size {
+                let addr = node.start_addr();
+                *current_block = node.next.take();
+                
+                let new_block_num_frames = (node.size - search_size)/PAGE_FRAME_SIZE;
+                let new_block_addr = node.start_addr() + search_size;
+                unsafe {
+                    self.free_block(new_block_addr, new_block_num_frames);   
+                }
+                
+                fill_block_with_zeros(node);
+                return Some(addr);
+
+            // Found no free block
+            } else {
+                let next_ptr: *mut Option<&'static mut PfListNode> = &mut node.next; // Get next
+                *current_block = Some(node); // Put the node back into the list
+
+                unsafe {
+                    current_block = &mut *next_ptr; // Set current to next
+                }
             }
         }
-        else if (self.head.size > PAGE_FRAME_SIZE*num_frames)
-        {
-
-        }
         
-        /*
-         * Hier muss Code eingefuegt werden
-         */
+        // No free block found
         Option::None
     }
 
@@ -173,4 +195,10 @@ impl PfListAllocator {
          * Hier muss Code eingefuegt werden
          */
     }
+}
+fn fill_block_with_zeros(node: &'static mut PfListNode) {
+    todo!()
+    /*
+     * Hier muss Code eingefuegt werden
+     */
 }
