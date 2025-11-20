@@ -136,6 +136,22 @@ impl PfListAllocator {
     /// the remaining part is added back to the free list.
     /// If no suitable block is found, returns None.
     pub unsafe fn alloc_block(&mut self, num_frames: usize) -> Option<PhysAddr> {
+        
+        if (self.head.size == PAGE_FRAME_SIZE*num_frames)
+        {
+            let addr = self.head.start_addr();
+            if let Some(next_node) = self.head.next.take() {
+                self.head = PfListNode {
+                    size: next_node.size,
+                    next: next_node.next.take(),
+                };
+            }
+        }
+        else if (self.head.size > PAGE_FRAME_SIZE*num_frames)
+        {
+
+        }
+        
         /*
          * Hier muss Code eingefuegt werden
          */
