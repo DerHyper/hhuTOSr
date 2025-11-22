@@ -253,9 +253,23 @@ impl PfListAllocator {
 
     /// Print the list of free physical memory.
     pub fn dump_free_list(&self) {
-        /*
-         * Hier muss Code eingefuegt werden
-         */
+        let mut current_block = & self.head.next;
+
+        
+        println!("Dumping free memory list:");
+        // Iterate over the list
+        while let Some(node) = current_block { // Take the current node
+            println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr().raw(), node.end_addr().raw(), node.size);
+            // let next_ptr: *mut Option<&'static mut PfListNode> = &mut node.next; // Get next
+            current_block = &node.next; // Put the node back into the list
+
+            // unsafe {
+            //     current_block = &mut *next_ptr; // Set current to next
+            // }
+        }
+        
+        println!("");
+
     }
 }
 
