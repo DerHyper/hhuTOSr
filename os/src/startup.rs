@@ -52,6 +52,7 @@ use crate::kernel::multiboot::MultibootInfo;
 use crate::library::input;
 use crate::user::aufgabe7::graphic_demo;
 use crate::user::aufgabe7::pong;
+use crate::user::aufgabe10::PfListTest;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -203,7 +204,8 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 
 fn show_startscreen(){
     // TODO: Remove and add to methods, once kernel Methods work
-    syscall_demo::syscall_test();
+    //syscall_demo::syscall_test();
+    PfListTest::run();
 
     // print_startscreen();
 
