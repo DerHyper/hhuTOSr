@@ -130,6 +130,12 @@ impl PfListNode {
     fn is_adjacent_back(&self, addr_start: &PhysAddr) -> bool {
         return self.end_addr().raw() == addr_start.raw(); //TODO: Check if this works
     }
+
+    fn is_overlapping(&self, addr_start: &PhysAddr, addr_end: &PhysAddr) -> bool {
+        let overlaps_front = addr_end > &self.start_addr();
+        let overlaps_end = addr_start < &self.end_addr();
+        return  overlaps_front || overlaps_end;
+    }
 }
 
 /// A physical frame allocator that uses a linked list to manage free memory blocks.
@@ -165,7 +171,7 @@ impl PfListAllocator {
         // Iterate over the list and find a free block
         while let Some(node) = current_block.take() {
 
-            // Found free block
+            // Found same size free block
             if node.size == search_size {
                 
                 let addr = node.start_addr();
@@ -206,6 +212,8 @@ impl PfListAllocator {
     /// The address must be aligned to PAGE_FRAME_SIZE (4096 bytes).
     /// The freed block is merged with adjacent free blocks if possible.
     pub unsafe fn free_block(&mut self, addr_start: PhysAddr, num_frames: usize) {
+        check_asserts(addr_start, num_frames);
+
         let pf_allocator_start_addr = &self.start_addr;
         let mut current_block = &mut self.head.next;
         let size =  PAGE_FRAME_SIZE*num_frames;
@@ -269,6 +277,10 @@ impl PfListAllocator {
                 continue;
             }
 
+            // Assert
+            assert!(!node.is_overlapping(&addr_start, &addr_end), "Addresses overlap with node.");
+            assert!(!node.next.as_mut().unwrap().is_overlapping(&addr_start, &addr_end), "Addresses overlap with next node.");
+
             // Decide Start Address
             let mut new_node_size: usize = size;
             let new_node_addr: *mut PfListNode;
@@ -326,6 +338,10 @@ impl PfListAllocator {
     }
 }
 
+fn check_asserts(addr_start: PhysAddr, num_frames: usize) {
+    assert!(addr_start.raw() % PAGE_FRAME_SIZE as u64 == 0, "free_block: addr_start not aligned");
+
+}
 
 /// Returns true if the addr_start is between the node and the start address
 fn is_between_head_and_first_node(node: &mut Option<&'static mut PfListNode>, addr_start: &PhysAddr, pf_allocator_start_addr: &Option<PhysAddr>) -> bool {
