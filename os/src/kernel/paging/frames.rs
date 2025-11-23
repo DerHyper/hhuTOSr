@@ -114,20 +114,42 @@ impl PfListNode {
     fn end_addr(&self) -> PhysAddr {
         self.start_addr() + self.size
     }
+
+    fn is_adjacent_front(&self, addr_end: &PhysAddr) -> bool {
+        return self.start_addr().raw() == addr_end.raw(); //TODO: Check if this works
+    }
+
+    fn is_adjacent_next_front(&mut self, addr_end: &PhysAddr) -> bool {
+        if let Some(next_node) = self.next.as_mut()
+        {
+            return next_node.start_addr().raw() == addr_end.raw(); //TODO: Check if this works
+        }
+        return false;
+    }
+    
+    fn is_adjacent_back(&self, addr_start: &PhysAddr) -> bool {
+        return self.end_addr().raw() == addr_start.raw(); //TODO: Check if this works
+    }
 }
 
 /// A physical frame allocator that uses a linked list to manage free memory blocks.
 /// Memory blocks are always aligned to PAGE_FRAME_SIZE (4096 bytes).
 pub struct PfListAllocator {
-    head: PfListNode
+    head: PfListNode,
+    start_addr: Option<PhysAddr>
 }
 
 impl PfListAllocator {
     /// Create a new empty physical frame list allocator.
     pub const fn new() -> PfListAllocator {
         PfListAllocator {
-            head: PfListNode::new(0)
+            head: PfListNode::new(0),
+            start_addr: None
         }
+    }
+
+    pub unsafe fn set_start_addr(&mut self, addr: PhysAddr) {
+        self.start_addr = Some(addr);
     }
 
     /// Try to allocate a block of 'num_frames' physical frames.
@@ -184,11 +206,54 @@ impl PfListAllocator {
     /// The address must be aligned to PAGE_FRAME_SIZE (4096 bytes).
     /// The freed block is merged with adjacent free blocks if possible.
     pub unsafe fn free_block(&mut self, addr_start: PhysAddr, num_frames: usize) {
-        
+        let pf_allocator_start_addr = &self.start_addr;
         let mut current_block = &mut self.head.next;
         let size =  PAGE_FRAME_SIZE*num_frames;
         let addr_end = addr_start + PAGE_FRAME_SIZE*num_frames;
 
+        // All Blocks are used
+        if current_block.is_none() {
+
+            // free_block is adjacent to no node
+            let new_node_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
+            unsafe {
+                (*new_node_addr).size = size;
+                (*new_node_addr).next = None;
+            }
+
+            *current_block =  Some(unsafe{ &mut *new_node_addr });
+            return; 
+        }
+
+        // Is between Head and current free block -> Override first node
+        if current_block.is_some() && let Some(pf_allocator_start) = pf_allocator_start_addr && is_between_head_and_first_node(current_block, &addr_start, &pf_allocator_start_addr) {
+            let mut node = current_block.take().unwrap();
+
+            // free_block is adjacent to next node
+            if node.is_adjacent_front(&addr_end) {
+                let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
+                unsafe {
+                    (*new_note_addr).size = size;
+                    (*new_note_addr).next = node.next.take();
+                    // next node is dropped here
+                }
+                node = unsafe{ &mut *new_note_addr };
+                *current_block = Some(&mut *node);
+                return; 
+
+            // free_block is adjacent to no node
+            } else {
+                let new_node_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
+                unsafe {
+                    (*new_node_addr).size = size;
+                    (*new_node_addr).next = Some(node);
+                }
+                node = unsafe{ &mut *new_node_addr };
+                *current_block = Some(&mut *node);
+                return; 
+            }
+        }
+        
         // Iterate over the list and find a free block
         while let Some(mut node) = current_block.take() {
 
@@ -204,49 +269,37 @@ impl PfListAllocator {
                 continue;
             }
 
-            // free_block is adjacent to this and next node
-            if is_adjacent_back(&mut node, &addr_start) && is_adjacent_next_front(&mut node, &addr_end) {
-                let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
-                unsafe {
-                    (*new_note_addr).size = size;
-                    (*new_note_addr).next = node.next.as_mut().unwrap().next.take(); // This is okay because "is_adjacent_next_front" checks if there is a next node
-                    // next node is dropped here
-                }
-                *current_block = Some(unsafe{ &mut *new_note_addr }); // old current_block node is dropped here
-                return; 
-
-            // free_block is adjacent to this node
-            } else if is_adjacent_back(&mut node, &addr_start) {
-                let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
-                unsafe {
-                    (*new_note_addr).size = size;
-                    (*new_note_addr).next = node.next.take(); // This is okay because "is_adjacent_next_front" checks if there is a next node
-                }
-                *current_block = Some(unsafe{ &mut *new_note_addr }); // old current_block node is dropped here
-                return; 
-
-            // free_block is adjacent to next node
-            } else if is_adjacent_next_front(&mut node, &addr_end) {
-                let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
-                unsafe {
-                    (*new_note_addr).size = size;
-                    (*new_note_addr).next = node.next.as_mut().unwrap().next.take(); // This is okay because "is_adjacent_next_front" checks if there is a next node
-                    // next node is dropped here
-                }
-                node.next = Some(unsafe{ &mut *new_note_addr });
-                *current_block = Some(&mut *node);
-                return; 
-
-            // free_block is adjacent to no node
+            // Decide Start Address
+            let mut new_node_size: usize = size;
+            let new_node_addr: *mut PfListNode;
+            let is_adjacent_back = node.is_adjacent_back(&addr_start);
+            if is_adjacent_back {
+                new_node_addr = node.start_addr().as_mut_ptr() as *mut PfListNode;
+                new_node_size += node.size;
             } else {
-                let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
-                unsafe {
-                    (*new_note_addr).size = size;
-                    (*new_note_addr).next = node.next.take(); // This is okay because "is_adjacent_next_front" checks if there is a next node
-                }
-                node.next = Some(unsafe{ &mut *new_note_addr });
+                new_node_addr = addr_start.as_mut_ptr() as *mut PfListNode;
+            }
+
+            // Decide next pointer
+            let next_ptr: Option<&'static mut PfListNode>;
+            let is_adjacent_next_front = node.is_adjacent_next_front(&addr_end);
+            if is_adjacent_next_front {
+                next_ptr = node.next.as_mut().unwrap().next.take(); // This is okay because "is_adjacent_next_front" checks if there is a next node
+                new_node_size += node.next.as_mut().unwrap().size;
+            } else {
+                next_ptr = node.next.take();
+            }
+
+            // Init Node
+            unsafe {
+                (*new_node_addr).size = new_node_size;
+                (*new_node_addr).next = next_ptr;
+            }
+            if is_adjacent_back {
+                *current_block = Some(unsafe{ &mut *new_node_addr }); // Override current
+            } else {
+                node.next = Some(unsafe{ &mut *new_node_addr }); // Add after current
                 *current_block = Some(&mut *node);
-                return; 
             }
         }
     }
@@ -273,6 +326,15 @@ impl PfListAllocator {
     }
 }
 
+
+/// Returns true if the addr_start is between the node and the start address
+fn is_between_head_and_first_node(node: &mut Option<&'static mut PfListNode>, addr_start: &PhysAddr, pf_allocator_start_addr: &Option<PhysAddr>) -> bool {
+    if pf_allocator_start_addr.is_none() || node.as_mut().is_none() {
+        return false;
+    }
+    return addr_start <= &node.as_mut().unwrap().start_addr() && addr_start >= &pf_allocator_start_addr.unwrap();
+}
+
 /// Returns true if the addr_start and addr_end are between the node and its successor
 fn is_between_node_and_successor(node: &mut &'static mut PfListNode, addr_start: &PhysAddr, addr_end: &PhysAddr) -> bool {
     if node.next.is_some() {
@@ -282,20 +344,8 @@ fn is_between_node_and_successor(node: &mut &'static mut PfListNode, addr_start:
 }
 
 fn fill_block_with_zeros(node: &'static mut PfListNode) {
-    todo!()
+    //todo!()
     /*
      * Hier muss Code eingefuegt werden
      */
-}
-
-fn is_adjacent_next_front(node: &mut &'static mut PfListNode, addr_end: &PhysAddr) -> bool {
-    if let Some(next_node) = node.next.as_mut()
-    {
-        return next_node.start_addr().raw() == addr_end.raw(); //TODO: Check if this works
-    }
-    return false;
-}
-
-fn is_adjacent_back(node: &mut &'static mut PfListNode, addr_start: &PhysAddr) -> bool {
-    return node.end_addr().raw() == addr_start.raw(); //TODO: Check if this works
 }

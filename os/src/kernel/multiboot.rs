@@ -211,6 +211,7 @@ impl MultibootInfo {
                 if num_frames > 0 {
                     kprintln!("Inserting physical memory block (Addr: 0x{:016x}, Size: {} frames)", start, num_frames);
                     unsafe {
+                        allocator.set_start_addr(PhysAddr::new(start));
                         allocator.free_block(PhysAddr::new(start), num_frames);
                     }
                 }
