@@ -136,6 +136,17 @@ impl PfListNode {
         let overlaps_end = addr_start < &self.end_addr();
         return  overlaps_front || overlaps_end;
     }
+
+    fn fill_with_zeros(&self, num_zeros: &usize) {
+        let node_metadata_size: u64 = size_of::<PfListNode>() as u64;
+        let node_ptr_after_metadata = (self.start_addr().raw() + node_metadata_size) as *mut u8;
+        let size = num_zeros-node_metadata_size as usize;
+        unsafe { 
+            for i in 0..size {
+                node_ptr_after_metadata.add(i).write_volatile(0);
+            }
+        };
+    }
 }
 
 /// A physical frame allocator that uses a linked list to manage free memory blocks.
@@ -176,7 +187,7 @@ impl PfListAllocator {
                 
                 let addr = node.start_addr();
                 *current_block = node.next.take();
-                fill_block_with_zeros(node);
+                node.fill_with_zeros(&search_size);
                 return Some(addr);
             
             // Found oversized free block
@@ -190,7 +201,7 @@ impl PfListAllocator {
                     self.free_block(new_block_addr, new_block_num_frames);   
                 }
                 
-                fill_block_with_zeros(node);
+                node.fill_with_zeros(&search_size);
                 return Some(addr);
 
             // Found no free block
@@ -325,12 +336,7 @@ impl PfListAllocator {
         // Iterate over the list
         while let Some(node) = current_block { // Take the current node
             println!("   Block start:  0x{:x}, block end:  0x{:x}, block size: {}", node.start_addr().raw(), node.end_addr().raw(), node.size);
-            // let next_ptr: *mut Option<&'static mut PfListNode> = &mut node.next; // Get next
             current_block = &node.next; // Put the node back into the list
-
-            // unsafe {
-            //     current_block = &mut *next_ptr; // Set current to next
-            // }
         }
         
         println!("");
@@ -357,11 +363,4 @@ fn is_between_node_and_successor(node: &mut &'static mut PfListNode, addr_start:
         return addr_start >= &node.end_addr() && addr_end <= &node.next.as_mut().unwrap().start_addr();
     }
     return addr_start >= &node.end_addr();
-}
-
-fn fill_block_with_zeros(node: &'static mut PfListNode) {
-    //todo!()
-    /*
-     * Hier muss Code eingefuegt werden
-     */
 }
