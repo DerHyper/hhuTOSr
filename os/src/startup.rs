@@ -49,6 +49,7 @@ use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
 use crate::kernel::multiboot::FramebufferType;
 use crate::kernel::multiboot::MultibootInfo;
+use crate::kernel::paging::frames;
 use crate::library::input;
 use crate::user::aufgabe7::graphic_demo;
 use crate::user::aufgabe7::pong;
@@ -97,6 +98,10 @@ fn aufgabe6() {
 pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     kprintln!("Welcome to hhuTOS!");
 
+    // Copy multiboot into on stack, because it lies in physical memory that might get reused after initializing the physical memory allocator
+    let multiboot_info = *multiboot_info;
+    kprintln!("Initializing physical memory allocator");
+    multiboot_info.init_phys_memory_allocator();
     allocator::init(); // Init memory management
     cga::CGA.lock().clear(); // Bildschirm loeschen
     idt::get_idt().load(); // Load Interrupt Descriptor Table
@@ -105,11 +110,6 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     cpu::enable_int(); // Enable interrupts
     keyboard::plugin(); // Init keyboard
     pit::plugin(); // Init PIT
-    
-    // Copy multiboot into on stack, because it lies in physical memory that might get reused after initializing the physical memory allocator
-    let multiboot_info = *multiboot_info;
-    kprintln!("Initializing physical memory allocator");
-    multiboot_info.init_phys_memory_allocator();
 
     kprintln!("Scanning PCI bus");
     for device in get_pci_bus().iter() {

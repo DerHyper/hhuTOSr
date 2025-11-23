@@ -18,24 +18,27 @@
    ╚═════════════════════════════════════════════════════════════════════════╝
 */
 use alloc::alloc::Layout;
+use crate::consts::PAGE_FRAME_SIZE;
 use crate::kernel::allocator::bump::BumpAllocator;
 use crate::kernel::allocator::list::LinkedListAllocator;
+use crate::kernel::paging::frames;
 
 pub mod bump;
 pub mod list;
 
-const HEAP_START: usize = 0x500000;
-const HEAP_SIZE: usize = 1024 * 1024 * 32; // 32 MiB heap size
+//const HEAP_START: usize = 0x500000;
+const HEAP_SIZE: usize = 1024 * 1024 * 8; // 8 MiB heap size
 
 // Define the allocator (which implements the 'GlobalAlloc' trait)
 #[global_allocator]
 //static ALLOCATOR: Locked<BumpAllocator> = Locked::new(BumpAllocator::new(HEAP_START, HEAP_SIZE));
-static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::new(HEAP_START, HEAP_SIZE));
+static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::empty());
 
 /// Initialize the heap allocator.
 pub fn init() {
     unsafe {
-        ALLOCATOR.lock().init();
+        let heap_addr = frames::FRAME_ALLOCATOR.lock().alloc_block(HEAP_SIZE/PAGE_FRAME_SIZE);
+        ALLOCATOR.lock().init(heap_addr.unwrap().raw() as usize, (heap_addr.unwrap().raw() as usize + HEAP_SIZE));
     }
 }
 

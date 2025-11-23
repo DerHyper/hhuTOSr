@@ -62,8 +62,20 @@ impl LinkedListAllocator {
         }
     }
 
+    /// Create a new empty linked list allocator.
+    pub const fn empty() -> LinkedListAllocator {
+        LinkedListAllocator {
+            head: ListNode::new(0),
+            heap_start: 0,
+            heap_end: 0,
+        }
+    }
+
     /// Initialize the allocator with the heap bounds given in the constructor.
-    pub unsafe fn init(&mut self) {
+    pub unsafe fn init(&mut self, heap_start: usize, heap_end: usize) {
+        // Set Heap
+        self.heap_start = heap_start;
+        self.heap_end = heap_end;
 
         // Add empty head
         let head = ListNode::new(0);
