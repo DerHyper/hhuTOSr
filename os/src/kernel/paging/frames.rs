@@ -153,7 +153,8 @@ impl PfListNode {
 /// Memory blocks are always aligned to PAGE_FRAME_SIZE (4096 bytes).
 pub struct PfListAllocator {
     head: PfListNode,
-    start_addr: Option<PhysAddr>
+    start_addr: Option<PhysAddr>,
+    max_addr: PhysAddr
 }
 
 impl PfListAllocator {
@@ -161,21 +162,27 @@ impl PfListAllocator {
     pub const fn new() -> PfListAllocator {
         PfListAllocator {
             head: PfListNode::new(0),
-            start_addr: None
+            start_addr: None,
+            max_addr: PhysAddr::new(0)
         }
     }
+
 
     pub unsafe fn set_start_addr(&mut self, addr: PhysAddr) {
         self.start_addr = Some(addr);
     }
 
+    /// Get the maximum physical address ever inserted into the allocator via `free_block()`.
+    pub fn get_max_phys_addr(&self) -> PhysAddr {
+        self.max_addr
+    }
     /// Try to allocate a block of 'num_frames' physical frames.
     /// Returns the starting physical address of the allocated block on success.
     /// The found block is filled with zeroes. If the block is larger than requested,
     /// the remaining part is added back to the free list.
     /// If no suitable block is found, returns None.
     pub unsafe fn alloc_block(&mut self, num_frames: usize) -> Option<PhysAddr> {
-        
+                
         let mut current_block = &mut self.head.next;
         let search_size = PAGE_FRAME_SIZE*num_frames;
 
