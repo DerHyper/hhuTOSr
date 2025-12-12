@@ -248,6 +248,7 @@ impl PfListAllocator {
             }
 
             *current_block =  Some(unsafe{ &mut *new_node_addr });
+            self.update_max_addr(new_node_addr);
             return; 
         }
 
@@ -265,6 +266,7 @@ impl PfListAllocator {
                 }
                 node = unsafe{ &mut *new_note_addr };
                 *current_block = Some(&mut *node);
+                self.update_max_addr(new_note_addr);
                 return; 
 
             // free_block is adjacent to no node
@@ -276,6 +278,7 @@ impl PfListAllocator {
                 }
                 node = unsafe{ &mut *new_node_addr };
                 *current_block = Some(&mut *node);
+                self.update_max_addr(new_node_addr);
                 return; 
             }
         }
@@ -331,9 +334,18 @@ impl PfListAllocator {
                 node.next = Some(unsafe{ &mut *new_node_addr }); // Add after current
                 *current_block = Some(&mut *node);
             }
+            self.update_max_addr(new_node_addr);
+            return;
         }
     }
 
+    fn update_max_addr(&mut self, new_node_addr: *mut PfListNode) {
+        let new_node_end_addr = unsafe {new_node_addr.as_ref().unwrap().end_addr()};
+        if new_node_end_addr > self.max_addr {
+            self.max_addr = new_node_end_addr;
+        }
+    }
+    
     /// Print the list of free physical memory.
     pub fn dump_free_list(&self) {
         let mut current_block = & self.head.next;
