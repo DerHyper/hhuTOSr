@@ -61,6 +61,7 @@ dependencies = [
 name = "hhu_tosr"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "nolock",
  "spin",
  "x86_64",

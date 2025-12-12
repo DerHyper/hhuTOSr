@@ -24,12 +24,14 @@ impl PageFlags {
         /*
          * Hier muss Code eingefuegt werden
          */
+        return PageFlags::DIRTY;
     }
 
     fn user_flags() -> Self {
         /*
          * Hier muss Code eingefuegt werden
          */
+        return PageFlags::DIRTY;
     }
 }
 
@@ -89,6 +91,8 @@ impl PageTable {
         /*
          * Hier muss Code eingefuegt werden
          */
+
+        return 0;
     }
 }
 
@@ -134,4 +138,6 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     /*
      * Hier muss Code eingefuegt werden
      */
+
+    return core::ptr::null_mut();
 }
