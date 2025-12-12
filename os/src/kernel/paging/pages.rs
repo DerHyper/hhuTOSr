@@ -88,9 +88,11 @@ impl PageTable {
     /// (virt_addr == phys_addr). Otherwise, new physical frames will be allocated
     /// for the mapping, using the frame allocator.
     fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
-        /*
-         * Hier muss Code eingefuegt werden
-         */
+        let paging_l4_pml4e = virt_addr >> 39 & 0x1FF; // 9 bit paging-level index: Page map level 4
+        let paging_l3_pdpte = virt_addr >> 30 & 0x1FF;
+        let paging_l2_pde = virt_addr >> 21 & 0x1FF;
+        let paging_l1_pte = virt_addr >> 12 & 0x1FF;
+        let offset = virt_addr & 0xFFF; // 12 bit
 
         return 0;
     }
