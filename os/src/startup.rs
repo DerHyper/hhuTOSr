@@ -50,6 +50,8 @@ use crate::kernel::interrupts::pic;
 use crate::kernel::multiboot::FramebufferType;
 use crate::kernel::multiboot::MultibootInfo;
 use crate::kernel::paging::frames;
+use crate::kernel::paging::pages::init_kernel_tables;
+use crate::kernel::paging::pages::write_cr3;
 use crate::library::input;
 use crate::user::aufgabe7::graphic_demo;
 use crate::user::aufgabe7::pong;
@@ -204,7 +206,10 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 
 fn show_startscreen(){
     // TODO: Remove and add to methods, once kernel Methods work
-    //syscall_demo::syscall_test();
+    // syscall_demo::syscall_test();
+    // PfListTest::run();
+    let table = init_kernel_tables();
+    unsafe { write_cr3(table); }
     PfListTest::run();
 
     // print_startscreen();
