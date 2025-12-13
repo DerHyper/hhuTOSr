@@ -1,5 +1,5 @@
 use core::ptr;
-use x86_64::structures::paging::FrameAllocator;
+use x86_64::structures::paging::{FrameAllocator, PageSize};
 
 use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::{PhysAddr, FRAME_ALLOCATOR};
@@ -91,43 +91,52 @@ impl PageTable {
     /// for the mapping, using the frame allocator.
     /// returns how man pages where allocated
     fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
-        let paging_l4_pml4e = virt_addr >> 39 & 0x1FF; // 9 bit paging-level index: Page map level 4
-        let paging_l3_pdpte = virt_addr >> 30 & 0x1FF;
-        let paging_l2_pde = virt_addr >> 21 & 0x1FF;
-        let paging_l1_pte = virt_addr >> 12 & 0x1FF;
-        let offset = virt_addr & 0xFFF; // 12 bit
+        let mut num_mapped_pages = 0;
+        for i in 0..num_pages {
+            let current_virt_addr = virt_addr + (i*PAGE_SIZE) as u64;
 
-        // Get to level 1
-        let l4_entry = &mut self.entries[paging_l4_pml4e as usize];
-        let l3_page_table = get_or_create_next_level_page_table(l4_entry);
+            let paging_l4_pml4e = current_virt_addr >> 39 & 0x1FF; // 9 bit paging-level index: Page map level 4
+            let paging_l3_pdpte = current_virt_addr >> 30 & 0x1FF;
+            let paging_l2_pde = current_virt_addr >> 21 & 0x1FF;
+            let paging_l1_pte = current_virt_addr >> 12 & 0x1FF;
+            let offset = current_virt_addr & 0xFFF; // 12 bit
 
-        let l3_entry = &mut l3_page_table.entries[paging_l3_pdpte as usize];
-        let l2_page_table = get_or_create_next_level_page_table(l3_entry);
+            // Get to level 1
+            let l4_entry = &mut self.entries[paging_l4_pml4e as usize];
+            let l3_page_table = get_or_create_next_level_page_table(l4_entry);
 
-        let l2_entry = &mut l2_page_table.entries[paging_l2_pde as usize];
-        let l1_page_table = get_or_create_next_level_page_table(l2_entry);
+            let l3_entry = &mut l3_page_table.entries[paging_l3_pdpte as usize];
+            let l2_page_table = get_or_create_next_level_page_table(l3_entry);
 
-        let mut l1_entry = &mut l1_page_table.entries[paging_l1_pte as usize];
+            let l2_entry = &mut l2_page_table.entries[paging_l2_pde as usize];
+            let l1_page_table = get_or_create_next_level_page_table(l2_entry);
 
-        if kernel {
-            // 1:1 mapping
-            l1_entry.set_addr(PhysAddr::new(virt_addr));
-            update_frame_flags(&mut l1_entry);
-            return virt_addr as usize;
-        } 
+            let mut l1_entry = &mut l1_page_table.entries[paging_l1_pte as usize];
 
-        // Alloc new physical frames
-        let frame = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages)};
-        if let Some(frame_addr) = frame
-        {
-            l1_entry.set_addr(frame_addr-offset);
+            if kernel {
+                // 1:1 mapping
+                l1_entry.set_addr(PhysAddr::new(current_virt_addr));
+                update_frame_flags(&mut l1_entry);
+                num_mapped_pages += 1;
+                continue;
+            } 
 
-            update_frame_flags(&mut l1_entry);
-            return frame_addr.raw() as usize;
+            // Alloc new physical frames
+            let frame = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages)};
+            if let Some(frame_addr) = frame
+            {
+                l1_entry.set_addr(frame_addr-offset);
+
+                update_frame_flags(&mut l1_entry);
+                num_mapped_pages += 1;
+                continue;
+            }
+
+            // Failed to alloc frame
+            continue;
         }
 
-        // Failed to alloc frame
-        return 0;
+        return num_mapped_pages;
     }
 }
 
