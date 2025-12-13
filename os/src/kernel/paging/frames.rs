@@ -171,6 +171,10 @@ impl PfListAllocator {
     /// the remaining part is added back to the free list.
     /// If no suitable block is found, returns None.
     pub unsafe fn alloc_block(&mut self, num_frames: usize) -> Option<PhysAddr> {
+
+        if num_frames == 0 {
+            return None;
+        }
                 
         let mut current_block = &mut self.head.next;
         let search_size = PAGE_FRAME_SIZE*num_frames;
@@ -189,13 +193,18 @@ impl PfListAllocator {
             // Found oversized free block
             } else if node.size > search_size {
                 let addr = node.start_addr();
-                *current_block = node.next.take();
                 
-                let new_block_num_frames = (node.size - search_size)/PAGE_FRAME_SIZE;
+                // create new, smaller node 
+                let new_block_size = node.size - search_size;
                 let new_block_addr = node.start_addr() + search_size;
+                let new_node: *mut PfListNode = new_block_addr.as_mut_ptr() as *mut PfListNode;
                 unsafe {
-                    self.free_block(new_block_addr, new_block_num_frames);   
+                    (*new_node).size = new_block_size;
+                    (*new_node).next = node.next.take();
                 }
+
+                // Replace current with new node
+                *current_block = Some(unsafe { &mut *new_node });
                 
                 fill_with_zeros(addr, search_size);
                 return Some(addr);
@@ -249,7 +258,7 @@ impl PfListAllocator {
             if node.is_adjacent_front(&addr_end) {
                 let new_note_addr: *mut PfListNode = addr_start.as_mut_ptr() as *mut PfListNode;
                 unsafe {
-                    (*new_note_addr).size = size;
+                    (*new_note_addr).size = size + node.size;
                     (*new_note_addr).next = node.next.take();
                     // next node is dropped here
                 }
