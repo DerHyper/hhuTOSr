@@ -89,6 +89,7 @@ impl PageTable {
     /// If `kernel` is true, the pages will be mapped 1:1 to their physical addresses
     /// (virt_addr == phys_addr). Otherwise, new physical frames will be allocated
     /// for the mapping, using the frame allocator.
+    /// returns how man pages where allocated
     fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
         let paging_l4_pml4e = virt_addr >> 39 & 0x1FF; // 9 bit paging-level index: Page map level 4
         let paging_l3_pdpte = virt_addr >> 30 & 0x1FF;
@@ -97,30 +98,31 @@ impl PageTable {
         let offset = virt_addr & 0xFFF; // 12 bit
 
         // Get to level 1
-        let l4_entry = self.entries[paging_l4_pml4e as usize];
-        let l3_page_table = get_next_level_page_table(&l4_entry);
+        let l4_entry = &mut self.entries[paging_l4_pml4e as usize];
+        let l3_page_table = get_or_create_next_level_page_table(l4_entry);
 
-        let l3_entry = l3_page_table.entries[paging_l3_pdpte as usize];
-        let l2_page_table = get_next_level_page_table(&l3_entry);
+        let l3_entry = &mut l3_page_table.entries[paging_l3_pdpte as usize];
+        let l2_page_table = get_or_create_next_level_page_table(l3_entry);
 
-        let l2_entry = l2_page_table.entries[paging_l2_pde as usize];
-        let l1_page_table = get_next_level_page_table(&l2_entry);
+        let l2_entry = &mut l2_page_table.entries[paging_l2_pde as usize];
+        let l1_page_table = get_or_create_next_level_page_table(l2_entry);
 
-        let mut l1_entry = l1_page_table.entries[paging_l1_pte as usize];
+        let mut l1_entry = &mut l1_page_table.entries[paging_l1_pte as usize];
 
         if kernel {
             // 1:1 mapping
             l1_entry.set_addr(PhysAddr::new(virt_addr));
+            update_frame_flags(&mut l1_entry);
             return virt_addr as usize;
         } 
 
         // Alloc new physical frames
-        let frame = unsafe {
-            FRAME_ALLOCATOR.lock().alloc_block(num_pages)
-        };
-
+        let frame = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages)};
         if let Some(frame_addr) = frame
         {
+            l1_entry.set_addr(frame_addr-offset);
+
+            update_frame_flags(&mut l1_entry);
             return frame_addr.raw() as usize;
         }
 
@@ -129,16 +131,28 @@ impl PageTable {
     }
 }
 
-fn get_next_level_page_table(entry: &PageTableEntry) -> &mut PageTable {
-    // let l4_flags = l4_entry.get_flags();
-    // if !l4_flags.contains(PageFlags::PRESENT) {
-            
-    //     return 0;
-    // }
+fn get_or_create_next_level_page_table(entry: &mut PageTableEntry) -> &mut PageTable {
+    // Alloc page frames in not already present
+    let flags = entry.get_flags();
+    if !flags.contains(PageFlags::PRESENT) {
+        let frame_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(1).unwrap() };
+        entry.set_addr(frame_addr);
+    }
+
+    update_frame_flags(entry);
+    
+    // get next page Table
     let next_page_table = unsafe {
         entry.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap()
     };
     next_page_table
+}
+
+/// Set frags according to specs
+fn update_frame_flags(entry: &mut PageTableEntry) { 
+    let mut flags = entry.get_flags();
+    flags.set(PageFlags::PRESENT | PageFlags::WRITEABLE, true);
+    entry.set_flags(flags);
 }
 
 pub fn read_cr3() -> &'static mut PageTable {
