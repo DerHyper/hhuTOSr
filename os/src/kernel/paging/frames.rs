@@ -136,17 +136,6 @@ impl PfListNode {
         let overlaps_end = addr_start < &self.end_addr();
         return  overlaps_front || overlaps_end;
     }
-
-    fn fill_with_zeros(&self, num_zeros: &usize) {
-        let node_metadata_size: u64 = size_of::<PfListNode>() as u64;
-        let node_ptr_after_metadata = (self.start_addr().raw() + node_metadata_size) as *mut u8;
-        let size = num_zeros-node_metadata_size as usize;
-        unsafe { 
-            for i in 0..size {
-                node_ptr_after_metadata.add(i).write_volatile(0);
-            }
-        };
-    }
 }
 
 /// A physical frame allocator that uses a linked list to manage free memory blocks.
@@ -194,7 +183,7 @@ impl PfListAllocator {
                 
                 let addr = node.start_addr();
                 *current_block = node.next.take();
-                node.fill_with_zeros(&search_size);
+                fill_with_zeros(addr, search_size);
                 return Some(addr);
             
             // Found oversized free block
@@ -208,7 +197,7 @@ impl PfListAllocator {
                     self.free_block(new_block_addr, new_block_num_frames);   
                 }
                 
-                node.fill_with_zeros(&search_size);
+                fill_with_zeros(addr, search_size);
                 return Some(addr);
 
             // Found no free block
@@ -366,6 +355,11 @@ impl PfListAllocator {
 fn check_asserts(addr_start: PhysAddr, num_frames: usize) {
     assert!(addr_start.raw() % PAGE_FRAME_SIZE as u64 == 0, "free_block: addr_start not aligned");
 
+}
+
+fn fill_with_zeros(addr: PhysAddr, size: usize) {
+    let ptr = addr.as_mut_ptr::<u8>();
+    unsafe { core::ptr::write_bytes(ptr, 0, size) };
 }
 
 /// Returns true if the addr_start is between the node and the start address
