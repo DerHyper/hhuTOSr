@@ -1,4 +1,6 @@
 use core::ptr;
+use x86_64::structures::paging::FrameAllocator;
+
 use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::{PhysAddr, FRAME_ALLOCATOR};
 
@@ -94,8 +96,49 @@ impl PageTable {
         let paging_l1_pte = virt_addr >> 12 & 0x1FF;
         let offset = virt_addr & 0xFFF; // 12 bit
 
+        // Get to level 1
+        let l4_entry = self.entries[paging_l4_pml4e as usize];
+        let l3_page_table = get_next_level_page_table(&l4_entry);
+
+        let l3_entry = l3_page_table.entries[paging_l3_pdpte as usize];
+        let l2_page_table = get_next_level_page_table(&l3_entry);
+
+        let l2_entry = l2_page_table.entries[paging_l2_pde as usize];
+        let l1_page_table = get_next_level_page_table(&l2_entry);
+
+        let mut l1_entry = l1_page_table.entries[paging_l1_pte as usize];
+
+        if kernel {
+            // 1:1 mapping
+            l1_entry.set_addr(PhysAddr::new(virt_addr));
+            return virt_addr as usize;
+        } 
+
+        // Alloc new physical frames
+        let frame = unsafe {
+            FRAME_ALLOCATOR.lock().alloc_block(num_pages)
+        };
+
+        if let Some(frame_addr) = frame
+        {
+            return frame_addr.raw() as usize;
+        }
+
+        // Failed to alloc frame
         return 0;
     }
+}
+
+fn get_next_level_page_table(entry: &PageTableEntry) -> &mut PageTable {
+    // let l4_flags = l4_entry.get_flags();
+    // if !l4_flags.contains(PageFlags::PRESENT) {
+            
+    //     return 0;
+    // }
+    let next_page_table = unsafe {
+        entry.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap()
+    };
+    next_page_table
 }
 
 pub fn read_cr3() -> &'static mut PageTable {
