@@ -93,6 +93,11 @@ impl PageTable {
     fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
         let mut num_mapped_pages = 0;
         for i in 0..num_pages {
+
+            if virt_addr == 0 {
+                continue; // Skip null pointer
+            }
+
             let current_virt_addr = virt_addr + (i*PAGE_SIZE) as u64;
 
             let paging_l4_pml4e = current_virt_addr >> 39 & 0x1FF; // 9 bit paging-level index: Page map level 4
@@ -117,16 +122,14 @@ impl PageTable {
                 // 1:1 mapping
                 l1_entry.set_addr(PhysAddr::new(current_virt_addr));
                 update_frame_flags(&mut l1_entry);
-                num_mapped_pages += 1;
                 continue;
             } 
 
             // Alloc new physical frames
-            let frame = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages)};
+            let frame = unsafe { FRAME_ALLOCATOR.lock().alloc_block(1)};
             if let Some(frame_addr) = frame
             {
-                l1_entry.set_addr(frame_addr-offset);
-
+                l1_entry.set_addr(frame_addr);
                 update_frame_flags(&mut l1_entry);
                 num_mapped_pages += 1;
                 continue;
@@ -144,7 +147,7 @@ fn get_or_create_next_level_page_table(entry: &mut PageTableEntry) -> &mut PageT
     // Alloc page frames in not already present
     let flags = entry.get_flags();
     if !flags.contains(PageFlags::PRESENT) {
-        let frame_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(1).unwrap() };
+        let frame_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(1).expect("Failed to allocate page table") };
         entry.set_addr(frame_addr);
     }
 
@@ -160,7 +163,7 @@ fn get_or_create_next_level_page_table(entry: &mut PageTableEntry) -> &mut PageT
 /// Set frags according to specs
 fn update_frame_flags(entry: &mut PageTableEntry) { 
     let mut flags = entry.get_flags();
-    flags.set(PageFlags::PRESENT | PageFlags::WRITEABLE, true);
+    flags.set(PageFlags::PRESENT | PageFlags::WRITEABLE | PageFlags::USER, true);
     entry.set_flags(flags);
 }
 
