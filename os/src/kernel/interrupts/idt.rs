@@ -2,6 +2,7 @@ use core::arch::asm;
 use core::ptr;
 use spin::once::Once;
 use crate::kernel::interrupts::intdispatcher::int_disp;
+use crate::kernel::paging::pages::page_fault_handler;
 use crate::kernel::syscalls::syscall_dispatcher::syscall_disp;
 use crate::kernel::interrupts::InterruptStackFrame;
 
@@ -414,6 +415,7 @@ impl Idt {
 
         // Set Trap Gate on Vektor 0x80
         idt.set_entry(0x80, IdtEntry::syscall_gate(syscall_disp));
+        idt.set_entry(0x0E, IdtEntry::with_error_code(page_fault_handler));
         idt
     }
 

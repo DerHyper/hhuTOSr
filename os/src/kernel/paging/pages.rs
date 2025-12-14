@@ -3,6 +3,8 @@ use x86_64::structures::paging::{FrameAllocator, PageSize};
 
 use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel;
+use crate::kernel::interrupts::InterruptStackFrame;
+use crate::kernel::interrupts::intdispatcher::{INT_VECTORS, InterruptVector};
 use crate::kernel::paging::frames::{PhysAddr, FRAME_ALLOCATOR};
 
 const PAGE_TABLE_ENTRIES: usize = 512;
@@ -209,4 +211,27 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
      */
 
     return core::ptr::null_mut();
+}
+
+/// This function is called from the IDT syscall handler (interrupt 0x0E).
+/// Throws a panic containing the address of the instruction that 
+/// caused the page fault, which is written in the c2 register
+pub extern "x86-interrupt" fn page_fault_handler(
+    stack_frame: InterruptStackFrame,
+    error_code: u64,
+) {
+    let cr2: u64;
+    unsafe {
+        core::arch::asm!("mov {}, cr2", out(reg) cr2);
+    }
+
+    panic!(
+        "Page fault
+        faulting address: {:#x}
+        instruction pointer: {:#x}
+        error code: {:#x}",
+        cr2,
+        stack_frame.instruction_pointer as u64,
+        error_code
+    );
 }
