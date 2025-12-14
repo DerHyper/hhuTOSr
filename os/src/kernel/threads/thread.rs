@@ -61,7 +61,7 @@ unsafe extern "C" fn thread_start(stack_ptr: usize) {
 /// `current_stack_ptr` is a pointer to `stack_ptr` of the next coroutine (where the rsp is saved).
 /// `next_stack` is the value of `stack_ptr` of the next thread (the new rsp value).
 #[unsafe(naked)]
-unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: usize, next_stack_end: usize) {
+unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: usize, next_stack_end: usize, next_pml4: usize) {
     naked_asm!(
         // Save all registers of the current thread on its stack
         "push r8",
@@ -90,6 +90,9 @@ unsafe extern "C" fn thread_switch(current_stack_ptr: *mut usize, next_stack: us
 
         // Switch stack to 'next_stack' (second parameter)
         "mov rsp, rsi",
+
+        // Switch page table to 'next_pml4' (fourth parameter)
+        "mov cr3, rcx",
 
         // Unlock scheduler
         "call unlock_scheduler",
@@ -230,7 +233,11 @@ impl Thread {
             let next = &*next;
             let next_stack_end = Thread::get_top_of_stack(&next.kernel_stack);
 
-            thread_switch(&mut current.stack_ptr, next.stack_ptr, next_stack_end as usize);
+            thread_switch(
+                &mut current.stack_ptr, 
+                next.stack_ptr, 
+                next_stack_end as usize, 
+                current.page_table as *const PageTable as usize);
         }
     }
 
