@@ -57,6 +57,7 @@ use crate::user::aufgabe7::graphic_demo;
 use crate::user::aufgabe7::pong;
 use crate::user::aufgabe10::PfListTest;
 use crate::user::aufgabe11::page_table_demo;
+use crate::user::aufgabe11::page_table_thread_demo;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -209,7 +210,8 @@ fn show_startscreen(){
     // TODO: Remove and add to methods, once kernel Methods work
     // syscall_demo::syscall_test();
     // PfListTest::run();
-    page_table_demo::run();
+    // page_table_demo::run();
+    page_table_thread_demo::run();
 
     // print_startscreen();
 
