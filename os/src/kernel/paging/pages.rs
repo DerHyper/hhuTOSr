@@ -206,7 +206,7 @@ pub fn init_kernel_tables() -> &'static mut PageTable {
 }
 
 /// Sets up a mapping for the user stack.
-/// Returns the top of the downwards growing user stack.
+/// Returns the stacks virtual address
 pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     // Rounded up, because int-division may yield 1 page to few
     // eg. "6KB Stack / 4KB Pages = 1 Page" but 2 are needed
@@ -215,8 +215,7 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     // Map user stack pages
     pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
 
-    // Stack grows downwards
-    return USER_STACK_VIRT_END as *mut u8;
+    return USER_STACK_VIRT_START as *mut u8;
 }
 
 /// This function is called from the IDT syscall handler (interrupt 0x0E).

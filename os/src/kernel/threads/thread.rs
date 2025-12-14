@@ -15,7 +15,7 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE};
 use crate::kernel::cpu;
-use crate::kernel::paging::pages::{self, map_user_stack};
+use crate::kernel::paging::pages::{self, PageTable, map_user_stack};
 use crate::kernel::syscalls::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
@@ -137,6 +137,7 @@ pub struct Thread {
     user_stack: Vec<u64>,
     stack_ptr: usize, // Pointer on the stack to the saved context
     entry: fn(),
+    page_table: &'static mut PageTable,
 }
 
 impl Thread {
@@ -148,8 +149,11 @@ impl Thread {
             kernel_stack.push(0);
         }
 
+        // Allocate page table
+        let page_table = pages::init_kernel_tables();
+
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(pages::init_kernel_tables()) };
+        let user_stack_addr =  unsafe { map_user_stack(page_table) };
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
             user_stack_addr as *mut u64, //
@@ -165,7 +169,7 @@ impl Thread {
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry }
+            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -180,8 +184,11 @@ impl Thread {
             kernel_stack.push(0);
         }
 
+        // Allocate page table
+        let page_table = pages::init_kernel_tables();
+
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(pages::init_kernel_tables()) };
+        let user_stack_addr =  unsafe { map_user_stack(page_table) };
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
             user_stack_addr as *mut u64, //
@@ -197,7 +204,7 @@ impl Thread {
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
