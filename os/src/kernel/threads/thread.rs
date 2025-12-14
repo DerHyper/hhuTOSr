@@ -15,6 +15,7 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE};
 use crate::kernel::cpu;
+use crate::kernel::paging::pages::{self, map_user_stack};
 use crate::kernel::syscalls::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
@@ -148,7 +149,13 @@ impl Thread {
         }
 
         // Allocate memory for the user stack and initialize it to zero
-        let mut user_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
+        let user_stack_addr =  unsafe { map_user_stack(pages::init_kernel_tables()) };
+        let mut user_stack = unsafe { 
+            Vec::from_raw_parts(
+            user_stack_addr as *mut u64, //
+            STACK_SIZE, 
+            STACK_SIZE) 
+        };
         for _ in 0..user_stack.capacity() {
             user_stack.push(0);
         }
@@ -174,7 +181,13 @@ impl Thread {
         }
 
         // Allocate memory for the user stack and initialize it to zero
-        let mut user_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
+        let user_stack_addr =  unsafe { map_user_stack(pages::init_kernel_tables()) };
+        let mut user_stack = unsafe { 
+            Vec::from_raw_parts(
+            user_stack_addr as *mut u64, //
+            STACK_SIZE, 
+            STACK_SIZE) 
+        };
         for _ in 0..user_stack.capacity() {
             user_stack.push(0);
         }
