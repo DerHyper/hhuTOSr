@@ -15,7 +15,7 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE};
 use crate::kernel::cpu;
-use crate::kernel::paging::pages::{self, PageTable, map_user_stack};
+use crate::kernel::paging::pages::{self, PageTable, map_user_stack, write_cr3};
 use crate::kernel::syscalls::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
@@ -31,9 +31,10 @@ pub fn next_id() -> usize {
 
 /// Low-level routine for starting a thread.
 #[unsafe(naked)]
-unsafe extern "C" fn thread_start(stack_ptr: usize) {
+unsafe extern "C" fn thread_start(stack_ptr: usize, next_pml4: usize) {
     naked_asm!(
         "mov rsp, rdi", // Switch stack
+        "mov cr3, rsi", // Switch Page Table (pml4)
 
         "call unlock_scheduler", // Unlock scheduler
 
@@ -163,9 +164,9 @@ impl Thread {
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
-        for _ in 0..user_stack.capacity() {
-            user_stack.push(0);
-        }
+        // for _ in 0..user_stack.capacity() {
+        //     user_stack.push(0);
+        // }
 
         // Set the stack pointer to the top of the stack
         let stack_ptr = ptr::from_ref(&kernel_stack[kernel_stack.capacity() - 1]) as usize;
@@ -198,9 +199,9 @@ impl Thread {
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
-        for _ in 0..user_stack.capacity() {
-            user_stack.push(0);
-        }
+        // for _ in 0..user_stack.capacity() {
+        //     user_stack.push(0);
+        // }
 
         // Set the stack pointer to the top of the stack
         let stack_ptr = ptr::from_ref(&user_stack[user_stack.capacity() - 1]) as usize;
@@ -221,7 +222,7 @@ impl Thread {
     /// The scheduler does further thread switching via `switch()`.
     pub fn start(&mut self) {
         unsafe {
-            thread_start(self.stack_ptr);
+            thread_start(self.stack_ptr, self.page_table as *const PageTable as usize);
         }
     }
 
@@ -237,7 +238,7 @@ impl Thread {
                 &mut current.stack_ptr, 
                 next.stack_ptr, 
                 next_stack_end as usize, 
-                current.page_table as *const PageTable as usize);
+                next.page_table as *const PageTable as usize);
         }
     }
 
