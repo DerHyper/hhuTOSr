@@ -156,12 +156,12 @@ impl Thread {
         let page_table = pages::init_kernel_tables();
 
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(page_table) };
+        let user_stack_addr =  unsafe { map_user_stack(page_table) }  as *mut u64;
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
-            user_stack_addr as *mut u64, //
-            STACK_SIZE, 
-            STACK_SIZE) 
+            user_stack_addr.sub(STACK_SIZE) , //
+            STACK_SIZE/8, 
+            STACK_SIZE/8) 
         };
         for _ in 0..user_stack.capacity() {
             user_stack.push(0);
@@ -191,12 +191,12 @@ impl Thread {
         let page_table = pages::init_kernel_tables();
 
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(page_table) };
+        let user_stack_addr =  unsafe { map_user_stack(page_table) } as *mut u64;
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
-            user_stack_addr as *mut u64, //
-            STACK_SIZE, 
-            STACK_SIZE) 
+            user_stack_addr.sub(STACK_SIZE) , //
+            STACK_SIZE/8, 
+            STACK_SIZE/8) 
         };
         for _ in 0..user_stack.capacity() {
             user_stack.push(0);
