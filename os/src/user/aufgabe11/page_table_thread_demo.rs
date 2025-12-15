@@ -3,6 +3,7 @@ use crate::devices::{cga, pit};
 use crate::kernel::threads::scheduler::get_scheduler;
 use crate::kernel::threads::thread::Thread;
 
+/// page_table_thread_demo
 pub fn run() {
     let user_thread = Thread::new_user_thread(user_test_thread);
     let user_thread2 = Thread::new_user_thread(user_test_thread);
