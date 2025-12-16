@@ -160,7 +160,7 @@ impl Thread {
         let user_stack_addr =  unsafe { map_user_stack(page_table) }  as *mut u64;
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
-            user_stack_addr.sub(STACK_SIZE) , //
+            user_stack_addr, //
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
@@ -195,7 +195,7 @@ impl Thread {
         let user_stack_addr =  unsafe { map_user_stack(page_table) } as *mut u64;
         let mut user_stack = unsafe { 
             Vec::from_raw_parts(
-            user_stack_addr.sub(STACK_SIZE) , //
+            user_stack_addr,
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
