@@ -82,7 +82,7 @@ impl core::fmt::Debug for PageTableEntry {
 
 #[repr(transparent)]
 pub struct PageTable {
-    entries: [PageTableEntry; PAGE_TABLE_ENTRIES],
+    pub entries: [PageTableEntry; PAGE_TABLE_ENTRIES],
 }
 
 impl PageTable {

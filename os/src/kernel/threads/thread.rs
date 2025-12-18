@@ -13,9 +13,9 @@ use core::{fmt, ptr};
 use core::arch::naked_asm;
 use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
-use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE};
+use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_START};
 use crate::kernel::cpu;
-use crate::kernel::paging::pages::{self, PageTable, map_user_stack, write_cr3};
+use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_stack, write_cr3};
 use crate::kernel::syscalls::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
@@ -221,6 +221,28 @@ impl Thread {
     /// This function is only once by the scheduler.
     /// The scheduler does further thread switching via `switch()`.
     pub fn start(&mut self) {
+
+        // Test (Manuel page walk thru pml4). TODO: Remove if Page Faults are gone
+        let addr =  0x4000_000F_FFF8 as usize;
+        let pml4e = self.page_table.entries[(addr >> 39 & 0x1FF) as usize];
+        assert!(pml4e.get_flags().contains(PageFlags::PRESENT));
+
+        let pdpt = unsafe { pml4e.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        let pdpte = pdpt.entries[(addr >> 30 & 0x1FF) as usize];
+        assert!(pdpte.get_flags().contains(PageFlags::PRESENT));
+
+        let pd = unsafe { pdpte.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        let pde = pd.entries[(addr >> 21 & 0x1FF) as usize];
+        assert!(pde.get_flags().contains(PageFlags::PRESENT));
+
+        let pt = unsafe { pde.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        let pte = pt.entries[(addr >> 12 & 0x1FF) as usize];
+        assert!(pte.get_flags().contains(PageFlags::PRESENT), "pte.get_flags() was not PRESENT at {}", pte.get_addr().raw());
+
+        unsafe {
+            write_cr3(self.page_table);
+        }
+
         unsafe {
             thread_start(self.stack_ptr, self.page_table as *const PageTable as usize);
         }
