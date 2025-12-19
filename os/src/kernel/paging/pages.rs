@@ -93,30 +93,30 @@ impl PageTable {
     /// returns how man pages where allocated
     fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
         let mut num_mapped_pages = 0;
-        for i in 0..num_pages {
+        for current_page_num in 0..num_pages {
 
-            let current_virt_addr = virt_addr + (i*PAGE_SIZE) as u64;
+            let current_virt_addr = virt_addr + (current_page_num*PAGE_SIZE) as u64;
 
             if current_virt_addr == 0 {
                 continue; // Skip null pointer
             }
 
-            let paging_l4_pml4e = (current_virt_addr >> 39 & 0x1FF) as usize; // 9 bit paging-level index: Page map level 4
-            let paging_l3_pdpte = (current_virt_addr >> 30 & 0x1FF) as usize;
-            let paging_l2_pde = (current_virt_addr >> 21 & 0x1FF) as usize;
-            let paging_l1_pte = (current_virt_addr >> 12 & 0x1FF) as usize;
+            let pml4_index = (current_virt_addr >> 39 & 0x1FF) as usize; // 9 bit paging-level index: Page map level 4
+            let pdpt_index = (current_virt_addr >> 30 & 0x1FF) as usize;
+            let pd_index = (current_virt_addr >> 21 & 0x1FF) as usize;
+            let pt_index = (current_virt_addr >> 12 & 0x1FF) as usize;
 
             // Get to level 1
-            let pml4_entry = &mut self.entries[paging_l4_pml4e];
-            let pdpt = get_or_create_next_level_page_table(pml4_entry, &mut num_mapped_pages);
+            let pml4_entry = &mut self.entries[pml4_index];
+            let pdpt = get_or_create_page_table(pml4_entry, &mut num_mapped_pages);
 
-            let pdpt_entry = &mut pdpt.entries[paging_l3_pdpte];
-            let pd = get_or_create_next_level_page_table(pdpt_entry, &mut num_mapped_pages);
+            let pdpt_entry = &mut pdpt.entries[pdpt_index];
+            let pd = get_or_create_page_table(pdpt_entry, &mut num_mapped_pages);
 
-            let pd_entry = &mut pd.entries[paging_l2_pde];
-            let pt = get_or_create_next_level_page_table(pd_entry, &mut num_mapped_pages);
+            let pd_entry = &mut pd.entries[pd_index];
+            let pt = get_or_create_page_table(pd_entry, &mut num_mapped_pages);
 
-            let pt_entry = &mut pt.entries[paging_l1_pte];
+            let pt_entry = &mut pt.entries[pt_index];
 
             if kernel {
                 // 1:1 mapping
@@ -141,7 +141,9 @@ impl PageTable {
     }
 }
 
-fn get_or_create_next_level_page_table(entry: &mut PageTableEntry, allocated_pages: &mut usize) -> &'static mut PageTable {
+/// Returns the PageTable from a PageTableEntry.
+/// Allocs a page frames in not already present
+fn get_or_create_page_table(entry: &mut PageTableEntry, allocated_pages: &mut usize) -> &'static mut PageTable {
     // Alloc page frames in not already present
     let flags = entry.get_flags();
     if !flags.contains(PageFlags::PRESENT) {
