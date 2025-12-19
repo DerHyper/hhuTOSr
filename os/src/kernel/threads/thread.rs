@@ -13,7 +13,7 @@ use core::{fmt, ptr};
 use core::arch::naked_asm;
 use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
-use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_START};
+use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::cpu;
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_stack, write_cr3};
 use crate::kernel::syscalls::user_api::usr_thread_exit;
@@ -223,7 +223,8 @@ impl Thread {
     pub fn start(&mut self) {
 
         // Test (Manuel page walk thru pml4). TODO: Remove if Page Faults are gone
-        let addr =  0x4000_000F_FFF8 as usize;
+        let addr =  0x4000_000F_FFF8 as usize; // currently not working address
+        // let addr =  USER_STACK_VIRT_END - 0xFFF as usize; // Lower Address that should work
         let pml4e = self.page_table.entries[(addr >> 39 & 0x1FF) as usize];
         assert!(pml4e.get_flags().contains(PageFlags::PRESENT));
 
