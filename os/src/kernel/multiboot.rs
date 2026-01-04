@@ -1,11 +1,15 @@
 use core::ffi::{c_char, c_void, CStr};
+use spin::Once;
+use tar_no_std::TarArchiveRef;
 use crate::consts::PAGE_FRAME_SIZE;
-use crate::kernel::paging::frames::{PhysAddr, FRAME_ALLOCATOR};
+use crate::kernel::paging::frames::{PfListAllocator, PhysAddr, FRAME_ALLOCATOR};
 
 unsafe extern "C" {
     static ___KERNEL_DATA_START__: c_void; // Start address of OS image
     static ___KERNEL_DATA_END__: c_void; // End address of OS image
 }
+
+pub static MULTIBOOT_INFO: Once<MultibootInfo> = Once::new();
 
 #[repr(C, packed)]
 #[derive(Copy, Clone)]
@@ -128,6 +132,14 @@ pub enum FramebufferType {
     Text = 2
 }
 
+#[derive(Debug, Copy, Clone)]
+struct ModuleEntry {
+    start: u32,
+    end: u32,
+    cmdline: u32,
+    reserved: u32,
+}
+
 impl MultibootInfo {
     pub fn get_bootloader_name(&self) -> Option<&str> {
         if self.flags & (MultibootFlag::BootLoaderNameAvailable as u32) != 0 {
@@ -159,9 +171,43 @@ impl MultibootInfo {
         }
     }
 
+    fn get_initrd(&self) -> Option<&'static [u8]> {
+        if self.flags & (MultibootFlag::ModulesAvailable as u32) != 0 {
+            if self.mods_count == 0 {
+                return None;
+            }
+            if self.mods_count > 1 {
+                panic!("Only one multiboot module (initrd) is supported!");
+            }
+
+            let module = unsafe { &*((self.mods_addr as *const u8) as *const ModuleEntry) };
+
+            unsafe {
+                return Some(core::slice::from_raw_parts(module.start as *const u8, (module.end - module.start) as usize));
+            }
+        }
+
+        None
+    }
+
+    pub fn get_initrd_archive(&self) -> Option<TarArchiveRef<'_>> {
+        match self.get_initrd() {
+            Some(initrd) => {
+                let start = initrd.as_ptr() as u32;
+                let end = start + initrd.len() as u32;
+                kprintln!("Found initrd module at 0x{:08x} - 0x{:08x}", start, end);
+
+                Some(TarArchiveRef::new(initrd).expect("Failed to parse initrd archive"))
+            },
+            None => None,
+        }
+    }
+
     pub fn init_phys_memory_allocator(&self) {
         // End address of kernel image (must not be inserted into physical memory allocator!)
         let kernel_end = unsafe { &___KERNEL_DATA_END__ as *const c_void as u64 };
+        // Initrd might also occupy physical memory that must not be used
+        let initrd = self.get_initrd();
 
         // Access to the physical memory allocator
         let mut allocator = FRAME_ALLOCATOR.lock();
@@ -188,7 +234,7 @@ impl MultibootInfo {
                 }
 
                 let mut start = entry.addr;
-                let mut end = entry.addr + entry.len;
+                let end = entry.addr + entry.len;
 
                 // Leave kernel memory free
                 if start < kernel_end {
@@ -198,23 +244,49 @@ impl MultibootInfo {
                     }
                 }
 
-                // Align start and end address to 4096 byte
-                if start % (PAGE_FRAME_SIZE as u64) != 0 {
-                    start = (start / (PAGE_FRAME_SIZE as u64) + 1) * (PAGE_FRAME_SIZE as u64);
-                }
-                if end % (PAGE_FRAME_SIZE as u64) != 0 {
-                    end = (end / (PAGE_FRAME_SIZE as u64)) * (PAGE_FRAME_SIZE as u64);
-                }
+                // Leave initrd memory free
+                if let Some(initrd) = initrd {
+                    let initrd_start = initrd.as_ptr() as u64;
+                    let initrd_end = initrd_start + initrd.len() as u64;
 
-                // Insert block into physical memory allocator
-                let num_frames = ((end - start) / (PAGE_FRAME_SIZE as u64)) as usize;
-                if num_frames > 0 {
-                    kprintln!("Inserting physical memory block (Addr: 0x{:016x}, Size: {} frames)", start, num_frames);
-                    unsafe {
-                        allocator.set_start_addr(PhysAddr::new(start));
-                        allocator.free_block(PhysAddr::new(start), num_frames);
+                    if start < initrd_end && end > initrd_start {
+                        if start < initrd_start {
+                            // Memory block starts before initrd -> Insert block before initrd
+                            Self::insert_memory_block(&mut allocator, start, initrd_start);
+                        }
+
+                        // Adjust start to the end of initrd
+                        start = initrd_end;
+                        if start >= end {
+                            continue;
+                        }
                     }
                 }
+
+                Self::insert_memory_block(&mut allocator, start, end);
+            }
+        }
+    }
+
+    fn insert_memory_block(allocator: &mut PfListAllocator, start: u64, end: u64) {
+        let mut start = start;
+        let mut end = end;
+
+        // Align start and end address to 4096 byte
+        if start % (PAGE_FRAME_SIZE as u64) != 0 {
+            start = (start / (PAGE_FRAME_SIZE as u64) + 1) * (PAGE_FRAME_SIZE as u64);
+        }
+        if end % (PAGE_FRAME_SIZE as u64) != 0 {
+            end = (end / (PAGE_FRAME_SIZE as u64)) * (PAGE_FRAME_SIZE as u64);
+        }
+
+        // Insert block into physical memory allocator
+        let num_frames = ((end - start) / (PAGE_FRAME_SIZE as u64)) as usize;
+        if num_frames > 0 {
+            kprintln!("Inserting physical memory block (Addr: 0x{:016x}, Size: {} frames)", start, num_frames);
+            unsafe {
+                allocator.set_start_addr(PhysAddr::new(start));
+                allocator.free_block(PhysAddr::new(start), num_frames);
             }
         }
     }
