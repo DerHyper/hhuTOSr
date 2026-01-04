@@ -13,7 +13,7 @@ use core::fmt::Display;
 use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
-use crate::library::spinlock::Spinlock as Mutex;
+use usrlib::spinlock::Spinlock as Mutex;
 use crate::kernel::threads::idle_thread::idle_thread;
 use crate::kernel::threads::thread;
 use crate::kernel::threads::thread::Thread;

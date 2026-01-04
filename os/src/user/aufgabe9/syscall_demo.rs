@@ -2,7 +2,7 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 
-use crate::kernel::syscalls::user_api::{usr_get_char, usr_get_system_time, usr_hello_world, usr_print, usr_thread_get_id};
+use usrlib::user_api::{usr_get_char, usr_get_system_time, usr_hello_world, usr_print, usr_thread_get_id};
 use crate::kernel::threads::scheduler::get_scheduler;
 use crate::kernel::threads::thread::Thread;
 

@@ -2,7 +2,7 @@ use core::fmt;
 use core::ops::{Add, Sub};
 use crate::consts::PAGE_FRAME_SIZE;
 use crate::library::input::getch;
-use crate::library::spinlock::Spinlock as Mutex;
+use usrlib::spinlock::Spinlock as Mutex;
 
 pub static FRAME_ALLOCATOR: Mutex<PfListAllocator> = Mutex::new(PfListAllocator::new());
 

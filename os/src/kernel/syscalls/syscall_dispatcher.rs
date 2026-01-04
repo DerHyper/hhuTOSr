@@ -20,7 +20,7 @@ use crate::kernel::syscalls::functions::print::sys_print;
 use crate::kernel::syscalls::functions::thread_exit::sys_thread_exit;
 use crate::kernel::syscalls::functions::thread_get_id::sys_thread_get_id;
 use crate::kernel::syscalls::functions::thread_yield::sys_thread_yield;
-use crate::kernel::syscalls::user_api::SyscallFunction;
+use usrlib::user_api::SyscallFunction;
 
 /// Global syscall function table.
 static SYSCALL_TABLE: SyscallFunctionTable = SyscallFunctionTable::new();

@@ -1,0 +1,1 @@
+/home/stephi/BS-Entwicklung/hhuTOSr/target/hhu_tosr_app/debug/libhello.a: /home/stephi/BS-Entwicklung/hhuTOSr/apps/hello/src/hello.rs /home/stephi/BS-Entwicklung/hhuTOSr/usrlib/src/lib.rs /home/stephi/BS-Entwicklung/hhuTOSr/usrlib/src/print.rs /home/stephi/BS-Entwicklung/hhuTOSr/usrlib/src/spinlock.rs /home/stephi/BS-Entwicklung/hhuTOSr/usrlib/src/user_api.rs

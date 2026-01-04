@@ -16,7 +16,7 @@ use core::sync::atomic::AtomicUsize;
 use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::cpu;
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_stack, write_cr3};
-use crate::kernel::syscalls::user_api::usr_thread_exit;
+use usrlib::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
 unsafe extern "C" {
