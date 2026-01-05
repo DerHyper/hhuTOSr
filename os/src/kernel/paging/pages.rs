@@ -1,8 +1,8 @@
 use core::ptr;
 use x86_64::structures::paging::{FrameAllocator, PageSize};
 
-use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
-use crate::kernel;
+use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
+use crate::kernel::{self, multiboot};
 use crate::kernel::interrupts::InterruptStackFrame;
 use crate::kernel::interrupts::intdispatcher::{INT_VECTORS, InterruptVector};
 use crate::kernel::paging::frames::{PhysAddr, FRAME_ALLOCATOR};
@@ -218,6 +218,16 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
 
     return USER_STACK_VIRT_END as *mut u8;
+}
+
+/// Sets up a mapping for a user app.
+/// Returns the apps virtual address
+pub unsafe fn map_user_app(pml4_table: &mut PageTable, num_pages: usize) -> *mut u8 {
+
+    // Map user stack pages
+    pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
+
+    return USER_CODE_VIRT_START as *mut u8;
 }
 
 /// This function is called from the IDT syscall handler (interrupt 0x0E).
