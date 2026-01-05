@@ -6,3 +6,4 @@ pub mod threads;
 pub mod multiboot;
 pub mod syscalls;
 pub mod paging;
+pub mod processes;

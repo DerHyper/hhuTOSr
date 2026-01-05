@@ -20,21 +20,19 @@ impl Process {
 }
 
 pub fn add_process(process: Process) {
-    /*
-     * Hier muss Code eingefuegt werden
-     */
+    PROCESSES.lock().insert(process.id, process);
 }
 
 pub fn remove_process(process_id: usize) {
-    /*
-     * Hier muss Code eingefuegt werden
-     */
-
+    PROCESSES.lock().remove(&process_id);
 }
 
 pub fn get_app_name(process_id: usize) -> Option<String> {
-    /*
-     * Hier muss Code eingefuegt werden
-     */
+    let processes = PROCESSES.lock();
+    let process = processes.get(&process_id);
+    if process.is_none() {
+        return None;
+    }
+    return Some(process.unwrap().name.clone());
 
 }
