@@ -28,7 +28,6 @@ impl PageFlags {
     fn kernel_flags() -> Self {
         PageFlags::PRESENT
         | PageFlags::WRITEABLE
-        | PageFlags::USER
     }
 
     fn user_flags() -> Self {
