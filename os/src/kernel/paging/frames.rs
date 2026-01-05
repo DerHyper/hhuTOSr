@@ -298,7 +298,9 @@ impl PfListAllocator {
 
             // Assert
             assert!(node.is_overlapping(&addr_start, &addr_end), "Addresses overlap with node.");
-            assert!(node.next.as_mut().unwrap().is_overlapping(&addr_start, &addr_end), "Addresses overlap with next node.");
+            if node.next.as_mut().is_some() {
+                assert!(node.next.as_mut().unwrap().is_overlapping(&addr_start, &addr_end), "Addresses overlap with next node.");
+            }            
 
             // Decide Start Address
             let mut new_node_size: usize = size;

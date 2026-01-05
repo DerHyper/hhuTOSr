@@ -13,9 +13,10 @@ use core::{fmt, ptr};
 use core::arch::naked_asm;
 use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
-use crate::consts::{STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
-use crate::kernel::cpu;
-use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_stack, write_cr3};
+use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
+use crate::kernel::paging::frames::FRAME_ALLOCATOR;
+use crate::kernel::{allocator, cpu, multiboot};
+use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
 use usrlib::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
 
@@ -164,9 +165,6 @@ impl Thread {
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
-        // for _ in 0..user_stack.capacity() {
-        //     user_stack.push(0);
-        // }
 
         // Set the stack pointer to the top of the stack
         let stack_ptr = ptr::from_ref(&kernel_stack[kernel_stack.capacity() - 1]) as usize;
@@ -199,16 +197,29 @@ impl Thread {
             STACK_SIZE/8, 
             STACK_SIZE/8) 
         };
-        // for _ in 0..user_stack.capacity() {
-        //     user_stack.push(0);
-        // }
+
+        // Map user app to memory
+        let mut entry_function: fn() = entry;
+        let archive = multiboot::MULTIBOOT_INFO.get().expect("No MULTIBOOT_INFO").get_initrd_archive().expect("No TAR-Archive for the user app was found");
+        for entry in archive.entries() {
+            let num_pages = (entry.size() + PAGE_SIZE - 1) / PAGE_SIZE;
+            let app_data = entry.data();
+            let filename = entry.filename();
+            let str :&str = filename.as_str().unwrap();
+            kprintln!("TAR File found: '{}'",str);
+
+            let phys_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages).expect("Could not allocate physical memory for user app.") };
+            let virt_addr = unsafe { map_user_app(page_table, num_pages) };
+            entry_function = unsafe { core::mem::transmute(virt_addr) };
+        }
+
 
         // Set the stack pointer to the top of the stack
         let stack_ptr = ptr::from_ref(&user_stack[user_stack.capacity() - 1]) as usize;
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry : entry_function, page_table }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -223,22 +234,22 @@ impl Thread {
     pub fn start(&mut self) {
 
         // Test (Manuel page walk thru pml4). TODO: Remove if Page Faults are gone
-        let addr =  0x4000_000F_FFF8 as usize; // currently not working address
-        // let addr =  USER_STACK_VIRT_END - 0xFFF as usize; // Lower Address that should work
-        let pml4e = self.page_table.entries[(addr >> 39 & 0x1FF) as usize];
-        assert!(pml4e.get_flags().contains(PageFlags::PRESENT));
+        // let addr =  0x4000_000F_FFF8 as usize; // currently not working address
+        // // let addr =  USER_STACK_VIRT_END - 0xFFF as usize; // Lower Address that should work
+        // let pml4e = self.page_table.entries[(addr >> 39 & 0x1FF) as usize];
+        // assert!(pml4e.get_flags().contains(PageFlags::PRESENT));
 
-        let pdpt = unsafe { pml4e.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        let pdpte = pdpt.entries[(addr >> 30 & 0x1FF) as usize];
-        assert!(pdpte.get_flags().contains(PageFlags::PRESENT));
+        // let pdpt = unsafe { pml4e.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        // let pdpte = pdpt.entries[(addr >> 30 & 0x1FF) as usize];
+        // assert!(pdpte.get_flags().contains(PageFlags::PRESENT));
 
-        let pd = unsafe { pdpte.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        let pde = pd.entries[(addr >> 21 & 0x1FF) as usize];
-        assert!(pde.get_flags().contains(PageFlags::PRESENT));
+        // let pd = unsafe { pdpte.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        // let pde = pd.entries[(addr >> 21 & 0x1FF) as usize];
+        // assert!(pde.get_flags().contains(PageFlags::PRESENT));
 
-        let pt = unsafe { pde.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        let pte = pt.entries[(addr >> 12 & 0x1FF) as usize];
-        assert!(pte.get_flags().contains(PageFlags::PRESENT), "pte.get_flags() was not PRESENT at {}", pte.get_addr().raw());
+        // let pt = unsafe { pde.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
+        // let pte = pt.entries[(addr >> 12 & 0x1FF) as usize];
+        // assert!(pte.get_flags().contains(PageFlags::PRESENT), "pte.get_flags() was not PRESENT at {}", pte.get_addr().raw());
 
         unsafe {
             write_cr3(self.page_table);

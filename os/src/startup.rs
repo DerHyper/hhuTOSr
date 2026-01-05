@@ -47,6 +47,7 @@ use crate::devices::pit;
 use crate::kernel::cpu::IoPort;
 use crate::kernel::interrupts::idt;
 use crate::kernel::interrupts::pic;
+use crate::kernel::multiboot;
 use crate::kernel::multiboot::FramebufferType;
 use crate::kernel::multiboot::MultibootInfo;
 use crate::kernel::paging::frames;
@@ -103,9 +104,9 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     kprintln!("Welcome to hhuTOS!");
 
     // Copy multiboot into on stack, because it lies in physical memory that might get reused after initializing the physical memory allocator
-    let multiboot_info = *multiboot_info;
+    multiboot::MULTIBOOT_INFO.call_once(|| *multiboot_info);
     kprintln!("Initializing physical memory allocator");
-    multiboot_info.init_phys_memory_allocator();
+    multiboot::MULTIBOOT_INFO.get().unwrap().init_phys_memory_allocator();
     allocator::init(); // Init memory management
     cga::CGA.lock().clear(); // Bildschirm loeschen
     idt::get_idt().load(); // Load Interrupt Descriptor Table
