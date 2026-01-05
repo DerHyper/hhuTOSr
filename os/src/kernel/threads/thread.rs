@@ -203,12 +203,22 @@ impl Thread {
         let archive = multiboot::MULTIBOOT_INFO.get().expect("No MULTIBOOT_INFO").get_initrd_archive().expect("No TAR-Archive for the user app was found");
         for entry in archive.entries() {
             let num_pages = (entry.size() + PAGE_SIZE - 1) / PAGE_SIZE;
-            let app_data = entry.data();
             let filename = entry.filename();
             let str :&str = filename.as_str().unwrap();
             kprintln!("TAR File found: '{}'",str);
-
+            
+            // Save data to physical address
             let phys_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages).expect("Could not allocate physical memory for user app.") };
+            let app_data = entry.data();
+            unsafe {
+                core::ptr::copy_nonoverlapping(
+                    app_data.as_ptr(),
+                    phys_addr.as_mut_ptr::<u8>(),
+                    app_data.len(),
+                );
+            }
+
+            // Map user app
             let virt_addr = unsafe { map_user_app(page_table, num_pages) };
             entry_function = unsafe { core::mem::transmute(virt_addr) };
         }
@@ -328,7 +338,7 @@ impl Thread {
         // Interrupt Flag | Reserved (Always 1)
         const RFLAGS: u64 = 0b10_0000_0010; 
 
-        // Usermode start address
+        // Usermode start address, should be virt_addr of 
         let rip = Thread::kickoff_user_thread as u64;
 
         // User stack top
