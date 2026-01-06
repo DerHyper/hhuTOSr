@@ -7,7 +7,7 @@ pub fn hello_world() {
 }
 
 pub fn run() {
-    let thread = Thread::new_user_thread(hello_world);
+    let thread = Thread::new_user_thread(hello_world,0);
     scheduler::get_scheduler().ready(thread);
     scheduler::get_scheduler().schedule();
 }

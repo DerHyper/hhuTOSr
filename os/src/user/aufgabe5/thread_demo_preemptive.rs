@@ -67,9 +67,9 @@ fn check_for_yield(i: i32) {
 pub fn run() {
     
     // Create Therads
-    let thread1 = Thread::new_user_thread(thread_entry);
-    let thread2 = Thread::new_user_thread(thread_entry);
-    let thread3 = Thread::new_user_thread(thread_entry_killer);
+    let thread1 = Thread::new_user_thread(thread_entry,0);
+    let thread2 = Thread::new_user_thread(thread_entry,0);
+    let thread3 = Thread::new_user_thread(thread_entry_killer,0);
 
     // Set threads to be killed
     unsafe {

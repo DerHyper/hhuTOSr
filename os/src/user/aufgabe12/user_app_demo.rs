@@ -1,10 +1,10 @@
-use crate::kernel::threads::{scheduler::get_scheduler, thread::Thread};
+use crate::kernel::{processes, threads::{scheduler::get_scheduler, thread::Thread}};
 
 /// Starts a new user thread
 pub fn run() {
-    let user_thread = Thread::new_user_thread(user_fallback_fn);
     let scheduler = get_scheduler();
-    scheduler.ready(user_thread);
+    let thread_name = "test_thread";
+    scheduler.spawn_process(thread_name);
     scheduler.schedule();
 }
 

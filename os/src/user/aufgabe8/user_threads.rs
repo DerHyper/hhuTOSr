@@ -4,10 +4,10 @@ use crate::kernel::threads::scheduler::get_scheduler;
 use crate::kernel::threads::thread::Thread;
 
 pub fn thread_test() {
-    let kernel_thread = Thread::new_kernel_thread(kernel_test_thread);
-    let kernel_thread2 = Thread::new_kernel_thread(kernel_test_thread);
-    let user_thread = Thread::new_user_thread(user_test_thread);
-    let user_thread2 = Thread::new_user_thread(user_test_thread);
+    let kernel_thread = Thread::new_kernel_thread(kernel_test_thread,0);
+    let kernel_thread2 = Thread::new_kernel_thread(kernel_test_thread,0);
+    let user_thread = Thread::new_user_thread(user_test_thread,0);
+    let user_thread2 = Thread::new_user_thread(user_test_thread,0);
     let scheduler = get_scheduler();
     scheduler.ready(kernel_thread);
     scheduler.ready(kernel_thread2);

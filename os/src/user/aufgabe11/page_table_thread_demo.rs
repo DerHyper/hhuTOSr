@@ -5,8 +5,8 @@ use crate::kernel::threads::thread::Thread;
 
 /// page_table_thread_demo
 pub fn run() {
-    let user_thread = Thread::new_user_thread(user_test_thread);
-    let user_thread2 = Thread::new_user_thread(user_test_thread);
+    let user_thread = Thread::new_user_thread(user_test_thread,0);
+    let user_thread2 = Thread::new_user_thread(user_test_thread,0);
     let scheduler = get_scheduler();
     scheduler.ready(user_thread);
     scheduler.ready(user_thread2);

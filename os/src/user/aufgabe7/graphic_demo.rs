@@ -7,8 +7,8 @@ use crate::user::aufgabe7::bmp_hhu;
 const MESSAGE: &str = "Welcome to hhuTOS!";
 
 pub fn run() {
-    let draw_thread = Thread::new_user_thread(draw_demo);
-    let sound_thread = Thread::new_user_thread(pcspk::tetris);
+    let draw_thread = Thread::new_user_thread(draw_demo,0);
+    let sound_thread = Thread::new_user_thread(pcspk::tetris,0);
     
     let scheduler = get_scheduler();
     scheduler.ready(draw_thread);

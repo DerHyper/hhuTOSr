@@ -41,9 +41,9 @@ fn check_for_yield(i: i32) {
 pub fn run() {
     
     // Create Therads
-    let thread1 = Thread::new_user_thread(thread_entry);
-    let thread2 = Thread::new_user_thread(thread_entry);
-    let thread3 = Thread::new_user_thread(thread_entry);
+    let thread1 = Thread::new_user_thread(thread_entry,0);
+    let thread2 = Thread::new_user_thread(thread_entry,0);
+    let thread3 = Thread::new_user_thread(thread_entry,0);
     
     // Add threads to scheduler
     let sched = scheduler::get_scheduler();

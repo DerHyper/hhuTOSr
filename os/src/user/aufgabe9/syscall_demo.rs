@@ -7,7 +7,7 @@ use crate::kernel::threads::scheduler::get_scheduler;
 use crate::kernel::threads::thread::Thread;
 
 pub fn syscall_test() {
-    let thread = Thread::new_user_thread(syscall_test_thread);
+    let thread = Thread::new_user_thread(syscall_test_thread,0);
     let scheduler = get_scheduler();
     scheduler.ready(thread);
     scheduler.schedule();
