@@ -5,3 +5,4 @@ pub mod print;
 pub mod thread_exit;
 pub mod thread_get_id;
 pub mod thread_yield;
+pub mod process_get_id;

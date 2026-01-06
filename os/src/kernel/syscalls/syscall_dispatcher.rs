@@ -17,6 +17,7 @@ use crate::kernel::syscalls::functions::hello::sys_hello_world;
 use crate::kernel::syscalls::functions::get_char::sys_get_char;
 use crate::kernel::syscalls::functions::get_system_time::sys_get_system_time;
 use crate::kernel::syscalls::functions::print::sys_print;
+use crate::kernel::syscalls::functions::process_get_id::sys_process_get_id;
 use crate::kernel::syscalls::functions::thread_exit::sys_thread_exit;
 use crate::kernel::syscalls::functions::thread_get_id::sys_thread_get_id;
 use crate::kernel::syscalls::functions::thread_yield::sys_thread_yield;
@@ -40,6 +41,7 @@ impl SyscallFunctionTable {
                 sys_thread_yield as *const u64,
                 sys_thread_exit as *const u64,
                 sys_thread_get_id as *const u64,
+                sys_process_get_id as *const u64,
                 sys_get_system_time as *const u64,
                 sys_print as *const u64,
                 sys_get_char as *const u64

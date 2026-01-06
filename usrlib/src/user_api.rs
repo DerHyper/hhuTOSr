@@ -19,6 +19,7 @@ pub enum SyscallFunction {
     ThreadYield,
     ThreadExit,
     GetThreadId,
+    GetProcessId,
     GetSystemTime,
     Print,
     GetChar,
@@ -43,6 +44,12 @@ pub fn usr_thread_exit() {
 /// Returns the ID of the current thread
 pub fn usr_thread_get_id() -> usize {
     let ret = syscall0(SyscallFunction::GetThreadId);
+    ret as usize
+}
+
+/// Returns the ID of the current process
+pub fn usr_process_get_id() -> usize {
+    let ret = syscall0(SyscallFunction::GetProcessId);
     ret as usize
 }
 

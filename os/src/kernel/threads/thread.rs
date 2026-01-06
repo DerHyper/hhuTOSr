@@ -296,6 +296,11 @@ impl Thread {
         self.id
     }
 
+    /// Get the ID of the thread.
+    pub fn get_process_id(&self) -> usize {
+        self.process_id
+    }
+
     /// Prepare the stack of a newly created thread in a way that it can be used
     /// to return to the 'kickoff' function with the thread itself as parameter.
     /// The prepared stack is used in 'thread_start' to start the first thread.

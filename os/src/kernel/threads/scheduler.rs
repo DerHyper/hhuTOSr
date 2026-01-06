@@ -78,6 +78,13 @@ impl Scheduler {
         state.active_thread.as_ref().unwrap().get_id()
     }
 
+    /// Get the process ID of the currently active thread.
+    pub fn get_active_pid(&self) -> usize {
+        let state = self.state.lock();
+        
+        state.active_thread.as_ref().unwrap().get_process_id()
+    }
+
     /// Start the scheduler.
     /// This function must only be called once.
     pub fn schedule(&self) {
