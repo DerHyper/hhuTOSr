@@ -199,16 +199,20 @@ impl Thread {
             STACK_SIZE/8) 
         };
 
-        // Map user app to memory
+        // Map user app of process_id to memory
         let mut entry_function: fn() = entry;
         let archive = multiboot::MULTIBOOT_INFO.get().expect("No MULTIBOOT_INFO").get_initrd_archive().expect("No TAR-Archive for the user app was found");
         for entry in archive.entries() {
-            let num_pages = (entry.size() + PAGE_SIZE - 1) / PAGE_SIZE;
+            // Look for file matching process name
             let filename = entry.filename();
-            let str :&str = filename.as_str().unwrap();
-            kprintln!("TAR File found: '{}'",str);
+            let filename_str :&str = filename.as_str().unwrap();
+            kprintln!("TAR File found: '{}'",filename_str);
+            if processes::process::get_app_name(process_id).expect("Thread was started before matching process was created") != filename_str {
+                continue;
+            }
 
             // Save data to physical address
+            let num_pages = (entry.size() + PAGE_SIZE - 1) / PAGE_SIZE;
             let phys_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages).expect("Could not allocate physical memory for user app.") };
             let app_data = entry.data();
             unsafe {
