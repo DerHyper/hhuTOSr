@@ -216,7 +216,7 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     // Map user stack pages
     pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
 
-    return USER_STACK_VIRT_END as *mut u8;
+    return USER_STACK_VIRT_START as *mut u8;
 }
 
 /// Sets up a mapping for a user app.

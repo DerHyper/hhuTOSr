@@ -168,7 +168,7 @@ impl Thread {
         };
 
         // Set the stack pointer to the top of the stack
-        let stack_ptr = ptr::from_ref(&kernel_stack[kernel_stack.capacity() - 1]) as usize;
+        let stack_ptr = USER_STACK_VIRT_END;
 
         // Create a new thread object
         let mut thread = Box::new(
@@ -230,7 +230,7 @@ impl Thread {
 
 
         // Set the stack pointer to the top of the stack
-        let stack_ptr = ptr::from_ref(&user_stack[user_stack.capacity() - 1]) as usize;
+        let stack_ptr = USER_STACK_VIRT_END;
 
         // Create a new thread object
         let mut thread = Box::new(
