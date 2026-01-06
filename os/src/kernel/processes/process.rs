@@ -8,8 +8,8 @@ static NEXT_PID: AtomicUsize = AtomicUsize::new(1);
 
 #[derive(Debug)]
 pub struct Process {
-    id: usize,
-    name: String
+    pub id: usize,
+    pub name: String
 }
 
 impl Process {

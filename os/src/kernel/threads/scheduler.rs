@@ -8,17 +8,19 @@
    ╚═════════════════════════════════════════════════════════════════════════╝
 */
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::Display;
 use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
-use crate::kernel::threads::idle_thread::idle_thread;
+use crate::kernel::processes::process;
+use crate::kernel::threads::idle_thread::{IDLE_PROCESS_ID, idle_thread};
 use crate::kernel::threads::thread;
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
-use crate::kernel::{allocator, cpu};
+use crate::kernel::{allocator, cpu, processes};
 
 /// Global scheduler instance
 static SCHEDULER: Once<Scheduler> = Once::new();
@@ -61,7 +63,7 @@ impl Scheduler {
     /// and an idle thread as the active thread.
     pub fn new() -> Self {
         let state = SchedulerState {
-            active_thread: Some(Thread::new_kernel_thread(idle_thread)),
+            active_thread: Some(Thread::new_kernel_thread(idle_thread, IDLE_PROCESS_ID)),
             ready_queue: LinkedQueue::new(),
             initialized: false,
         };
@@ -112,6 +114,9 @@ impl Scheduler {
             // while `state.active_thread` contains the next one.
             Thread::switch(current.as_mut(), state.active_thread.as_mut().unwrap().as_mut());
         }
+
+        // Remoce current threads process from Processes
+        processes::process::remove_process(current.get_id());
     }
 
     /// Yield the CPU and switch to the next thread in the ready queue.
@@ -206,7 +211,7 @@ impl Scheduler {
         let mut next_thread;
         match next {
             Some(thread) => next_thread = thread,
-            None => next_thread = Thread::new_kernel_thread(idle_thread)
+            None => next_thread = Thread::new_kernel_thread(idle_thread, IDLE_PROCESS_ID)
         }
 
         // Switch to next Thread in Ready Queue
@@ -217,6 +222,22 @@ impl Scheduler {
         // Enable Interrupts
         cpu::enable_int_nested(interrupts_enabled);
     }
+
+    /// Creates a new Process
+    pub fn spawn_process(&self, process_name :&str)
+    {
+        // Create new Process
+        let new_process = process::Process::new(process_name);
+        let new_process_id = new_process.id.clone();
+        process::add_process(new_process);
+
+        // Init Thread
+        fn fallback_fn() { panic!("Thread fallback function was called instead of user app.") }
+        let new_thread = Thread::new_user_thread(fallback_fn , new_process_id);
+        get_scheduler().ready(new_thread);
+    }
+
+    
 }
 
 impl Display for Scheduler {

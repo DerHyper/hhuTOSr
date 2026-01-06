@@ -15,7 +15,7 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::FRAME_ALLOCATOR;
-use crate::kernel::{allocator, cpu, multiboot};
+use crate::kernel::{allocator, cpu, multiboot, processes};
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
 use usrlib::user_api::usr_thread_exit;
 use crate::kernel::threads::scheduler::get_scheduler;
@@ -143,11 +143,12 @@ pub struct Thread {
     stack_ptr: usize, // Pointer on the stack to the saved context
     entry: fn(),
     page_table: &'static mut PageTable,
+    process_id: usize,
 }
 
 impl Thread {
     /// Create a new thread with the given entry function.
-    pub fn new_kernel_thread(entry: fn()) -> Box<Thread> {
+    pub fn new_kernel_thread(entry: fn(), process_id: usize) -> Box<Thread> {
         // Allocate memory for the kernel stack and initialize it to zero
         let mut kernel_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
         for _ in 0..kernel_stack.capacity() {
@@ -171,7 +172,7 @@ impl Thread {
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table }
+            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -179,7 +180,7 @@ impl Thread {
         thread
     }
 
-    pub fn new_user_thread(entry: fn()) -> Box<Thread> {
+    pub fn new_user_thread(entry: fn(), process_id: usize) -> Box<Thread> {
         // Allocate memory for the kernel stack and initialize it to zero
         let mut kernel_stack = Vec::<u64>::with_capacity(STACK_SIZE / 8);
         for _ in 0..kernel_stack.capacity() {
@@ -206,7 +207,7 @@ impl Thread {
             let filename = entry.filename();
             let str :&str = filename.as_str().unwrap();
             kprintln!("TAR File found: '{}'",str);
-            
+
             // Save data to physical address
             let phys_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages).expect("Could not allocate physical memory for user app.") };
             let app_data = entry.data();
@@ -229,7 +230,7 @@ impl Thread {
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry : entry_function, page_table }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry : entry_function, page_table, process_id }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
