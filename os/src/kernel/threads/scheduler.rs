@@ -15,6 +15,7 @@ use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
+use crate::consts::USER_CODE_VIRT_START;
 use crate::kernel::processes::process;
 use crate::kernel::threads::idle_thread::{IDLE_PROCESS_ID, idle_thread};
 use crate::kernel::threads::thread;
@@ -123,7 +124,7 @@ impl Scheduler {
         }
 
         // Remoce current threads process from Processes
-        processes::process::remove_process(current.get_id());
+        processes::process::remove_process(current.get_process_id());
     }
 
     /// Yield the CPU and switch to the next thread in the ready queue.
