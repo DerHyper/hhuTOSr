@@ -13,7 +13,7 @@ use core::{fmt, ptr};
 use core::arch::naked_asm;
 use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
-use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
+use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::FRAME_ALLOCATOR;
 use crate::kernel::{allocator, cpu, multiboot, processes};
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
@@ -199,42 +199,65 @@ impl Thread {
             STACK_SIZE/8) 
         };
 
-        // Map user app of process_id to memory
-        let mut entry_function: fn() = entry;
-        let archive = multiboot::MULTIBOOT_INFO.get().expect("No MULTIBOOT_INFO").get_initrd_archive().expect("No TAR-Archive for the user app was found");
-        for entry in archive.entries() {
-            // Look for file matching process name
-            let filename = entry.filename();
-            let filename_str :&str = filename.as_str().unwrap();
-            kprintln!("TAR File found: '{}'",filename_str);
-            if processes::process::get_app_name(process_id).expect("Thread was started before matching process was created") != filename_str {
-                continue;
-            }
-
-            // Save data to physical address
-            let num_pages = (entry.size() + PAGE_SIZE - 1) / PAGE_SIZE;
-            let phys_addr = unsafe { FRAME_ALLOCATOR.lock().alloc_block(num_pages).expect("Could not allocate physical memory for user app.") };
-            let app_data = entry.data();
-            unsafe {
-                core::ptr::copy_nonoverlapping(
-                    app_data.as_ptr(),
-                    phys_addr.as_mut_ptr::<u8>(),
-                    app_data.len(),
-                );
-            }
-
-            // Map user app
-            let virt_addr = unsafe { map_user_app(page_table, num_pages) };
-            entry_function = unsafe { core::mem::transmute(virt_addr) };
-        }
-
-
         // Set the stack pointer to the top of the stack
         let stack_ptr = USER_STACK_VIRT_END;
 
+        // Get user app from TAR-archive
+        let app_name = processes::process::get_app_name(process_id)
+            .expect("Process has no app name");
+
+        let archive = multiboot::MULTIBOOT_INFO
+            .get()
+            .expect("MULTIBOOT_INFO not loaded")
+            .get_initrd_archive()
+            .expect("No module found");
+        let mut app_data: Option<&[u8]> = None;
+
+        for entry in archive.entries() {
+            let filename = entry.filename();
+            let filename_str :&str = filename.as_str().unwrap();
+            if filename_str == app_name {
+                app_data = Some(entry.data());
+                break;
+            }
+        }
+
+        let app_data = app_data.expect("Application not found in initrd");
+
+        // Allocate physical memory for user app of process_id to memory
+        let app_size = app_data.len();
+        let num_pages = (app_size + PAGE_SIZE - 1) / PAGE_SIZE;
+
+        // allocate physical memory
+        let phys_start = unsafe {
+            FRAME_ALLOCATOR
+                .lock()
+                .alloc_block(num_pages)
+                .expect("Failed to allocate app frames")
+        };
+
+        // Copy user app to physical memory
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                app_data.as_ptr(),
+                phys_start.as_mut_ptr(),
+                app_size,
+            );
+        }
+
+        // Map physical memory on page_table
+        unsafe {
+            map_user_app(page_table, num_pages);
+        }
+
+        // Set entry method 
+        let entry: fn() = unsafe {
+            core::mem::transmute(USER_CODE_VIRT_START)
+        };
+
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry : entry_function, page_table, process_id }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -247,24 +270,6 @@ impl Thread {
     /// This function is only once by the scheduler.
     /// The scheduler does further thread switching via `switch()`.
     pub fn start(&mut self) {
-
-        // Test (Manuel page walk thru pml4). TODO: Remove if Page Faults are gone
-        // let addr =  0x4000_000F_FFF8 as usize; // currently not working address
-        // // let addr =  USER_STACK_VIRT_END - 0xFFF as usize; // Lower Address that should work
-        // let pml4e = self.page_table.entries[(addr >> 39 & 0x1FF) as usize];
-        // assert!(pml4e.get_flags().contains(PageFlags::PRESENT));
-
-        // let pdpt = unsafe { pml4e.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        // let pdpte = pdpt.entries[(addr >> 30 & 0x1FF) as usize];
-        // assert!(pdpte.get_flags().contains(PageFlags::PRESENT));
-
-        // let pd = unsafe { pdpte.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        // let pde = pd.entries[(addr >> 21 & 0x1FF) as usize];
-        // assert!(pde.get_flags().contains(PageFlags::PRESENT));
-
-        // let pt = unsafe { pde.get_addr().as_mut_ptr::<PageTable>().as_mut().unwrap() };
-        // let pte = pt.entries[(addr >> 12 & 0x1FF) as usize];
-        // assert!(pte.get_flags().contains(PageFlags::PRESENT), "pte.get_flags() was not PRESENT at {}", pte.get_addr().raw());
 
         unsafe {
             write_cr3(self.page_table);
@@ -282,6 +287,10 @@ impl Thread {
             let current = &mut *current;
             let next = &*next;
             let next_stack_end = Thread::get_top_of_stack(&next.kernel_stack);
+
+            unsafe {
+                write_cr3(next.page_table);
+            }
 
             thread_switch(
                 &mut current.stack_ptr, 
@@ -348,8 +357,8 @@ impl Thread {
         // Interrupt Flag | Reserved (Always 1)
         const RFLAGS: u64 = 0b10_0000_0010; 
 
-        // Usermode start address, should be virt_addr of 
-        let rip = Thread::kickoff_user_thread as u64;
+        // Usermode start address
+        let rip = USER_CODE_VIRT_START as u64;
 
         // User stack top
         let rsp = Thread::get_top_of_stack(&self.user_stack) as u64;
