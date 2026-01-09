@@ -3,7 +3,7 @@ use crate::kernel::{processes, threads::{scheduler::get_scheduler, thread::Threa
 /// Starts a new user thread
 pub fn run() {
     let scheduler = get_scheduler();
-    let thread_name = "test_thread";
+    let thread_name = "hello";
     scheduler.spawn_process(thread_name);
     scheduler.schedule();
 }
