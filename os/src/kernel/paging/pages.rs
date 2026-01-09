@@ -90,7 +90,7 @@ impl PageTable {
     /// (virt_addr == phys_addr). Otherwise, new physical frames will be allocated
     /// for the mapping, using the frame allocator.
     /// returns how man pages where allocated
-    fn map(&mut self, virt_addr: u64, num_pages: usize, kernel: bool) -> usize {
+    fn map(&mut self, virt_addr: u64, num_pages: usize, phys_addr: Option<PhysAddr>, kernel: bool) -> usize {
         let mut num_mapped_pages = 0;
         for current_page_num in 0..num_pages {
 
@@ -123,14 +123,22 @@ impl PageTable {
                 continue;
             }
 
-            // Alloc new physical frames
-            let frame = unsafe { 
-                FRAME_ALLOCATOR
-                .lock()
-                .alloc_block(1)
-                .expect("Failed to allocate new physical user frames")
-            };
-            pt_entry.set(frame, PageFlags::user_flags());
+            if phys_addr.is_some() {
+                // Use existing physical frames
+                let current_phys_addr = phys_addr.unwrap() + (current_page_num*PAGE_SIZE);
+                pt.entries[pt_index as usize].set(current_phys_addr, PageFlags::user_flags());
+            } else {
+                // Alloc new physical frames
+                let frame = unsafe { 
+                    FRAME_ALLOCATOR
+                    .lock()
+                    .alloc_block(1)
+                    .expect("Failed to allocate new physical user frames")
+                };
+
+                pt_entry.set(frame, PageFlags::user_flags());
+            }
+            
             
             num_mapped_pages += 1;
             continue;
@@ -212,7 +220,7 @@ pub fn init_kernel_tables() -> &'static mut PageTable {
                 .as_mut()
                 .unwrap();
 
-        pml4.map(0, num_pages, true);
+        pml4.map(0, num_pages, None, true);
         pml4
     }
 }
@@ -225,17 +233,17 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
     let num_pages = (STACK_SIZE + PAGE_SIZE - 1) / PAGE_SIZE; 
 
     // Map user stack pages
-    pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
+    pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, None, false);
 
     return USER_STACK_VIRT_START as *mut u8;
 }
 
 /// Sets up a mapping for a user app.
 /// Returns the apps virtual address
-pub unsafe fn map_user_app(pml4_table: &mut PageTable, num_pages: usize) -> *mut u8 {
+pub unsafe fn map_user_app(pml4_table: &mut PageTable, num_pages: usize, phys_addr: PhysAddr) -> *mut u8 {
 
     // Map user app
-    pml4_table.map(USER_CODE_VIRT_START as u64, num_pages, false);
+    pml4_table.map(USER_CODE_VIRT_START as u64, num_pages, Some(phys_addr), false);
     return USER_CODE_VIRT_START as *mut u8;
 }
 

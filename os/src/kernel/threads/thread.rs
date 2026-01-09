@@ -247,7 +247,7 @@ impl Thread {
 
         // Map physical memory on page_table
         unsafe {
-            map_user_app(page_table, num_pages);
+            map_user_app(page_table, num_pages, phys_start);
         }
 
         // Set entry method 
@@ -367,15 +367,19 @@ impl Thread {
         let rdi = self as *const Thread as u64;
         
         // Interrupt stack frame Layout expected by thread_user_start.
-        let mut stack_frame: [u64; 6] = [0; 6];
-        stack_frame[0] = rdi; // Self stack
-        stack_frame[1] = rip; // kickoff_user_thread
-        stack_frame[2] = CS;
-        stack_frame[3] = RFLAGS;
-        stack_frame[4] = rsp; // user stack
-        stack_frame[5] = SS;
+        let user_stack_top = Thread::get_top_of_stack(&self.user_stack) as *mut u64;
+        let mut stack_frame = unsafe { user_stack_top.offset(-6)};
 
-        unsafe {thread_user_start(stack_frame.as_ptr() as usize)};
+        unsafe{  
+            *stack_frame = rdi; // Self stack
+            *stack_frame.add(1) = rip; // kickoff_user_thread
+            *stack_frame.add(2) = CS;
+            *stack_frame.add(3) = RFLAGS;
+            *stack_frame.add(4) = rsp; // user stack
+            *stack_frame.add(5) = SS;
+        }
+
+        unsafe {thread_user_start(stack_frame as usize)};
 
         // thread_user_start will not be exited 
 
