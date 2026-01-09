@@ -107,13 +107,13 @@ impl PageTable {
 
             // Get to level 1
             let pml4_entry = &mut self.entries[pml4_index];
-            let pdpt = get_or_create_page_table(pml4_entry, &mut num_mapped_pages);
+            let pdpt = get_or_create_page_table(pml4_entry, &mut num_mapped_pages, kernel);
 
             let pdpt_entry = &mut pdpt.entries[pdpt_index];
-            let pd = get_or_create_page_table(pdpt_entry, &mut num_mapped_pages);
+            let pd = get_or_create_page_table(pdpt_entry, &mut num_mapped_pages, kernel);
 
             let pd_entry = &mut pd.entries[pd_index];
-            let pt = get_or_create_page_table(pd_entry, &mut num_mapped_pages);
+            let pt = get_or_create_page_table(pd_entry, &mut num_mapped_pages, kernel);
 
             let pt_entry = &mut pt.entries[pt_index];
 
@@ -142,18 +142,29 @@ impl PageTable {
 
 /// Returns the PageTable from a PageTableEntry.
 /// Allocs a page frames in not already present
-fn get_or_create_page_table(entry: &mut PageTableEntry, allocated_pages: &mut usize) -> &'static mut PageTable {
+fn get_or_create_page_table(entry: &mut PageTableEntry, allocated_pages: &mut usize, kernel: bool) -> &'static mut PageTable {
     // Alloc page frames in not already present
-    let flags = entry.get_flags();
-    if !flags.contains(PageFlags::PRESENT) {
+    if !entry.get_flags().contains(PageFlags::PRESENT) {
         let frame_addr = unsafe { 
             FRAME_ALLOCATOR
             .lock()
             .alloc_block(1)
             .expect("Failed to allocate page table") 
         };
-        entry.set(frame_addr, PageFlags::kernel_flags());
+        
+        // Set kernel/user flag
+        if kernel {
+            entry.set(frame_addr, PageFlags::kernel_flags());
+        } else {
+            entry.set(frame_addr, PageFlags::user_flags());
+        };
+        
         *allocated_pages += 1;
+    
+    } else if !kernel {
+        // Propagate USER flag if table already exists
+        let new_flags = entry.get_flags() | PageFlags::USER;
+        entry.set_flags(new_flags);
     }
     
     // get next page Table
