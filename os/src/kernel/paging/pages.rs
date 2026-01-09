@@ -223,9 +223,8 @@ pub unsafe fn map_user_stack(pml4_table: &mut PageTable) -> *mut u8 {
 /// Returns the apps virtual address
 pub unsafe fn map_user_app(pml4_table: &mut PageTable, num_pages: usize) -> *mut u8 {
 
-    // Map user stack pages
-    pml4_table.map(USER_STACK_VIRT_START as u64, num_pages, false);
-
+    // Map user app
+    pml4_table.map(USER_CODE_VIRT_START as u64, num_pages, false);
     return USER_CODE_VIRT_START as *mut u8;
 }
 
