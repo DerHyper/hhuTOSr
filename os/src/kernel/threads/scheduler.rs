@@ -239,10 +239,14 @@ impl Scheduler {
         let new_process_id = new_process.id.clone();
         process::add_process(new_process);
 
+        // Create user thread
+        let entry: fn() = unsafe {
+            core::mem::transmute(USER_CODE_VIRT_START)
+        };
+
         // Init Thread
-        fn fallback_fn() { panic!("Thread fallback function was called instead of user app.") }
-        let new_thread = Thread::new_user_thread(fallback_fn , new_process_id);
-        get_scheduler().ready(new_thread);
+        let new_thread = Thread::new_user_thread(entry , new_process_id);
+        self.ready(new_thread);
     }
 
     
