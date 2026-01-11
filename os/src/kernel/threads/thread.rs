@@ -216,6 +216,7 @@ impl Thread {
         for entry in archive.entries() {
             let filename = entry.filename();
             let filename_str :&str = filename.as_str().unwrap();
+            kprintln!("Found file: {}", filename_str);
             if filename_str == app_name {
                 app_data = Some(entry.data());
                 break;
