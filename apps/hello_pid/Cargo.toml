@@ -1,0 +1,13 @@
+[package]
+edition = "2024"
+name = "hello_pid"
+version = "0.1.0"
+authors = ["Max R. <maric118@hhu.de>"]
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/hello_pid.rs"
+
+[dependencies]
+usrlib = { path = "../../usrlib" }
+itoa = { version = "1", default-features = false }

@@ -60,6 +60,7 @@ use crate::user::aufgabe10::PfListTest;
 use crate::user::aufgabe11::page_table_demo;
 use crate::user::aufgabe11::page_table_thread_demo;
 use crate::user::aufgabe12::user_app_demo;
+use crate::user::aufgabe12::user_app_demo_pid;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -214,7 +215,8 @@ fn show_startscreen(){
     // PfListTest::run();
     // page_table_demo::run();
     // page_table_thread_demo::run();
-    user_app_demo::run();
+    // user_app_demo::run();
+    user_app_demo_pid::run();
 
     // print_startscreen();
 

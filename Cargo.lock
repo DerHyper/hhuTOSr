@@ -78,6 +78,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hello_pid"
+version = "0.1.0"
+dependencies = [
+ "itoa",
+ "usrlib",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
