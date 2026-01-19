@@ -2,6 +2,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::{self, Vec};
 use core::sync::atomic::AtomicUsize;
+use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_START};
 use crate::kernel::processes::vma::{self, VMA};
 use crate::library::mutex::Mutex;
 
@@ -21,8 +22,15 @@ impl Process {
         
         // VMAs
         let mut vmas = Vec::new();
-        let vma = VMA::new(0, 0, vma::VmaType::Code); // TODO
-        vmas.push(vma);
+        let vma_code_start = USER_CODE_VIRT_START as u64;
+        let vma_code_end = USER_CODE_VIRT_START as u64;
+        let vma_code = VMA::new( vma_code_start, vma_code_end, vma::VmaType::Code);
+        vmas.push(vma_code);
+
+        let vma_stack_start = (USER_STACK_VIRT_START + STACK_SIZE - PAGE_SIZE) as u64;
+        let vma_stack_end = (USER_STACK_VIRT_START + STACK_SIZE) as u64;
+        let vma_stack = VMA::new(vma_stack_start, vma_stack_end, vma::VmaType::Stack);
+        vmas.push(vma_stack);
 
         Process { id: pid, name: String::from(name), vmas }
     }

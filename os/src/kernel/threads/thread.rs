@@ -144,6 +144,7 @@ pub struct Thread {
     entry: fn(),
     page_table: &'static mut PageTable,
     process_id: usize,
+    user_app_size: Option<usize> // Size of the user_app
 }
 
 impl Thread {
@@ -170,9 +171,11 @@ impl Thread {
         // Set the stack pointer to the top of the stack
         let stack_ptr = USER_STACK_VIRT_END;
 
+        let user_app_size: Option<_> = None;
+
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id }
+            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id, user_app_size }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -256,9 +259,12 @@ impl Thread {
             core::mem::transmute(USER_CODE_VIRT_START)
         };
 
+        // Size
+        let user_app_size: Option<_> = Some(app_size);
+
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id, user_app_size }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
