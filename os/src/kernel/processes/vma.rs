@@ -22,7 +22,7 @@ impl VMA {
 
     /// Check if this VMA overlaps with another one.
     pub fn overlaps(&self, other: &VMA) -> bool {
-        self.end > other.start || other.end > self.start
+        (self.end > other.start && self.end < other.end) || (other.end > self.start && other.end < self.end)
     }
 }
 
