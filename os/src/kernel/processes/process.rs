@@ -2,7 +2,7 @@ use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::{self, Vec};
 use core::sync::atomic::AtomicUsize;
-use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_START};
+use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::processes::vma::{self, VMA};
 use crate::library::mutex::Mutex;
 
@@ -22,15 +22,6 @@ impl Process {
         
         // VMAs
         let mut vmas = Vec::new();
-        let vma_code_start = USER_CODE_VIRT_START as u64;
-        let vma_code_end = USER_CODE_VIRT_START as u64;
-        let vma_code = VMA::new( vma_code_start, vma_code_end, vma::VmaType::Code);
-        vmas.push(vma_code);
-
-        let vma_stack_start = (USER_STACK_VIRT_START + STACK_SIZE - PAGE_SIZE) as u64;
-        let vma_stack_end = (USER_STACK_VIRT_START + STACK_SIZE) as u64;
-        let vma_stack = VMA::new(vma_stack_start, vma_stack_end, vma::VmaType::Stack);
-        vmas.push(vma_stack);
 
         Process { id: pid, name: String::from(name), vmas }
     }
@@ -51,6 +42,17 @@ impl Process {
 
         self.vmas.push(vma);
         return Ok(());
+    }
+
+    pub fn init_vmas(&mut self, vma_code_end_address: u64) {
+        let vma_code_start = USER_CODE_VIRT_START as u64;
+        let vma_code = VMA::new( vma_code_start, vma_code_end_address, vma::VmaType::Code);
+        self.vmas.push(vma_code);
+
+        let vma_stack_start = (USER_STACK_VIRT_END - PAGE_SIZE) as u64;
+        let vma_stack_end = USER_STACK_VIRT_END as u64;
+        let vma_stack = VMA::new(vma_stack_start, vma_stack_end, vma::VmaType::Stack);
+        self.vmas.push(vma_stack);
     }
 }
 
@@ -79,4 +81,11 @@ pub fn add_vma(process_id: usize, vma: VMA) -> Result<(), &'static str> {
     } else {
         return Err("Process not found");   
     }
+}
+
+pub fn init_vmas(process_id: usize, vma_code_end_address: u64) {
+    let mut processes = PROCESSES.lock();
+    let process = processes.get_mut(&process_id).expect("Found no process to init vmas");
+
+    process.init_vmas(vma_code_end_address);
 }

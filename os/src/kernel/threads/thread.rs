@@ -144,7 +144,7 @@ pub struct Thread {
     entry: fn(),
     page_table: &'static mut PageTable,
     process_id: usize,
-    user_app_size: Option<usize> // Size of the user_app
+    pub user_app_size: Option<usize> // Size of the user_app
 }
 
 impl Thread {

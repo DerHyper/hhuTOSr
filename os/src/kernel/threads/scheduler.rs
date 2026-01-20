@@ -246,6 +246,11 @@ impl Scheduler {
 
         // Init Thread
         let new_thread = Thread::new_user_thread(entry , new_process_id);
+
+        // Init Process VMAs
+        let vma_code_end_address = (USER_CODE_VIRT_START + new_thread.user_app_size.expect("No user_app_size was found")) as u64;
+        process::init_vmas(new_process_id, vma_code_end_address);
+
         self.ready(new_thread);
     }
 
