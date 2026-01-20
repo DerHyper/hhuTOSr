@@ -15,7 +15,7 @@ use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
-use crate::consts::USER_CODE_VIRT_START;
+use crate::consts::{PAGE_SIZE, USER_CODE_VIRT_START};
 use crate::kernel::processes::process;
 use crate::kernel::threads::idle_thread::{IDLE_PROCESS_ID, idle_thread};
 use crate::kernel::threads::thread;
@@ -248,7 +248,8 @@ impl Scheduler {
         let new_thread = Thread::new_user_thread(entry , new_process_id);
 
         // Init Process VMAs
-        let vma_code_end_address = (USER_CODE_VIRT_START + new_thread.user_app_size.expect("No user_app_size was found")) as u64;
+        let aligned_app_size = ((new_thread.user_app_size.expect("No user_app_size was found") + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+        let vma_code_end_address = (USER_CODE_VIRT_START + aligned_app_size) as u64;
         process::init_vmas(new_process_id, vma_code_end_address);
 
         self.ready(new_thread);
