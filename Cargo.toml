@@ -4,5 +4,6 @@ resolver = "2"
 members = [
     "os",
     "apps/hello",
-    "apps/hello_pid"
+    "apps/hello_pid",
+    "apps/dump_vmas_app"
 ]

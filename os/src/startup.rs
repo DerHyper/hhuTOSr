@@ -61,6 +61,7 @@ use crate::user::aufgabe11::page_table_demo;
 use crate::user::aufgabe11::page_table_thread_demo;
 use crate::user::aufgabe12::user_app_demo;
 use crate::user::aufgabe12::user_app_demo_pid;
+use crate::user::aufgabe13::user_app_dump_vmas;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -216,7 +217,8 @@ fn show_startscreen(){
     // page_table_demo::run();
     // page_table_thread_demo::run();
     // user_app_demo::run();
-    user_app_demo_pid::run();
+    // user_app_demo_pid::run();
+    user_app_dump_vmas::run();
 
     // print_startscreen();
 
