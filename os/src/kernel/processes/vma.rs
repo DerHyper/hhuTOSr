@@ -1,4 +1,4 @@
-use core::fmt;
+use core::fmt::{self, Display, Formatter};
 
 #[derive(Debug)]
 pub enum VmaType {
@@ -7,11 +7,21 @@ pub enum VmaType {
     Stack,
 }
 
+impl Display for VmaType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Code => write!(f, "Code"),
+            Self::Heap => write!(f, "Heap"),
+            Self::Stack => write!(f, "Stack")
+        }
+    }
+}
+
 /// Virtual Memory Area (VMA)
 pub struct VMA {
-    start: u64,
-    end: u64,
-    typ: VmaType,
+    pub start: u64,
+    pub end: u64,
+    pub typ: VmaType,
 }
 
 impl VMA {

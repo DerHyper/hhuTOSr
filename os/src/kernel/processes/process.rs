@@ -54,6 +54,14 @@ impl Process {
         let vma_stack = VMA::new(vma_stack_start, vma_stack_end, vma::VmaType::Stack);
         self.vmas.push(vma_stack);
     }
+
+    fn dump_vmas(&self) {
+        kprintln!("VMAs of process '{}'",self.name);
+
+        for vma in self.vmas.iter() {
+            kprintln!("   type: {}, start: {:#x}, end: {:#x}", vma.typ, vma.start, vma.end)
+        }
+    }
 }
 
 pub fn add_process(process: Process) {
@@ -88,4 +96,11 @@ pub fn init_vmas(process_id: usize, vma_code_end_address: u64) {
     let process = processes.get_mut(&process_id).expect("Found no process to init vmas");
 
     process.init_vmas(vma_code_end_address);
+}
+
+pub fn dump_vmas(process_id: usize) {
+    let processes = PROCESSES.lock();
+    let process = processes.get(&process_id).expect("Found no process to dump vmas");
+
+    process.dump_vmas();
 }

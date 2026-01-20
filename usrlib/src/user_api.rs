@@ -20,6 +20,7 @@ pub enum SyscallFunction {
     ThreadExit,
     GetThreadId,
     GetProcessId,
+    DumpProcessVMAs,
     GetSystemTime,
     Print,
     GetChar,
@@ -51,6 +52,11 @@ pub fn usr_thread_get_id() -> usize {
 pub fn usr_process_get_id() -> usize {
     let ret = syscall0(SyscallFunction::GetProcessId);
     ret as usize
+}
+
+/// Returns the ID of the current process
+pub fn usr_dump_vmas() {
+    syscall0(SyscallFunction::DumpProcessVMAs);
 }
 
 /// Returns the system time in ms 
