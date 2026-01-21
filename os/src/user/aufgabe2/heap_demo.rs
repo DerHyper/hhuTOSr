@@ -1,7 +1,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 
-use crate::kernel::allocator;
+use usrlib::allocator;
 use crate::keyboard;
 use crate::cga;
 use crate::library::input;

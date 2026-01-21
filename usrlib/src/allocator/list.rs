@@ -8,11 +8,9 @@
  *  ╚═════════════════════════════════════════════════════════════════════════╝
  */
 use super::{align_up, Locked};
-use alloc::alloc::{GlobalAlloc, Layout};
+use core::alloc::{GlobalAlloc, Layout};
 use core::{mem, ptr};
-use crate::devices::kprint;
-use crate::kernel::allocator::bump::BumpAllocator;
-use crate::kernel::cpu as cpu;
+use crate::allocator::bump::BumpAllocator;
 
 /// Header of a free block in the list allocator.
 struct ListNode {

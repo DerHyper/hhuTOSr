@@ -37,8 +37,9 @@ use devices::cga_print; // used to import code needed by println!
 use devices::keyboard; // shortcut for keyboard
 
 use kernel::cpu;
-use kernel::allocator;
 use kernel::interrupts::intdispatcher;
+
+use usrlib::allocator;
 
 use devices::pci::get_pci_bus;
 use crate::devices::lfb::init_lfb;

@@ -1,3 +1,5 @@
+use core::alloc;
+
 /* ╔═════════════════════════════════════════════════════════════════════════╗
    ║ Module: allocator                                                       ║
    ╟─────────────────────────────────────────────────────────────────────────╢
@@ -17,11 +19,10 @@
    ║         https://os.phil-opp.com/allocator-designs/                      ║
    ╚═════════════════════════════════════════════════════════════════════════╝
 */
-use alloc::alloc::Layout;
+use core::alloc::Layout;
 use crate::consts::PAGE_FRAME_SIZE;
-use crate::kernel::allocator::bump::BumpAllocator;
-use crate::kernel::allocator::list::LinkedListAllocator;
-use crate::kernel::paging::frames;
+use crate::allocator::bump::BumpAllocator;
+use crate::allocator::list::LinkedListAllocator;
 
 pub mod bump;
 pub mod list;
@@ -37,8 +38,9 @@ static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator:
 /// Initialize the heap allocator.
 pub fn init() {
     unsafe {
-        let heap_addr = frames::FRAME_ALLOCATOR.lock().alloc_block(HEAP_SIZE/PAGE_FRAME_SIZE);
-        ALLOCATOR.lock().init(heap_addr.unwrap().raw() as usize, (heap_addr.unwrap().raw() as usize + HEAP_SIZE));
+        // TODO, fix with syscall
+        //let heap_addr = frames::FRAME_ALLOCATOR.lock().alloc_block(HEAP_SIZE/PAGE_FRAME_SIZE); 
+        //ALLOCATOR.lock().init(heap_addr.unwrap().raw() as usize, (heap_addr.unwrap().raw() as usize + HEAP_SIZE));
     }
 }
 

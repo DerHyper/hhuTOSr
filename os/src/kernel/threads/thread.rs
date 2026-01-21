@@ -15,9 +15,10 @@ use core::fmt::Display;
 use core::sync::atomic::AtomicUsize;
 use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::FRAME_ALLOCATOR;
-use crate::kernel::{allocator, cpu, multiboot, processes};
+use crate::kernel::{cpu, multiboot, processes};
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
 use usrlib::user_api::usr_thread_exit;
+use usrlib::allocator;
 use crate::kernel::threads::scheduler::get_scheduler;
 
 unsafe extern "C" {

@@ -15,13 +15,14 @@ use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
+use usrlib::allocator;
 use crate::consts::{PAGE_SIZE, USER_CODE_VIRT_START};
 use crate::kernel::processes::process;
 use crate::kernel::threads::idle_thread::{IDLE_PROCESS_ID, idle_thread};
 use crate::kernel::threads::thread;
 use crate::kernel::threads::thread::Thread;
 use crate::library::queue::LinkedQueue;
-use crate::kernel::{allocator, cpu, processes};
+use crate::kernel::{cpu, processes};
 
 /// Global scheduler instance
 static SCHEDULER: Once<Scheduler> = Once::new();

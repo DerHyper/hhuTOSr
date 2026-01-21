@@ -9,7 +9,7 @@
  *   ╚═════════════════════════════════════════════════════════════════════════╝
  */
 use super::{align_up, Locked};
-use alloc::alloc::{GlobalAlloc, Layout};
+use core::alloc::{GlobalAlloc, Layout};
 use core::ptr;
 
 /// A simple bump allocator that allocates memory in a linear fashion.
