@@ -42,6 +42,8 @@ use kernel::interrupts::intdispatcher;
 use usrlib::allocator;
 
 use devices::pci::get_pci_bus;
+use crate::consts::HEAP_SIZE;
+use crate::consts::PAGE_FRAME_SIZE;
 use crate::devices::lfb::init_lfb;
 use crate::devices::pci::Command;
 use crate::devices::pit;
@@ -111,7 +113,9 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
     multiboot::MULTIBOOT_INFO.call_once(|| *multiboot_info);
     kprintln!("Initializing physical memory allocator");
     multiboot::MULTIBOOT_INFO.get().unwrap().init_phys_memory_allocator();
-    allocator::init(); // Init memory management
+
+    let heap_addr = unsafe { frames::FRAME_ALLOCATOR.lock().alloc_block(HEAP_SIZE/PAGE_FRAME_SIZE).unwrap().raw() } as usize;
+    allocator::init(heap_addr, HEAP_SIZE); // Init memory management
     cga::CGA.lock().clear(); // Bildschirm loeschen
     idt::get_idt().load(); // Load Interrupt Descriptor Table
     pic::PIC.lock().init(); // Init Programmable Interrupt Controller

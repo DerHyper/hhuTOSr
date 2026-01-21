@@ -35,7 +35,6 @@ fn demo_alloc_box(cur_n: usize, max_n: usize) {
     println!("Heap Demo {}/{}: Allocate 2 Structs using Box::new", cur_n, max_n);
     println!("=================================================\n");
 
-    allocator::init();
     allocator::dump_free_list();
 
     struct Test {

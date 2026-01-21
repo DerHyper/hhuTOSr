@@ -36,11 +36,10 @@ const HEAP_SIZE: usize = 1024 * 1024 * 8; // 8 MiB heap size
 static ALLOCATOR: Locked<LinkedListAllocator> = Locked::new(LinkedListAllocator::empty());
 
 /// Initialize the heap allocator.
-pub fn init() {
+pub fn init(heap_start: usize, heap_size: usize) {
     unsafe {
         // TODO, fix with syscall
-        //let heap_addr = frames::FRAME_ALLOCATOR.lock().alloc_block(HEAP_SIZE/PAGE_FRAME_SIZE); 
-        //ALLOCATOR.lock().init(heap_addr.unwrap().raw() as usize, (heap_addr.unwrap().raw() as usize + HEAP_SIZE));
+        ALLOCATOR.lock().init(heap_start, heap_start+heap_size);
     }
 }
 
