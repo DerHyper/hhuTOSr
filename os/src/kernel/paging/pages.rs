@@ -248,6 +248,14 @@ pub unsafe fn map_user_app(pml4_table: &mut PageTable, num_pages: usize, phys_ad
     return USER_CODE_VIRT_START as *mut u8;
 }
 
+/// Sets up a mapping for a user heap.
+pub unsafe fn map_user_heap(pml4_table: &mut PageTable, user_heap_start: u64, user_heap_size: usize) {
+
+    let num_pages =  (user_heap_size + PAGE_SIZE - 1) / PAGE_SIZE;
+
+    pml4_table.map(user_heap_start, num_pages, None, false);
+}
+
 /// This function is called from the IDT syscall handler (interrupt 0x0E).
 /// Throws a panic containing the address of the instruction that 
 /// caused the page fault, which is written in the c2 register
