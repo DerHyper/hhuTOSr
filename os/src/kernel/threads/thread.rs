@@ -19,7 +19,7 @@ use crate::kernel::{cpu, multiboot, processes};
 use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
 use usrlib::user_api::usr_thread_exit;
 use usrlib::allocator;
-use crate::kernel::threads::scheduler::get_scheduler;
+use crate::kernel::threads::scheduler::{get_scheduler, set_current_thread};
 
 unsafe extern "C" {
     fn _tss_set_rsp0(rsp0: usize);
@@ -143,7 +143,7 @@ pub struct Thread {
     user_stack: Vec<u64>,
     stack_ptr: usize, // Pointer on the stack to the saved context
     entry: fn(),
-    page_table: &'static mut PageTable,
+    pub page_table: &'static mut PageTable,
     process_id: usize,
     pub user_app_size: Option<usize> // Size of the user_app
 }
@@ -283,6 +283,8 @@ impl Thread {
             write_cr3(self.page_table);
         }
 
+        set_current_thread(self);
+
         unsafe {
             thread_start(self.stack_ptr, self.page_table as *const PageTable as usize);
         }
@@ -293,12 +295,14 @@ impl Thread {
     pub unsafe fn switch(current: *mut Thread, next: *mut Thread) {
         unsafe {
             let current = &mut *current;
-            let next = &*next;
+            let next = &mut*next;
             let next_stack_end = Thread::get_top_of_stack(&next.kernel_stack);
 
             unsafe {
                 write_cr3(next.page_table);
             }
+
+            set_current_thread(next);
 
             thread_switch(
                 &mut current.stack_ptr, 

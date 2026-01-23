@@ -11,6 +11,7 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt::Display;
+use core::ptr::NonNull;
 use core::{fmt, panic, ptr};
 use core::sync::atomic::AtomicUsize;
 use spin::Once;
@@ -26,6 +27,9 @@ use crate::kernel::{cpu, processes};
 
 /// Global scheduler instance
 static SCHEDULER: Once<Scheduler> = Once::new();
+
+// Current Thread
+static mut CURRENT_THREAD: Option<NonNull<Thread>> = None;
 
 /// Global access to the scheduler.
 pub fn get_scheduler() -> &'static Scheduler {
@@ -256,7 +260,20 @@ impl Scheduler {
         self.ready(new_thread);
     }
 
-    
+}
+
+pub fn set_current_thread(thread: &mut Thread) {
+    unsafe {
+        CURRENT_THREAD = Some(NonNull::from(thread));
+    }
+}
+
+pub fn get_current_thread() -> &'static mut Thread {
+    unsafe {
+        CURRENT_THREAD
+            .expect("No current thread")
+            .as_mut()
+    }
 }
 
 impl Display for Scheduler {
