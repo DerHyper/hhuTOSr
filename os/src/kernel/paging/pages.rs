@@ -87,8 +87,9 @@ pub struct PageTable {
 impl PageTable {
     /// Set up a mapping from `virt_addr` to `num_pages` pages at the given `level`.
     /// If `kernel` is true, the pages will be mapped 1:1 to their physical addresses
-    /// (virt_addr == phys_addr). Otherwise, new physical frames will be allocated
-    /// for the mapping, using the frame allocator.
+    /// (virt_addr == phys_addr). 
+    /// If `phys_addr` is None() new physical frames will be allocated for the mapping, 
+    /// using the frame allocator. Otherwise the frames at `phys_addr` will be used.
     /// returns how man pages where allocated
     fn map(&mut self, virt_addr: u64, num_pages: usize, phys_addr: Option<PhysAddr>, kernel: bool) -> usize {
         let mut num_mapped_pages = 0;
