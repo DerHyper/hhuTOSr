@@ -22,6 +22,10 @@ pub const HEAP_START: usize = 0x800000;
 pub const PAGE_FRAME_SIZE: usize = 0x1000;
 /// Size of a virtual page (4 KiB)
 pub const PAGE_SIZE: usize = 0x1000;
+/// Start of the user heap
+pub const USER_HEAP_SIZE: usize = 512 * 1024; // 512 KiB
+/// Size of the user heap (16 MiB)
+pub const USER_HEAP_VIRT_START: u64 = 0x2000_0000_0000;
 
 
 /// Start address of the user code in virtual memory (1 TiB)
