@@ -24,6 +24,7 @@ pub enum SyscallFunction {
     GetSystemTime,
     Print,
     GetChar,
+    MapHeap,
     NumSyscalls // Last entry to count number of syscalls
 }
 
@@ -76,6 +77,11 @@ pub fn usr_print(msg: &str) {
 pub fn usr_get_char() -> char {
     let ret = syscall0(SyscallFunction::GetChar);
     (ret as u8) as char
+}
+
+/// Returns the next key from the keyboard buffer.
+pub fn usr_map_heap(user_heap_start: u64, user_heap_size: usize) {
+    syscall2(SyscallFunction::MapHeap, user_heap_start, user_heap_size as u64);
 }
 
 /// Perform a system call with 0 arguments.

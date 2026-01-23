@@ -7,3 +7,4 @@ pub mod thread_get_id;
 pub mod thread_yield;
 pub mod process_get_id;
 pub mod process_dump_vmas;
+pub mod map_heap;

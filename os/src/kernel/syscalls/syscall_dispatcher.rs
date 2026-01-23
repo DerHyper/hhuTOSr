@@ -16,6 +16,7 @@ use core::arch::{naked_asm};
 use crate::kernel::syscalls::functions::hello::sys_hello_world;
 use crate::kernel::syscalls::functions::get_char::sys_get_char;
 use crate::kernel::syscalls::functions::get_system_time::sys_get_system_time;
+use crate::kernel::syscalls::functions::map_heap::sys_map_heap;
 use crate::kernel::syscalls::functions::print::sys_print;
 use crate::kernel::syscalls::functions::process_dump_vmas::sys_dump_vmas;
 use crate::kernel::syscalls::functions::process_get_id::sys_process_get_id;
@@ -46,7 +47,8 @@ impl SyscallFunctionTable {
                 sys_dump_vmas as *const u64,
                 sys_get_system_time as *const u64,
                 sys_print as *const u64,
-                sys_get_char as *const u64
+                sys_get_char as *const u64,
+                sys_map_heap as *const u64
             ],
         }
     }
