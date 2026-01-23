@@ -140,7 +140,6 @@ pub struct Thread {
     id: usize,
     is_kernel_thread: bool,
     kernel_stack: Vec<u64>,
-    user_stack: Vec<u64>,
     stack_ptr: usize, // Pointer on the stack to the saved context
     entry: fn(),
     pub page_table: &'static mut PageTable,
@@ -161,22 +160,14 @@ impl Thread {
         let page_table = pages::init_kernel_tables();
 
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(page_table) }  as *mut u64;
-        let mut user_stack = unsafe { 
-            Vec::from_raw_parts(
-            user_stack_addr, //
-            STACK_SIZE/8, 
-            STACK_SIZE/8) 
-        };
-
         // Set the stack pointer to the top of the stack
-        let stack_ptr = USER_STACK_VIRT_END;
+        let stack_ptr = unsafe { map_user_stack(page_table) };
 
         let user_app_size: Option<_> = None;
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id, user_app_size }
+            Thread { id: next_id(), is_kernel_thread: true, kernel_stack, stack_ptr, entry, page_table, process_id, user_app_size }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
@@ -195,16 +186,8 @@ impl Thread {
         let page_table = pages::init_kernel_tables();
 
         // Allocate memory for the user stack and initialize it to zero
-        let user_stack_addr =  unsafe { map_user_stack(page_table) } as *mut u64;
-        let mut user_stack = unsafe { 
-            Vec::from_raw_parts(
-            user_stack_addr,
-            STACK_SIZE/8, 
-            STACK_SIZE/8) 
-        };
-
         // Set the stack pointer to the top of the stack
-        let stack_ptr = USER_STACK_VIRT_END;
+        let stack_ptr = unsafe { map_user_stack(page_table) };
 
         // Get user app from TAR-archive
         let app_name = processes::process::get_app_name(process_id)
@@ -265,12 +248,11 @@ impl Thread {
 
         // Create a new thread object
         let mut thread = Box::new(
-            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, user_stack, stack_ptr, entry, page_table, process_id, user_app_size }
+            Thread { id: next_id(), is_kernel_thread: false, kernel_stack, stack_ptr, entry, page_table, process_id, user_app_size }
         );
 
         // Prepare the stack for the thread so it can be started via `thread_start()`
         thread.prepare_kernel_stack();
-
         thread
     }
 
@@ -373,13 +355,13 @@ impl Thread {
         let rip = USER_CODE_VIRT_START as u64;
 
         // User stack top
-        let rsp = Thread::get_top_of_stack(&self.user_stack) as u64;
+        let rsp = USER_STACK_VIRT_END  as u64;
 
         // Self Thread stack:
         let rdi = self as *const Thread as u64;
         
         // Interrupt stack frame Layout expected by thread_user_start.
-        let user_stack_top = Thread::get_top_of_stack(&self.user_stack) as *mut u64;
+        let user_stack_top = USER_STACK_VIRT_END  as *mut u64;
         let mut stack_frame = unsafe { user_stack_top.offset(-6)};
 
         unsafe{  
