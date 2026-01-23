@@ -256,6 +256,32 @@ pub unsafe fn map_user_heap(pml4_table: &mut PageTable, user_heap_start: u64, us
     pml4_table.map(user_heap_start, num_pages, None, false);
 }
 
+/// Aligns a address to the corresponding page address
+/// Source https://stackoverflow.com/questions/3023909/what-is-the-trick-in-paddress-page-size-1-to-get-the-pages-base-address
+pub fn aligne_to_page(addr: u64) -> u64 {
+    addr & !(PAGE_SIZE as u64 - 1)
+}
+
+/// Checks if the `fault_addr` of a Page Fault is within the user stack
+/// If so, the matching page is mapped to the page table
+/// returns if `fault_addr` of a Page Fault is within the user stack
+fn check_and_grow_user_stack(fault_addr: u64) -> bool {
+
+    if fault_addr < USER_STACK_VIRT_START as u64 || fault_addr >= USER_STACK_VIRT_END as u64 {
+        // Is not within user stack
+        kprintln!("User stack limit was reached");
+        return false;
+    }
+
+    // Map new page
+    let current_page_table = read_cr3();
+    let page_addr = aligne_to_page(fault_addr);
+    current_page_table.map(page_addr, 1, None, false);
+    kprintln!("User stack size was increased");
+
+    return true;
+}
+
 /// This function is called from the IDT syscall handler (interrupt 0x0E).
 /// Throws a panic containing the address of the instruction that 
 /// caused the page fault, which is written in the c2 register
