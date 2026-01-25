@@ -1,7 +1,7 @@
 #![no_std]
 
 use core::panic::PanicInfo;
-use usrlib::{print, println, user_api::usr_hello_world};
+use usrlib::{print, println, user_api::{usr_dump_vmas, usr_hello_world}};
 
 #[unsafe(link_section = ".main")]
 #[unsafe(no_mangle)]
@@ -43,7 +43,14 @@ struct BigStruct {
 fn fibonacci(a:usize , b:usize, x:BigStruct)
 {
     let a2 = b;
-    let b2 = a+b;
+    let b2_option = a.checked_add(b);
+    if b2_option.is_none() {
+        println!("fibonacci reached overflow, restarting ...");
+        fibonacci(0,1,x);
+        return; // Will not return, but needed because of x borrow
+    }
+    let b2 = b2_option.unwrap();
+
     println!("{}",a);
     fibonacci(a2,b2,x);
 }
