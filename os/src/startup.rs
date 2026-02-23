@@ -66,6 +66,7 @@ use crate::user::aufgabe12::user_app_demo;
 use crate::user::aufgabe12::user_app_demo_pid;
 use crate::user::aufgabe13::user_app_dump_vmas;
 use crate::user::aufgabe13::user_app_fibonacci;
+use crate::user::aufgabe14::user_app_pong;
 
 use user::aufgabe1::text_demo;
 use user::aufgabe1::keyboard_demo;
@@ -225,7 +226,8 @@ fn show_startscreen(){
     // user_app_demo::run();
     // user_app_demo_pid::run();
     // user_app_dump_vmas::run();
-    user_app_fibonacci::run();
+    // user_app_fibonacci::run();
+    user_app_pong::run();
 
     // print_startscreen();
 

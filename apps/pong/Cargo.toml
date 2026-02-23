@@ -1,0 +1,12 @@
+[package]
+edition = "2024"
+name = "pong"
+version = "0.1.0"
+authors = ["Max R."]
+
+[lib]
+crate-type = ["staticlib"]
+path = "src/pong.rs"
+
+[dependencies]
+usrlib = { path = "../../usrlib" }
