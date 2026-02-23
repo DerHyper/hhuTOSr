@@ -1,6 +1,9 @@
 use core::char;
 
-use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::{self, Ball}, player::{self, Player}}};
+//use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::{self, Ball}, player::{self, Player}}};
+use crate::ball::{self, Ball};
+use crate::player::{self, Player};
+use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 const BAR: char = 0xDB as char; // '█' in Code page 437
 const SPACE: char = ' ';

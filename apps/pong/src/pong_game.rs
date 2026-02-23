@@ -1,11 +1,12 @@
 use core::arch::asm;
 
-use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
-use crate::devices::{cga, pit};
+use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
+use usrlib::user_api::{usr_get_char, usr_get_system_time};
+//use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
 use crate::ball::{self, Ball};
-use crate::library::input;
+//use crate::library::input;
 use crate::sound_fx;
 
 const MIN_WINNING_POINTS: u16 = 11;
@@ -42,15 +43,15 @@ fn run_game_interation() {
     show_start_screen();
 
     // Hide cursor
-    cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
+    //TODO: cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
         
     // wait for start input
-    while !input::getch().eq_ignore_ascii_case(&'W') { // Bussy-Polling
+    while usr_get_char().eq_ignore_ascii_case(&'W') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
         
     // Game loop
-    let mut last_frame_time =  pit::get_system_time();
+    let mut last_frame_time =  usr_get_system_time();
     while !is_game_end(&player_1, &player_2) {
         if !check_next_frame_time(&mut last_frame_time) {
             unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
@@ -134,7 +135,7 @@ fn show_start_screen() {
 
 /// Returns true if enugh time has elapsed to draw a new frame
 fn check_next_frame_time(last_frame_time: &mut usize) -> bool {
-    let current_time = pit::get_system_time();
+    let current_time = usr_get_system_time();
     if current_time - *last_frame_time <= MS_BETWEEN_FRAMES {
         return false;
     }

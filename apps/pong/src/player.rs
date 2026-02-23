@@ -1,4 +1,4 @@
-use crate::devices::cga::{CGA_COLUMNS, CGA_ROWS};
+use usrlib::consts::{CGA_ROWS};
 
 /// Player, which is represented on the screen as a bar
 pub struct Player {

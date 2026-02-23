@@ -1,7 +1,6 @@
 #![no_std]
 mod ball;
 mod frame;
-mod graphic_demo;
 mod player;
 mod pong_game;
 mod sound_fx;

@@ -1,5 +1,7 @@
-use crate::{devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit}, user::aufgabe7::player::Player};
-use crate::user::aufgabe7::sound_fx;
+//use crate::devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit};
+use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
+use crate::player::{self, Player};
+use crate::sound_fx;
 
 const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
 
