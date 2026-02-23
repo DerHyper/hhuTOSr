@@ -189,6 +189,9 @@ impl Thread {
         // Set the stack pointer to the top of the stack
         let stack_ptr = unsafe { map_user_stack(page_table) };
 
+        // Map user cga
+        unsafe { pages::map_user_cga(page_table) };
+
         // Get user app from TAR-archive
         let app_name = processes::process::get_app_name(process_id)
             .expect("Process has no app name");

@@ -31,3 +31,9 @@ pub const USER_CODE_VIRT_START: usize = 0x100_0000_0000;
 pub const USER_STACK_VIRT_START:usize = 0x4000_0000_0000;
 /// End address of the user stack in virtual memory
 pub const USER_STACK_VIRT_END: usize = USER_STACK_VIRT_START + STACK_SIZE;
+
+
+// CGA constants
+pub const CGA_ROWS: usize = 25;
+pub const CGA_COLUMNS: usize = 80;
+pub const CGA_USR_ADDR: usize = 0x3000_0000_0000;

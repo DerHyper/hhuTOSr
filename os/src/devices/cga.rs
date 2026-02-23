@@ -42,7 +42,7 @@ pub enum Color {
 
 pub const CGA_STD_ATTR: u8 = (Color::Black as u8) << 4 | (Color::LightRed as u8);
 
-const CGA_BASE_ADDR: *mut u8 = 0xb8000 as *mut u8;
+pub const CGA_BASE_ADDR: *mut u8 = 0xb8000 as *mut u8;
 pub const CGA_ROWS: usize = 25;
 pub const CGA_COLUMNS: usize = 80;
 

@@ -1,7 +1,9 @@
 use core::ptr;
-use x86_64::structures::paging::{FrameAllocator, PageSize};
+use usrlib::consts::{CGA_COLUMNS, CGA_ROWS, CGA_USR_ADDR};
+use x86_64::structures::paging::{FrameAllocator, PageSize, frame};
 
 use crate::consts::{PAGE_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
+use crate::devices::cga::{CGA, CGA_BASE_ADDR};
 use crate::kernel::{self, multiboot};
 use crate::kernel::interrupts::InterruptStackFrame;
 use crate::kernel::interrupts::intdispatcher::{INT_VECTORS, InterruptVector};
@@ -255,6 +257,17 @@ pub unsafe fn map_user_heap(pml4_table: &mut PageTable, user_heap_start: u64, us
     let num_pages =  (user_heap_size + PAGE_SIZE - 1) / PAGE_SIZE;
 
     pml4_table.map(user_heap_start, num_pages, None, false);
+}
+
+/// Sets up a mapping for the CGA.
+pub unsafe fn map_user_cga(pml4_table: &mut PageTable) {
+
+    let user_addr = CGA_USR_ADDR as u64;
+    let phys_addr = Some(PhysAddr::new(CGA_BASE_ADDR as u64)); 
+    let num_cga_adresses = (CGA_COLUMNS * CGA_ROWS) * 2; // Each CGA character takes 2 bytes
+    let num_pages =  (num_cga_adresses + PAGE_SIZE - 1) / PAGE_SIZE;
+
+    pml4_table.map(user_addr, num_pages, phys_addr, false);
 }
 
 /// Aligns a address to the corresponding page address
