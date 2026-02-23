@@ -23,10 +23,11 @@ impl Frame {
 
     /// print frame to CGA
     pub fn print_frame(&mut self) {
-        let mut cga_lock = cga::CGA.lock();
+        // TODO: let mut cga_lock = cga::CGA.lock();
         for y in 0..CGA_ROWS {
             for x in 0..CGA_COLUMNS {
-                cga_lock.print_byte_at_nowrapping(self.frame[y][x] as u8, x, y);
+                // cga_lock.print_byte_at_nowrapping(self.frame[y][x] as u8, x, y);
+                usrlib::user_cga::write_char(x, y, self.frame[y][x] as u8, 8);
             }
         }
     }

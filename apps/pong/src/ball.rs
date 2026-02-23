@@ -112,7 +112,8 @@ impl Ball {
 /// Generates pseudo random number `range_max`
 /// Needed because `rand` cannot be used, as it requires std.
 fn random_range(range_min: usize, range_max: usize) -> usize {
-    let time = pit::get_system_time();
+    // TODO: let time = pit::get_system_time();
+    let time :usize = 0; // TODO: Remove, only for testing
 
     // Mixing
     let mut random_number = time.wrapping_mul(0x123456789);

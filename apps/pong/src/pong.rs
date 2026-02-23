@@ -7,9 +7,12 @@ mod sound_fx;
 
 use core::panic::PanicInfo;
 
+use crate::frame::Frame;
+
 #[unsafe(link_section = ".main")]
 #[unsafe(no_mangle)]
 fn main() {
+    let mut frame = Frame::new();
     pong_game::run();
     loop {}
 }

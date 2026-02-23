@@ -1,7 +1,7 @@
 use core::arch::asm;
 
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
-use usrlib::user_api::{usr_get_char, usr_get_system_time};
+use usrlib::user_api::{self, usr_get_char, usr_get_system_time};
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
@@ -67,7 +67,7 @@ fn run_game_interation() {
     show_end_screen(&mut player_1, &mut player_2);
 
     // wait for restart input
-    while !input::getch().eq_ignore_ascii_case(&'R') { // Bussy-Polling
+    while usr_get_char().eq_ignore_ascii_case(&'R') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
 }
@@ -92,15 +92,15 @@ fn show_end_screen(player_1: &Player, player_2: &Player) {
 
     let player_offset_y = 6;
     if player_1.points > player_2.points {
-        cga::CGA.lock().print_centered_block(&player_1_str, player_offset_y);
+        //TODO: cga::CGA.lock().print_centered_block(&player_1_str, player_offset_y);
     } else {
-        cga::CGA.lock().print_centered_block(&player_2_str, player_offset_y);
+        //TODO: cga::CGA.lock().print_centered_block(&player_2_str, player_offset_y);
     }
 
     // Call to action Restart
     let cta_str = ["Press 'R' to restart!"];
     let cta_offset_y = player_offset_y + player_1_str.len() + 4;
-    cga::CGA.lock().print_centered_block(&cta_str, cta_offset_y);
+    //TODO: cga::CGA.lock().print_centered_block(&cta_str, cta_offset_y);
 }
 
 /// Returns true if one player has won
@@ -120,7 +120,7 @@ fn show_start_screen() {
         "|_|     \\____/|_| \\_|\\_____|"
     ]; // Big by Glenn Chappell 4/93 -- based on Standard
     let pong_offset_y = 5;
-    cga::CGA.lock().print_centered_block(&pong_str, pong_offset_y);
+    //TODO: cga::CGA.lock().print_centered_block(&pong_str, pong_offset_y);
 
     // Write instructions
     let instructions = [
@@ -130,7 +130,7 @@ fn show_start_screen() {
         "Press 'W' to start!"
     ];
     let instruction_offset_y = pong_offset_y + pong_str.len() + 3;
-    cga::CGA.lock().print_centered_block(&instructions, instruction_offset_y);
+    //TODO: cga::CGA.lock().print_centered_block(&instructions, instruction_offset_y);
 }
 
 /// Returns true if enugh time has elapsed to draw a new frame
@@ -169,7 +169,7 @@ fn ball_hit_goal(ball: &mut Ball, player: &mut Player) {
     ball.randomize_movement_direction();
     player.score_point();
     sound_fx::play_score_point();
-    pit::wait(RESET_TIME_AFTER_GOAL);
+    // pit::wait(RESET_TIME_AFTER_GOAL);
 }
 
 /// Move ball by one step
@@ -179,8 +179,9 @@ fn move_ball(ball: &mut Ball, mut player_1: &mut Player, mut player_2: &mut Play
 
 /// Poll player input, chance input accordingly
 fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
-    let last_key = input::try_getch();
-    if let Some(key) = last_key {
+    //TODO: let last_key = input::try_getch();
+    let last_key = usr_get_char(); // Bussy-Polling, TODO: Change to event based input
+    if let key = last_key {
         match key.to_ascii_uppercase() {
             'W' => player_1.up(),
             'S' => player_1.down(),
