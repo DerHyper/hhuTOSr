@@ -4,6 +4,7 @@ mod frame;
 mod player;
 mod pong_game;
 mod sound_fx;
+mod game_object;
 
 use core::panic::PanicInfo;
 
