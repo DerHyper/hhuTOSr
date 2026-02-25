@@ -1,5 +1,6 @@
 
 use alloc::boxed::Box;
+use alloc::vec::Vec;
 use nolock::queues::mpmc;
 use nolock::queues::mpmc::bounded::scq::{Receiver, Sender};
 
@@ -436,6 +437,21 @@ impl KeyQueue {
             Ok(key) => Some(key),
             Err(_) => None
         }
+    }
+
+    /// Pop all keys from the queue.
+    pub fn get_all_keys(&self) -> Vec<char> {
+        if self.receiver.is_closed() {
+            // Should never haven
+            panic!("KeyQueue is closed!");
+        }
+
+        let mut keys: Vec<char> = Vec::new();
+        while let Ok(mut key) = self.receiver.try_dequeue() {
+            keys.push(char::from_u32(key.get_ascii() as u32).unwrap());
+        }
+        
+        return keys;
     }
 
     /// Pop a key from the queue.

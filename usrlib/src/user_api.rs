@@ -24,6 +24,7 @@ pub enum SyscallFunction {
     GetSystemTime,
     Print,
     GetChar,
+    GetKeyQueue,
     MapHeap,
     NumSyscalls // Last entry to count number of syscalls
 }
@@ -80,6 +81,15 @@ pub fn usr_get_char() -> char {
 }
 
 /// Returns the next key from the keyboard buffer.
+pub fn usr_get_key_queue(buf: &mut [char]) -> usize {
+    syscall2(
+        SyscallFunction::GetKeyQueue,
+        buf.as_mut_ptr() as u64,
+        buf.len() as u64,
+    ) as usize
+}
+
+/// Maps the user heap within the given range.
 pub fn usr_map_heap(user_heap_start: u64, user_heap_size: usize) {
     syscall2(SyscallFunction::MapHeap, user_heap_start, user_heap_size as u64);
 }
