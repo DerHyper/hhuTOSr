@@ -2,6 +2,7 @@ use core::arch::asm;
 
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_api::{self, usr_get_char, usr_get_system_time};
+use usrlib::user_cga::{self, Color};
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
@@ -20,8 +21,9 @@ const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const STD_BALL_SPEED_X: f32 = 0.5;
 const STD_BALL_SPEED_Y: f32 = 0.25;
 const RESET_TIME_AFTER_GOAL: usize = 700;
+const MENU_COLOR: Color = Color::LightGreen;
 
-const MS_BETWEEN_FRAMES: usize = 33;
+const MS_BETWEEN_FRAMES: usize = 33; // 30 FPS
 
 /// Starts the game
 pub fn run() {
@@ -92,15 +94,15 @@ fn show_end_screen(player_1: &Player, player_2: &Player) {
 
     let player_offset_y = 6;
     if player_1.points > player_2.points {
-        //TODO: cga::CGA.lock().print_centered_block(&player_1_str, player_offset_y);
+        user_cga::print_centered_block(&player_1_str, player_offset_y, MENU_COLOR);
     } else {
-        //TODO: cga::CGA.lock().print_centered_block(&player_2_str, player_offset_y);
+        user_cga::print_centered_block(&player_2_str, player_offset_y, MENU_COLOR);
     }
 
     // Call to action Restart
     let cta_str = ["Press 'R' to restart!"];
     let cta_offset_y = player_offset_y + player_1_str.len() + 4;
-    //TODO: cga::CGA.lock().print_centered_block(&cta_str, cta_offset_y);
+    user_cga::print_centered_block(&cta_str, cta_offset_y, MENU_COLOR);
 }
 
 /// Returns true if one player has won
@@ -120,7 +122,7 @@ fn show_start_screen() {
         "|_|     \\____/|_| \\_|\\_____|"
     ]; // Big by Glenn Chappell 4/93 -- based on Standard
     let pong_offset_y = 5;
-    //TODO: cga::CGA.lock().print_centered_block(&pong_str, pong_offset_y);
+    user_cga::print_centered_block(&pong_str, pong_offset_y, MENU_COLOR);
 
     // Write instructions
     let instructions = [
@@ -130,7 +132,7 @@ fn show_start_screen() {
         "Press 'W' to start!"
     ];
     let instruction_offset_y = pong_offset_y + pong_str.len() + 3;
-    //TODO: cga::CGA.lock().print_centered_block(&instructions, instruction_offset_y);
+    user_cga::print_centered_block(&instructions, instruction_offset_y, MENU_COLOR);
 }
 
 /// Returns true if enugh time has elapsed to draw a new frame
