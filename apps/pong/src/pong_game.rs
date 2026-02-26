@@ -112,6 +112,9 @@ fn is_game_end(player_1: &Player, player_2: &Player) -> bool {
 
 /// Write PONG at the screen together with instructions
 fn show_start_screen() {
+    // Clear Screen
+    user_cga::clear_screen();
+
     // Write Pong
     let pong_str = [
         " _____   ____  _   _  _____", 

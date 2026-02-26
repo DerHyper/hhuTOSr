@@ -108,3 +108,12 @@ pub fn print_centered_block(lines: &[&'static str], y_offset: usize, color: Colo
         print(lines[y], x_offset, y_offset+y, color as u8);
     }
 }
+
+pub fn clear_screen() {
+    for y in 0..CGA_ROWS {
+        for x in 0..CGA_COLUMNS {
+            write_char(x, y, b' ', Color::Black as u8);
+        }
+    }
+    CURSOR.lock().setpos(0, 0);
+}
