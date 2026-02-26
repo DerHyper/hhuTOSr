@@ -1,7 +1,7 @@
 use core::arch::asm;
 
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
-use usrlib::user_api::{self, usr_get_char, usr_get_system_time};
+use usrlib::user_api::{self, usr_get_char, usr_get_system_time, usr_try_get_char};
 use usrlib::user_cga::{self, Color};
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
@@ -181,8 +181,7 @@ fn move_ball(ball: &mut Ball, mut player_1: &mut Player, mut player_2: &mut Play
 
 /// Poll player input, chance input accordingly
 fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
-    //TODO: let last_key = input::try_getch();
-    let last_key = usr_get_char(); // Bussy-Polling, TODO: Change to event based input
+    let last_key = usr_try_get_char();
     if let key = last_key {
         match key.to_ascii_uppercase() {
             'W' => player_1.up(),

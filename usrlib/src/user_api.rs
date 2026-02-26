@@ -24,6 +24,7 @@ pub enum SyscallFunction {
     GetSystemTime,
     Print,
     GetChar,
+    TryGetChar,
     GetKeyQueue,
     MapHeap,
     NumSyscalls // Last entry to count number of syscalls
@@ -77,6 +78,12 @@ pub fn usr_print(msg: &str) {
 /// Returns the next key from the keyboard buffer.
 pub fn usr_get_char() -> char {
     let ret = syscall0(SyscallFunction::GetChar);
+    (ret as u8) as char
+}
+
+/// Non blocking. Returns the next key from the keyboard. None was pressed returns '\0'.
+pub fn usr_try_get_char() -> char {
+    let ret = syscall0(SyscallFunction::TryGetChar);
     (ret as u8) as char
 }
 

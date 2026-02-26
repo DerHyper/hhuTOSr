@@ -1,5 +1,6 @@
 pub mod hello;
 pub mod get_char;
+pub mod try_get_char;
 pub mod get_key_queue;
 pub mod get_system_time;
 pub mod print;

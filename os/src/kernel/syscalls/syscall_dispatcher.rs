@@ -24,6 +24,7 @@ use crate::kernel::syscalls::functions::thread_exit::sys_thread_exit;
 use crate::kernel::syscalls::functions::thread_get_id::sys_thread_get_id;
 use crate::kernel::syscalls::functions::thread_yield::sys_thread_yield;
 use crate::kernel::syscalls::functions::get_key_queue::sys_get_key_queue;
+use crate::kernel::syscalls::functions::try_get_char::sys_try_get_char;
 use usrlib::user_api::SyscallFunction;
 
 /// Global syscall function table.
@@ -49,6 +50,7 @@ impl SyscallFunctionTable {
                 sys_get_system_time as *const u64,
                 sys_print as *const u64,
                 sys_get_char as *const u64,
+                sys_try_get_char as *const u64,
                 sys_get_key_queue as *const u64,
                 sys_map_heap as *const u64
             ],
