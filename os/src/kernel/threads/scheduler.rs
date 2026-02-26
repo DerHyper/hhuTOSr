@@ -10,6 +10,7 @@
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
+use usrlib::consts::{USER_HEAP_SIZE, USER_HEAP_VIRT_START};
 use core::fmt::Display;
 use core::ptr::NonNull;
 use core::{fmt, panic, ptr};
@@ -18,6 +19,7 @@ use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
 use usrlib::allocator;
 use crate::consts::{PAGE_SIZE, USER_CODE_VIRT_START};
+use crate::kernel::paging::pages::map_user_heap;
 use crate::kernel::processes::process;
 use crate::kernel::threads::idle_thread::{IDLE_PROCESS_ID, idle_thread};
 use crate::kernel::threads::thread;
@@ -251,6 +253,7 @@ impl Scheduler {
 
         // Init Thread
         let new_thread = Thread::new_user_thread(entry , new_process_id);
+        //unsafe { map_user_heap(new_thread.page_table, USER_HEAP_VIRT_START, USER_HEAP_SIZE) };
 
         // Init Process VMAs
         let aligned_app_size = ((new_thread.user_app_size.expect("No user_app_size was found") + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;

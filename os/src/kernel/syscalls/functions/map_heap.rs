@@ -12,8 +12,8 @@ pub extern "C" fn sys_map_heap(user_heap_start: u64, user_heap_size: usize) {
     
     // Create VMA for Heap
     let pid = thread.get_process_id();
-    let num_pages = (user_heap_start as usize + user_heap_size + PAGE_SIZE - 1) / PAGE_SIZE;
-    let user_heap_end = (num_pages * PAGE_SIZE) as u64;
+    let num_pages_to_heap_end = (user_heap_start as usize + user_heap_size + PAGE_SIZE - 1) / PAGE_SIZE;
+    let user_heap_end = (num_pages_to_heap_end * PAGE_SIZE) as u64;
     let vma = VMA::new(user_heap_start, user_heap_end, vma::VmaType::Heap);
     processes::process::add_vma(pid, vma);
 

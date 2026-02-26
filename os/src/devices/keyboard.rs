@@ -1,5 +1,6 @@
 
 use alloc::boxed::Box;
+use alloc::string::String;
 use alloc::vec::Vec;
 use nolock::queues::mpmc;
 use nolock::queues::mpmc::bounded::scq::{Receiver, Sender};
@@ -352,6 +353,7 @@ static KEYBOARD_BUFFER: Once<KeyQueue> = Once::new();
 ///        let key = key_buffer.get_last_key();
 pub fn get_key_buffer() -> &'static KeyQueue {
     KEYBOARD_BUFFER.call_once(|| {
+        kprintln!("Initializing keyboard buffer...");
         KeyQueue::new()
     })
 }
@@ -415,7 +417,7 @@ impl KeyQueue {
     /// Push a key to the queue.
     /// If the queue is full, the key is silently discarded.
     pub fn push_key(&self, key: Key) {
-        if self.receiver.is_closed() {
+        if self.sender.is_closed() {
             // Should never haven
             panic!("KeyQueue is closed!");
         }
@@ -433,7 +435,7 @@ impl KeyQueue {
             panic!("KeyQueue is closed!");
         }
 
-//match cpu::without_interrupts(|| {self.receiver.try_dequeue()}) {
+        //match cpu::without_interrupts(|| {self.receiver.try_dequeue()}) {
         match self.receiver.try_dequeue() {
             Ok(key) => Some(key),
             Err(_) => None
@@ -449,9 +451,9 @@ impl KeyQueue {
 
         let mut keys: Vec<char> = Vec::new();
         while !self.receiver.is_closed() {
-let key = self.get_last_key();
+            let key = self.get_last_key();
             match key {
-                Some(mut k) =>             keys.push(char::from_u32(k.get_ascii() as u32).unwrap()),
+                Some(mut k) => keys.push(char::from_u32(k.get_ascii() as u32).unwrap()),
                 None => break
             }
         }

@@ -9,6 +9,7 @@
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+use usrlib::consts::{USER_HEAP_SIZE, USER_HEAP_VIRT_START};
 use core::{fmt, ptr};
 use core::arch::naked_asm;
 use core::fmt::Display;
@@ -16,7 +17,7 @@ use core::sync::atomic::AtomicUsize;
 use crate::consts::{PAGE_SIZE, STACK_ENTRY_SIZE, STACK_SIZE, USER_CODE_VIRT_START, USER_STACK_VIRT_END, USER_STACK_VIRT_START};
 use crate::kernel::paging::frames::FRAME_ALLOCATOR;
 use crate::kernel::{cpu, multiboot, processes};
-use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_stack, write_cr3};
+use crate::kernel::paging::pages::{self, PageFlags, PageTable, map_user_app, map_user_heap, map_user_stack, write_cr3};
 use usrlib::user_api::usr_thread_exit;
 use usrlib::allocator;
 use crate::kernel::threads::scheduler::{get_scheduler, set_current_thread};
@@ -162,6 +163,7 @@ impl Thread {
         // Allocate memory for the user stack and initialize it to zero
         // Set the stack pointer to the top of the stack
         let stack_ptr = unsafe { map_user_stack(page_table) };
+        unsafe { map_user_heap(page_table, USER_HEAP_VIRT_START, USER_HEAP_SIZE) };
 
         let user_app_size: Option<_> = None;
 
@@ -188,6 +190,7 @@ impl Thread {
         // Allocate memory for the user stack and initialize it to zero
         // Set the stack pointer to the top of the stack
         let stack_ptr = unsafe { map_user_stack(page_table) };
+        unsafe { map_user_heap(page_table, USER_HEAP_VIRT_START, USER_HEAP_SIZE) };
 
         // Map user cga
         unsafe { pages::map_user_cga(page_table) };

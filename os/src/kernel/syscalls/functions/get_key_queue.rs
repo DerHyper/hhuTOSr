@@ -1,15 +1,17 @@
-use crate::{devices::keyboard, kernel::syscalls::functions::get_key_queue};
+use crate::{devices::keyboard, kernel::syscalls::functions::get_key_queue, library::input::try_getch};
 
 pub extern "C" fn sys_get_key_queue(user_ptr: *mut char, len: usize) -> u64 {
-    let keybuffer = keyboard::get_key_buffer();
-    let keys = keybuffer.get_all_keys();
+    let mut count = 0;
 
-
-    let count = keys.len().min(len);
-
-    for i in 0..count {
-        unsafe {
-            *user_ptr.add(i) = keys[i];
+    while count < len {
+        match try_getch() {
+            Some(k) => {
+                unsafe {
+                    *user_ptr.add(count) = k;
+                }
+                count += 1;
+            }
+            None => break
         }
     }
 

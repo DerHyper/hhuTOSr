@@ -7,13 +7,14 @@ mod sound_fx;
 mod game_object;
 
 use core::panic::PanicInfo;
-
-use crate::frame::Frame;
+use usrlib::{allocator, consts::{USER_HEAP_SIZE, USER_HEAP_VIRT_START}, user_api::usr_map_heap};
 
 #[unsafe(link_section = ".main")]
 #[unsafe(no_mangle)]
 fn main() {
-    let mut frame = Frame::new();
+    usr_map_heap(USER_HEAP_VIRT_START, USER_HEAP_SIZE);
+    allocator::init(USER_HEAP_VIRT_START as usize, USER_HEAP_SIZE);
+    
     pong_game::run();
     loop {}
 }

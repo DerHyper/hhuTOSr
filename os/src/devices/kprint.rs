@@ -1,3 +1,6 @@
+use alloc::string::String;
+use alloc::vec::Vec;
+
 /* ╔═════════════════════════════════════════════════════════════════════════╗
    ║ Module: kprint                                                          ║
    ╟─────────────────────────────────────────────────────────────────────────╢
@@ -18,7 +21,7 @@ pub static WRITER: spin::Mutex<Writer> = spin::Mutex::new(Writer::new());
 
 /// The global writer that can used as an interface from other modules.
 /// It is not threadsafe, but can be used in interrupt handlers.
-pub static mut WRITER_LOCKFREE: Writer = Writer::new_lockfree();
+pub static mut WRITER_LOG: Vec<String> = Vec::new();
 
 /// Writer for writing formatted strings to the CGA screen.
 pub struct Writer {
@@ -87,5 +90,16 @@ macro_rules! kprintln_lockfree {
 /// Helper function of print macros (must be public)
 #[allow(static_mut_refs)]
 pub fn kprint_lockfree(args: fmt::Arguments) {
-    unsafe { WRITER_LOCKFREE.write_fmt(args).unwrap() };
+    // let mut s = String::new();
+    // s.write_fmt(args).unwrap();
+    // unsafe { WRITER_LOG.push(s); };
+}
+
+#[allow(static_mut_refs)]
+pub fn kprint_dump_lockfree() {
+    while !unsafe { WRITER_LOG.is_empty() } {
+        let str = unsafe { WRITER_LOG.remove(0) };
+        WRITER.lock().write_str(&str).unwrap();
+        
+    }
 }
