@@ -48,7 +48,7 @@ fn run_game_interation() {
     //TODO: cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
         
     // wait for start input
-    while usr_get_char().eq_ignore_ascii_case(&'W') { // Bussy-Polling
+    while !usr_get_char().eq_ignore_ascii_case(&'W') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
         
@@ -69,7 +69,7 @@ fn run_game_interation() {
     show_end_screen(&mut player_1, &mut player_2);
 
     // wait for restart input
-    while usr_get_char().eq_ignore_ascii_case(&'R') { // Bussy-Polling
+    while !usr_get_char().eq_ignore_ascii_case(&'R') { // Bussy-Polling
         unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
     };
 }
@@ -171,7 +171,7 @@ fn ball_hit_goal(ball: &mut Ball, player: &mut Player) {
     ball.randomize_movement_direction();
     player.score_point();
     sound_fx::play_score_point();
-    // pit::wait(RESET_TIME_AFTER_GOAL);
+    // TODO: pit::wait(RESET_TIME_AFTER_GOAL);
 }
 
 /// Move ball by one step
