@@ -281,9 +281,13 @@ pub fn aligne_to_page(addr: u64) -> u64 {
 /// returns if `fault_addr` of a Page Fault is within the user stack
 fn check_and_grow_user_stack(fault_addr: u64) -> bool {
 
-    if fault_addr < USER_STACK_VIRT_START as u64 || fault_addr >= USER_STACK_VIRT_END as u64 {
+    if fault_addr < USER_STACK_VIRT_START as u64 {
         // Is not within user stack
-        kprintln!("User stack limit was reached");
+        kprintln_lockfree!("Tried to acces user stack with address {:#x} which is below the user stack limit", fault_addr);
+        return false;
+    } else if fault_addr >= USER_STACK_VIRT_END as u64 {
+        // Is not within user stack
+        kprintln_lockfree!("User stack limit was reached");
         return false;
     }
 
@@ -291,7 +295,7 @@ fn check_and_grow_user_stack(fault_addr: u64) -> bool {
     let current_page_table = read_cr3();
     let page_addr = aligne_to_page(fault_addr);
     current_page_table.map(page_addr, 1, None, false);
-    kprintln!("User stack size was increased");
+    kprintln_lockfree!("User stack size was increased");
 
     return true;
 }

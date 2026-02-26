@@ -16,6 +16,10 @@ use crate::devices::serial::{ComBaseAddress, ComPort};
 /// It is threadsafe by using 'Mutex'.
 pub static WRITER: spin::Mutex<Writer> = spin::Mutex::new(Writer::new());
 
+/// The global writer that can used as an interface from other modules.
+/// It is not threadsafe, but can be used in interrupt handlers.
+pub static mut WRITER_LOCKFREE: Writer = Writer::new_lockfree();
+
 /// Writer for writing formatted strings to the CGA screen.
 pub struct Writer {
     com_port: ComPort
@@ -27,6 +31,11 @@ impl Writer {
     pub const fn new() -> Writer {
         Writer {
             com_port: ComPort::new(ComBaseAddress::Com1)
+        }
+    }
+    pub const fn new_lockfree() -> Writer {
+        Writer {
+            com_port: ComPort::new(ComBaseAddress::Com2)
         }
     }
 }
@@ -57,4 +66,26 @@ macro_rules! kprintln {
 /// Helper function of print macros (must be public)
 pub fn kprint(args: fmt::Arguments) {
     WRITER.lock().write_fmt(args).unwrap();
+}
+
+
+// Provide macros like in the 'io' module of Rust
+// But without locking the global writer, so that it can be used in interrupt handlers.
+// The $crate variable ensures that the macro also works
+// from outside the 'std' crate.
+macro_rules! kprint_lockfree {
+    ($($arg:tt)*) => ({
+        $crate::devices::kprint::kprint_lockfree(format_args!($($arg)*));
+    });
+}
+
+macro_rules! kprintln_lockfree {
+    ($fmt:expr) => (kprint_lockfree!(concat!($fmt, "\n")));
+    ($fmt:expr, $($arg:tt)*) => (kprint_lockfree!(concat!($fmt, "\n"), $($arg)*));
+}
+
+/// Helper function of print macros (must be public)
+#[allow(static_mut_refs)]
+pub fn kprint_lockfree(args: fmt::Arguments) {
+    unsafe { WRITER_LOCKFREE.write_fmt(args).unwrap() };
 }
