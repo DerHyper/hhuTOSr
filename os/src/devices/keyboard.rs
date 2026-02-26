@@ -433,6 +433,7 @@ impl KeyQueue {
             panic!("KeyQueue is closed!");
         }
 
+//match cpu::without_interrupts(|| {self.receiver.try_dequeue()}) {
         match self.receiver.try_dequeue() {
             Ok(key) => Some(key),
             Err(_) => None
@@ -447,8 +448,12 @@ impl KeyQueue {
         }
 
         let mut keys: Vec<char> = Vec::new();
-        while let Ok(mut key) = self.receiver.try_dequeue() {
-            keys.push(char::from_u32(key.get_ascii() as u32).unwrap());
+        while !self.receiver.is_closed() {
+let key = self.get_last_key();
+            match key {
+                Some(mut k) =>             keys.push(char::from_u32(k.get_ascii() as u32).unwrap()),
+                None => break
+            }
         }
         
         return keys;
