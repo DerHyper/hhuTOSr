@@ -25,6 +25,7 @@ use crate::kernel::syscalls::functions::thread_get_id::sys_thread_get_id;
 use crate::kernel::syscalls::functions::thread_yield::sys_thread_yield;
 use crate::kernel::syscalls::functions::get_key_queue::sys_get_key_queue;
 use crate::kernel::syscalls::functions::try_get_char::sys_try_get_char;
+use crate::kernel::syscalls::functions::play_note::sys_play_note;
 use usrlib::user_api::SyscallFunction;
 
 /// Global syscall function table.
@@ -52,6 +53,7 @@ impl SyscallFunctionTable {
                 sys_get_char as *const u64,
                 sys_try_get_char as *const u64,
                 sys_get_key_queue as *const u64,
+                sys_play_note as *const u64,
                 sys_map_heap as *const u64
             ],
         }

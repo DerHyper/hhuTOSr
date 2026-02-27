@@ -26,6 +26,7 @@ pub enum SyscallFunction {
     GetChar,
     TryGetChar,
     GetKeyQueue,
+    PlayNote,
     MapHeap,
     NumSyscalls // Last entry to count number of syscalls
 }
@@ -94,6 +95,11 @@ pub fn usr_get_key_queue(buf: &mut [char]) -> usize {
         buf.as_mut_ptr() as u64,
         buf.len() as u64,
     ) as usize
+}
+
+/// Plays a note with the given frequency for the given duration in ms.
+pub fn usr_play_note(frequency: usize, duration_ms: usize) {
+    syscall2(SyscallFunction::PlayNote, frequency as u64, duration_ms as u64);
 }
 
 /// Maps the user heap within the given range.
