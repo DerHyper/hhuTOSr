@@ -375,7 +375,7 @@ pub struct KeyboardISR {}
 
 impl ISR for KeyboardISR {
     fn trigger(&self) {
-        kprintln_lockfree!("   keyboard::trigger called!");
+        // kprintln_lockfree!("   keyboard::trigger called!");
 
         // Get key input and push it to the key buffer if valid
         let mut keyboard = KEYBOARD.lock();
@@ -383,7 +383,7 @@ impl ISR for KeyboardISR {
         match key {
             Some(mut k) => {
                 get_key_buffer().push_key(k); 
-                kprintln_lockfree!("   keyboard::trigger got key: {}", k.get_ascii());
+                // kprintln_lockfree!("   keyboard::trigger got key: {}", k.get_ascii());
             }
             None => {}
         }

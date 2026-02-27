@@ -87,5 +87,5 @@ macro_rules! kprintln_lockfree {
 /// Helper function of print macros (must be public)
 #[allow(static_mut_refs)]
 pub fn kprint_lockfree(args: fmt::Arguments) {
-    unsafe { WRITER_LOCKFREE.write_fmt(args).unwrap() };
+    unsafe { WRITER_LOCKFREE.write_fmt(args).unwrap() }; // TODO: write_fmt uses an internal lock, so this is not really lockfree.
 }
