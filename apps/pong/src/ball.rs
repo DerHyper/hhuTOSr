@@ -1,7 +1,9 @@
 //use crate::devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit};
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
+use usrlib::user_api::usr_get_system_time;
 use crate::player::{self, Player};
 use crate::sound_fx;
+use crate::utils::random_range;
 
 const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
 
@@ -107,33 +109,4 @@ impl Ball {
         self.movement_x = self.movement_x * BALL_SPEEDUP_MULTIPLICATOR;
         self.movement_y = self.movement_y * BALL_SPEEDUP_MULTIPLICATOR;
     }
-}
-
-/// Generates pseudo random number `range_max`
-/// Needed because `rand` cannot be used, as it requires std.
-fn random_range(range_min: usize, range_max: usize) -> usize {
-    // TODO: let time = pit::get_system_time();
-    let time :usize = 0; // TODO: Remove, only for testing
-
-    // Mixing
-    let mut random_number = time.wrapping_mul(0x123456789);
-    random_number ^= random_number<<12;
-    random_number ^= random_number>>27;
-        
-    let rand_within_range = range_min+(random_number%(range_max-range_min));
-    rand_within_range
-}
-
-/// Round to the neares int.<br>
-/// Needed because `f32::round()` cannot be used, as it requires std.<br>
-/// Example:<br>
-/// 0.3 -> 0<br>
-/// 0.5 -> 1<br>
-/// 0.7 -> 1<br>
-pub fn round(n: f32) -> usize {
-    let mut result = n as usize;
-    if n%1.0 >= 0.5 {
-        result = result+1;
-    }
-    return result;
 }

@@ -1,3 +1,5 @@
+use usrlib::user_api::usr_get_system_time;
+
 /// Round to the neares int.<br>
 /// Needed because `f32::round()` cannot be used, as it requires std.<br>
 /// Example:<br>
@@ -32,3 +34,16 @@ pub fn sqrt(n: f32) -> f32 {
     return x;
 }
 
+/// Generates pseudo random number `range_max`
+/// Needed because `rand` cannot be used, as it requires std.
+pub fn random_range(range_min: usize, range_max: usize) -> usize {
+    let time = usr_get_system_time();
+
+    // Mixing
+    let mut random_number = time.wrapping_mul(0x123456789);
+    random_number ^= random_number<<12;
+    random_number ^= random_number>>27;
+        
+    let rand_within_range = range_min+(random_number%(range_max-range_min));
+    rand_within_range
+}
