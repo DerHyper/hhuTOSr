@@ -2,13 +2,13 @@ use core::char;
 
 //use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::{self, Ball}, player::{self, Player}}};
 use crate::ball::{self, Ball};
+use crate::game_object::{self, GameObject};
 use crate::player::{self, Player};
+use crate::utils;
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_cga;
 use usrlib::user_cga::Color;
 
-const BAR_SYMBOL: char = 0xDB as char; // '█' in Code page 437
-const BAR_COLOR: Color = Color::White;
 const SPACE: char = ' ';
 // const BALL: char = 0x09 as char; // '○' in Code page 437
 const BALL_SYMBOL: char = 0xDB as char; // '█' in Code page 437
@@ -41,18 +41,10 @@ impl Frame {
         }
     }
 
-    /// Draw the bar of a player inside the frame
-    pub fn draw_player(&mut self, player: &Player) {
-        for y in player.upper_bar_end()..player.lower_bar_end()+1 {
-            self.frame[y as usize][player.x as usize] = BAR_SYMBOL;
-            self.color[y as usize][player.x as usize] = BAR_COLOR;
-        }
-    }
-
     /// Draw the ball
     pub fn draw_ball(&mut self, ball: &Ball) {
-        let y = ball::round(ball.y);
-        let x = ball::round(ball.x);
+        let y = utils::round(ball.y);
+        let x = utils::round(ball.x);
         self.frame[y][x] = BALL_SYMBOL;
         self.color[y][x] = BALL_COLOR;
     }
@@ -78,6 +70,34 @@ impl Frame {
             self.color[SCORE_Y_BUFFER][CGA_COLUMNS/2+3] = SCORE_COLOR;
             self.color[SCORE_Y_BUFFER][CGA_COLUMNS/2+2] = SCORE_COLOR;
         }
+    }
+
+    /// Draws a general game object on the screen.
+    pub fn draw(&mut self, game_object: &GameObject) {
+        let pivot = (game_object.x, game_object.y);
+        let left_bound = (pivot.0 - game_object.size_left) as usize;
+        let right_bound = (pivot.0 + game_object.size_right) as usize;
+        let upper_bound = (pivot.1 - game_object.size_up) as usize;
+        let lower_bound = (pivot.1 + game_object.size_down) as usize;
+
+        for y in upper_bound..lower_bound+1 {
+            for x in left_bound..right_bound+1 {
+                if x < 0 || x >= CGA_COLUMNS as usize || y < 0 || y >= CGA_ROWS as usize {
+                    continue; // Skip out of bounds
+                }
+                self.frame[y as usize][x as usize] = game_object.symbol;
+                self.color[y as usize][x as usize] = game_object.color;
+            }
+        }
+    }
+
+    /// Draws a point on the screen.
+    pub fn draw_point(&mut self, x: usize, y: usize, symbol: char, color: Color) {
+        if x < 0 || x >= CGA_COLUMNS as usize || y < 0 || y >= CGA_ROWS as usize {
+            return; // Out of bounds
+        }
+        self.frame[y][x] = symbol;
+        self.color[y][x] = color;
     }
 
     pub(crate) fn draw_middle_line(&mut self) {

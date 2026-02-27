@@ -1,8 +1,13 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
-use crate::utils;
+use crate::{frame::Frame, utils};
+
+pub trait Renderable {
+    fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color);
+}
 
 #[derive(Copy, Clone)]
 pub struct Point {
@@ -22,6 +27,14 @@ impl Point {
     /// Using the Pythagorean theorem
     pub fn distance(point1: &Point, point2: &Point) -> f32 {
         utils::sqrt(utils::square(point1.x - point2.x) + utils::square(point1.y - point2.y))
+    }
+}
+
+impl Renderable for Point {
+    fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color) {
+        let y = utils::round(self.y);
+        let x = utils::round(self.x);
+        frame.draw_point(x, y, symbol, color);
     }
 }
 
@@ -67,6 +80,18 @@ impl Line {
         }
 
         return Some(Point::new(x, y));
+    }
+}
+
+impl Renderable for Line {
+    fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color) {
+        let dx = self.end.x - self.start.x;
+        let dy = self.end.y - self.start.y;
+        let m = dx/dy;
+        for x in (self.start.x as usize)..(self.end.x as usize) {
+            let y = (self.start.y + (x as f32 - self.start.x) / m) as usize;
+            frame.draw_point(x, y, symbol, color);
+        }
     }
 }
 
@@ -139,5 +164,23 @@ impl Rect {
         });
 
         return res;
+    }
+}
+
+impl Renderable for Rect {
+    fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color) {
+        let left_bound = (self.pivot.x - self.width/2.0) as usize;
+        let right_bound = (self.pivot.x + self.width/2.0) as usize;
+        let upper_bound = (self.pivot.y - self.height/2.0) as usize;
+        let lower_bound = (self.pivot.y + self.height/2.0) as usize;
+
+        for y in upper_bound..lower_bound+1 {
+            for x in left_bound..right_bound+1 {
+                if x < 0 || x >= CGA_COLUMNS as usize || y < 0 || y >= CGA_ROWS as usize {
+                    continue; // Skip out of bounds
+                }
+                frame.draw_point(x, y, symbol, color);
+            }
+        }
     }
 }
