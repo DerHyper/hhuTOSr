@@ -13,7 +13,7 @@ use crate::ball::{self, Ball};
 use crate::sound_fx;
 
 const MIN_WINNING_POINTS: u16 = 11;
-const BAR_LENGTH: f32 = 5.;
+const BAR_LENGTH: f32 = 4.;
 const BAR_THICKNESS: f32 = 0.9;
 
 const LEFT_SIDE: u16 = 0;
