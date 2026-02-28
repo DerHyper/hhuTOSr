@@ -7,6 +7,7 @@ mod sound_fx;
 mod game_object;
 mod utils;
 mod geometrics;
+mod upgrades;
 
 use core::panic::PanicInfo;
 
