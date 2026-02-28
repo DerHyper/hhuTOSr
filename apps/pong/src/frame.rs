@@ -11,9 +11,6 @@ use usrlib::user_cga;
 use usrlib::user_cga::Color;
 
 const SPACE: char = ' ';
-// const BALL: char = 0x09 as char; // '○' in Code page 437
-const BALL_SYMBOL: char = 0xDB as char; // '█' in Code page 437
-const BALL_COLOR: Color = Color::White;
 const DIVIDER_LINE: char = '|';
 const DIVIDER_LINE_COLOR: Color = Color::LightGray;
 const SCORE_Y_BUFFER: usize = 1; // Distance between opper screen edge and score
@@ -40,14 +37,6 @@ impl Frame {
                 usrlib::user_cga::write_char(x, y, self.frame[y][x] as u8, self.color[y][x] as u8);
             }
         }
-    }
-
-    /// Draw the ball
-    pub fn draw_ball(&mut self, ball: &Ball) {
-        let y = utils::round(ball.y);
-        let x = utils::round(ball.x);
-        self.frame[y][x] = BALL_SYMBOL;
-        self.color[y][x] = BALL_COLOR;
     }
     
     /// Draw the score near the top of the screen

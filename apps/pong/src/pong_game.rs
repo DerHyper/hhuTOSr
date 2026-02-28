@@ -38,7 +38,7 @@ pub fn run() {
 fn run_game_interation() {
     // Init Game Objects
     let mut frame = Frame::new();
-    let mut player_1 = Player::new((LEFT_SIDE as f32+1.) , Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS);
+    let mut player_1 = Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS);
     let mut player_2 = Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS);
     let mut ball = Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
     ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
@@ -160,11 +160,11 @@ fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
 /// Checks if goal was hit, if so, update player score
 fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
     // Player 2 scored goal
-    if ball.x < (LEFT_SIDE as f32) -0.1 {
+    if ball.object.x < (LEFT_SIDE as f32) -0.1 {
         ball_hit_goal(ball, player_2);
 
     // Player 1 scored goal
-    } else if ball.x > (RIGHT_SIDE as f32) +0.1 {
+    } else if ball.object.x > (RIGHT_SIDE as f32) +0.1 {
         ball_hit_goal(ball, player_1);
     }
 }
@@ -202,9 +202,9 @@ fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
 fn draw_frame(frame: &mut Frame, player_1: &Player, player_2: &Player, ball: &Ball) {
     *frame = Frame::new();
     frame.draw_middle_line();
-    frame.draw_renderable(&player_1.collider, player_1.symbol, player_1.color);
-    frame.draw_renderable(&player_2.collider, player_2.symbol, player_2.color);
+    frame.draw_renderable(&player_1.object, player_1.symbol, player_1.color);
+    frame.draw_renderable(&player_2.object, player_2.symbol, player_2.color);
     frame.draw_score(&player_1, &player_2);
-    frame.draw_ball(&ball);
+    frame.draw_renderable(&ball.object, ball.symbol, ball.color);
     frame.print_frame();
 }

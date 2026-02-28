@@ -1,17 +1,23 @@
 //use crate::devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit};
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_api::usr_get_system_time;
+use usrlib::user_cga::Color;
+use crate::geometrics::Point;
 use crate::player::{self, Player};
 use crate::sound_fx;
 use crate::utils::random_range;
 
 const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
+// const BALL: char = 0x09 as char; // '○' in Code page 437
+const BALL_SYMBOL: char = 0xDB as char; // '█' in Code page 437
+const BALL_COLOR: Color = Color::White;
 
 /// 1 Letter big ball that moves over the screen
 pub struct Ball {
-    pub x: f32,
-    pub y: f32,
+    pub object: Point,
     //pub size: u16,
+    pub symbol: char,
+    pub color: Color,
     pub min_x: f32,
     pub max_x: f32,
     pub min_y: f32,
@@ -24,8 +30,9 @@ impl Ball {
     /// Creates a new ball
     pub const fn new(x: f32, y: f32) -> Ball {
         Ball {
-            x: x, 
-            y: y, 
+            object: Point::new(x, y),
+            symbol: BALL_SYMBOL,
+            color: BALL_COLOR,
             min_x: 0.0,
             max_x: (CGA_COLUMNS -1 ) as f32,
             min_y: 0.0, 
@@ -40,8 +47,8 @@ impl Ball {
     pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player)
     {
         self.check_collision(&mut player_1, &mut player_2);
-        self.y = self.y + self.movement_y;
-        self.x = self.x + self.movement_x;
+        self.object.y = self.object.y + self.movement_y;
+        self.object.x = self.object.x + self.movement_x;
     }
 
     /// Sets `movement_x` and `movement_y`. Move will be fulfilled after calling `move_step()`.
@@ -53,22 +60,22 @@ impl Ball {
 
     /// Sets `x` and `y`.
     pub fn set_position(&mut self, x: f32, y: f32) {
-        self.y = y;
-        self.x = x;
+        self.object.y = y;
+        self.object.x = x;
     }
 
     /// Checks if ball would clip inside a border/object in the next movement step.
     /// If that would happen, flip the movement.
     fn check_collision(&mut self, player_1: &mut Player, player_2: &mut Player) {
         // Check collision with border
-        let next_y = self.y + self.movement_y;
+        let next_y = self.object.y + self.movement_y;
         if next_y > self.max_y || next_y < self.min_y {
             self.flip_y();
             sound_fx::play_collision_border();
         }
 
         // Check collition with bar
-        let next_x = (self.x + self.movement_x) as f32;
+        let next_x = (self.object.x + self.movement_x) as f32;
         let collides_with_player =
             player_1.is_colliding(next_x, next_y) ||
             player_2.is_colliding(next_x, next_y);
