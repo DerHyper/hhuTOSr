@@ -30,181 +30,197 @@ const MS_BETWEEN_FRAMES: usize = 33; // 30 FPS
 /// Starts the game
 pub fn run() {
     loop {
-        run_game_interation();
+        let mut game_iteration = GameIteration::new();
+        game_iteration.run_game_interation();
     }
 }
 
-/// Starts a new itteration of the game. 
-fn run_game_interation() {
-    // Init Game Objects
-    let mut frame = Frame::new();
-    let mut player_1 = Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS);
-    let mut player_2 = Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS);
-    let mut ball = Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
-    ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+pub struct GameIteration {
+    frame: Frame,
+    player_1: Player,
+    player_2: Player,
+    ball: Ball
+}
 
-    // Show Start Screen
-    show_start_screen();
+impl GameIteration {
+    pub fn new() -> GameIteration {
+        GameIteration {
+            frame: Frame::new(),
+            player_1: Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS),
+            player_2: Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS),
+            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y())
+        }
+    }
 
-    // Hide cursor
-    //TODO: cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
-        
-    // wait for start input
-    while !usr_get_char().eq_ignore_ascii_case(&'W') { // Bussy-Polling
-        unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
-    };
-        
-    // Game loop
-    let mut last_frame_time =  usr_get_system_time();
-    while !is_game_end(&player_1, &player_2) {
-        if !check_next_frame_time(&mut last_frame_time) {
+    /// Starts a new itteration of the game. 
+    pub fn run_game_interation(&mut self) {
+        // Init Game Objects
+        self.ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+
+        // Show Start Screen
+        self.show_start_screen();
+
+        // Hide cursor
+        //TODO: cga::CGA.lock().setpos(CGA_COLUMNS, CGA_ROWS);
+            
+        // wait for start input
+        while !usr_get_char().eq_ignore_ascii_case(&'W') { // Bussy-Polling
             unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
-            continue; // Bussy-Polling
+        };
+            
+        // Game loop
+        let mut last_frame_time =  usr_get_system_time();
+        while !self.is_game_end() {
+            if !self.check_next_frame_time(&mut last_frame_time) {
+                unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
+                continue; // Bussy-Polling
+            }
+
+            self.run_pipeline();
+        
+            self.draw_frame();
+        }
+            
+        // Show End Screen
+        self.show_end_screen();
+
+        // wait for restart input
+        while !usr_get_char().eq_ignore_ascii_case(&'R') { // Bussy-Polling
+            unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
+        };
+    }
+
+    fn show_end_screen(&mut self) {
+        // Write winner
+        let player_1_str = [                                                
+            "_____ _                    ___      _ _ _ _         ",
+            "|  _  | |___ _ _ ___ ___   |_  |    | | | |_|___ ___ ",
+            "|   __| | .'| | | -_|  _|   _| |_   | | | | |   |_ -|",
+            "|__|  |_|__,|_  |___|_|    |_____|  |_____|_|_|_|___|",
+            "            |___|                                    "
+        ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
+
+        let player_2_str = [                                                
+            "_____ _                    ___    _ _ _ _         ",
+            "|  _  | |___ _ _ ___ ___   |_  |  | | | |_|___ ___ ",
+            "|   __| | .'| | | -_|  _|  |  _|  | | | | |   |_ -|",
+            "|__|  |_|__,|_  |___|_|    |___|  |_____|_|_|_|___|",
+            "            |___|                                  "
+        ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
+
+        let player_offset_y = 6;
+        if self.player_1.points > self.player_2.points {
+            user_cga::print_centered_block(&player_1_str, player_offset_y, MENU_COLOR);
+        } else {
+            user_cga::print_centered_block(&player_2_str, player_offset_y, MENU_COLOR);
         }
 
-        run_pipeline(&mut player_1, &mut player_2, &mut ball);
-    
-        draw_frame(&mut frame, &player_1, &player_2, &mut ball);
-    }
-        
-    // Show End Screen
-    show_end_screen(&mut player_1, &mut player_2);
-
-    // wait for restart input
-    while !usr_get_char().eq_ignore_ascii_case(&'R') { // Bussy-Polling
-        unsafe{ asm!("pause"); } // TODO: Check if this makes a difference
-    };
-}
-
-fn show_end_screen(player_1: &Player, player_2: &Player) {
-    // Write winner
-    let player_1_str = [                                                
-        "_____ _                    ___      _ _ _ _         ",
-        "|  _  | |___ _ _ ___ ___   |_  |    | | | |_|___ ___ ",
-        "|   __| | .'| | | -_|  _|   _| |_   | | | | |   |_ -|",
-        "|__|  |_|__,|_  |___|_|    |_____|  |_____|_|_|_|___|",
-        "            |___|                                    "
-    ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
-
-    let player_2_str = [                                                
-        "_____ _                    ___    _ _ _ _         ",
-        "|  _  | |___ _ _ ___ ___   |_  |  | | | |_|___ ___ ",
-        "|   __| | .'| | | -_|  _|  |  _|  | | | | |   |_ -|",
-        "|__|  |_|__,|_  |___|_|    |___|  |_____|_|_|_|___|",
-        "            |___|                                  "
-    ]; // rectangles.flf by David Villegas <mnementh@netcom.com> 12/94
-
-    let player_offset_y = 6;
-    if player_1.points > player_2.points {
-        user_cga::print_centered_block(&player_1_str, player_offset_y, MENU_COLOR);
-    } else {
-        user_cga::print_centered_block(&player_2_str, player_offset_y, MENU_COLOR);
+        // Call to action Restart
+        let cta_str = ["Press 'R' to restart!"];
+        let cta_offset_y = player_offset_y + player_1_str.len() + 4;
+        user_cga::print_centered_block(&cta_str, cta_offset_y, MENU_COLOR);
     }
 
-    // Call to action Restart
-    let cta_str = ["Press 'R' to restart!"];
-    let cta_offset_y = player_offset_y + player_1_str.len() + 4;
-    user_cga::print_centered_block(&cta_str, cta_offset_y, MENU_COLOR);
-}
-
-/// Returns true if one player has won
-fn is_game_end(player_1: &Player, player_2: &Player) -> bool {
-    return player_1.points >= MIN_WINNING_POINTS || player_2.points >= MIN_WINNING_POINTS;
-}
-
-/// Write PONG at the screen together with instructions
-fn show_start_screen() {
-    // Clear Screen
-    user_cga::clear_screen();
-
-    // Write Pong
-    let pong_str = [
-        " _____   ____  _   _  _____", 
-        "|  __ \\ / __ \\| \\ | |/ ____|",
-        "| |__) | |  | |  \\| | |  __ ",
-        "|  ___/| |  | | . ` | | |_ |",
-        "| |    | |__| | |\\  | |__| |",
-        "|_|     \\____/|_| \\_|\\_____|"
-    ]; // Big by Glenn Chappell 4/93 -- based on Standard
-    let pong_offset_y = 5;
-    user_cga::print_centered_block(&pong_str, pong_offset_y, MENU_COLOR);
-
-    // Write instructions
-    let instructions = [
-        "Player 1: Press 'W' and 'S' to move",
-        "Player 2: Press 'I' and 'K' to move",
-        "",
-        "Press 'W' to start!"
-    ];
-    let instruction_offset_y = pong_offset_y + pong_str.len() + 3;
-    user_cga::print_centered_block(&instructions, instruction_offset_y, MENU_COLOR);
-}
-
-/// Returns true if enugh time has elapsed to draw a new frame
-fn check_next_frame_time(last_frame_time: &mut usize) -> bool {
-    let current_time = usr_get_system_time();
-    if current_time - *last_frame_time <= MS_BETWEEN_FRAMES {
-        return false;
+    /// Returns true if one player has won
+    fn is_game_end(&mut self) -> bool {
+        return self.player_1.points >= MIN_WINNING_POINTS || self.player_2.points >= MIN_WINNING_POINTS;
     }
-    *last_frame_time = current_time;
-    true
-}
 
-/// Runs the pyhsics and event pipeline 
-fn run_pipeline(player_1: &mut Player, player_2: &mut Player, ball: &mut Ball) {
-    run_player_input(player_1, player_2);
-    move_ball(ball, player_1, player_2);
-    check_ball_hit_goal(ball, player_1, player_2);
-}
+    /// Write PONG at the screen together with instructions
+    fn show_start_screen(&mut self) {
+        // Clear Screen
+        user_cga::clear_screen();
 
-/// Checks if goal was hit, if so, update player score
-fn check_ball_hit_goal(ball: &mut Ball, player_1: &mut Player, player_2: &mut Player) {
-    // Player 2 scored goal
-    if ball.object.x < (LEFT_SIDE as f32) -0.1 {
-        ball_hit_goal(ball, player_2);
+        // Write Pong
+        let pong_str = [
+            " _____   ____  _   _  _____", 
+            "|  __ \\ / __ \\| \\ | |/ ____|",
+            "| |__) | |  | |  \\| | |  __ ",
+            "|  ___/| |  | | . ` | | |_ |",
+            "| |    | |__| | |\\  | |__| |",
+            "|_|     \\____/|_| \\_|\\_____|"
+        ]; // Big by Glenn Chappell 4/93 -- based on Standard
+        let pong_offset_y = 5;
+        user_cga::print_centered_block(&pong_str, pong_offset_y, MENU_COLOR);
 
-    // Player 1 scored goal
-    } else if ball.object.x > (RIGHT_SIDE as f32) +0.1 {
-        ball_hit_goal(ball, player_1);
+        // Write instructions
+        let instructions = [
+            "Player 1: Press 'W' and 'S' to move",
+            "Player 2: Press 'I' and 'K' to move",
+            "",
+            "Press 'W' to start!"
+        ];
+        let instruction_offset_y = pong_offset_y + pong_str.len() + 3;
+        user_cga::print_centered_block(&instructions, instruction_offset_y, MENU_COLOR);
+    }
+
+    /// Returns true if enugh time has elapsed to draw a new frame
+    fn check_next_frame_time(&mut self, last_frame_time: &mut usize) -> bool {
+        let current_time = usr_get_system_time();
+        if current_time - *last_frame_time <= MS_BETWEEN_FRAMES {
+            return false;
+        }
+        *last_frame_time = current_time;
+        true
+    }
+
+    /// Runs the pyhsics and event pipeline 
+    fn run_pipeline(&mut self) {
+        self.run_player_input();
+        self.move_ball();
+        self.check_ball_hit_goal();
+    }
+
+    /// Checks if goal was hit, if so, update player score
+    fn check_ball_hit_goal(&mut self) {
+        // Player 2 scored goal
+        if self.ball.object.x < (LEFT_SIDE as f32) -0.1 {
+            ball_hit_goal(&mut self.ball, &mut self.player_2);
+            return;
+
+        // Player 1 scored goal
+        } else if self.ball.object.x > (RIGHT_SIDE as f32) +0.1 {
+            ball_hit_goal(&mut self.ball,&mut self.player_1);
+        }
+    }
+
+    /// Move ball by one step
+    fn move_ball(&mut self) {
+        self.ball.move_step(&mut self.player_1, &mut self.player_2);
+    }
+
+    /// Poll player input, chance input accordingly
+    fn run_player_input(&mut self) {
+        let last_key = usr_try_get_char();
+        if let key = last_key {
+            match key.to_ascii_uppercase() {
+                'W' => self.player_1.up(),
+                'S' => self.player_1.down(),
+                'I' => self.player_2.up(),
+                'K' => self.player_2.down(),
+                _=>()
+            }
+        }
+    }
+
+    /// Calculates and prints a new frame that shows the current game state
+    fn draw_frame(&mut self) {
+        self.frame = Frame::new();
+        self.frame.draw_middle_line();
+        self.frame.draw_renderable(&self.player_1.object, self.player_1.symbol, self.player_1.color);
+        self.frame.draw_renderable(&self.player_2.object, self.player_2.symbol, self.player_2.color);
+        self.frame.draw_score(&self.player_1, &self.player_2);
+        self.frame.draw_renderable(&self.ball.object, self.ball.symbol, self.ball.color);
+        self.frame.print_frame();
     }
 }
 
 /// Call if ball hit a goal, resets ball, scores player score and plays sound effect
-fn ball_hit_goal(ball: &mut Ball, player: &mut Player) {
+pub fn ball_hit_goal(ball: &mut Ball,player: &mut Player) {
     ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
     ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
     ball.randomize_movement_direction();
     player.score_point();
     sound_fx::play_score_point();
     // TODO: pit::wait(RESET_TIME_AFTER_GOAL);
-}
-
-/// Move ball by one step
-fn move_ball(ball: &mut Ball, mut player_1: &mut Player, mut player_2: &mut Player) {
-    ball.move_step(&mut player_1, &mut player_2);
-}
-
-/// Poll player input, chance input accordingly
-fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
-    let last_key = usr_try_get_char();
-    if let key = last_key {
-        match key.to_ascii_uppercase() {
-            'W' => player_1.up(),
-            'S' => player_1.down(),
-            'I' => player_2.up(),
-            'K' => player_2.down(),
-            _=>()
-        }
-    }
-}
-
-/// Calculates and prints a new frame that shows the current game state
-fn draw_frame(frame: &mut Frame, player_1: &Player, player_2: &Player, ball: &Ball) {
-    *frame = Frame::new();
-    frame.draw_middle_line();
-    frame.draw_renderable(&player_1.object, player_1.symbol, player_1.color);
-    frame.draw_renderable(&player_2.object, player_2.symbol, player_2.color);
-    frame.draw_score(&player_1, &player_2);
-    frame.draw_renderable(&ball.object, ball.symbol, ball.color);
-    frame.print_frame();
 }
