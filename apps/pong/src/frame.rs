@@ -3,6 +3,7 @@ use core::char;
 //use crate::{devices::cga::{self, CGA_COLUMNS, CGA_ROWS}, user::aufgabe7::{ball::{self, Ball}, player::{self, Player}}};
 use crate::ball::{self, Ball};
 use crate::game_object::{self, GameObject};
+use crate::geometrics::Renderable;
 use crate::player::{self, Player};
 use crate::utils;
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
@@ -89,6 +90,11 @@ impl Frame {
                 self.color[y as usize][x as usize] = game_object.color;
             }
         }
+    }
+
+    /// Draws a renderable object on the screen.
+    pub fn draw_renderable(&mut self, renderable : &impl Renderable, symbol: char, color: Color) {
+        renderable.draw(self, symbol, color);
     }
 
     /// Draws a point on the screen.
