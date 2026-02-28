@@ -88,7 +88,7 @@ impl Renderable for Line {
         let dx = self.end.x - self.start.x;
         let dy = self.end.y - self.start.y;
         let m = dx/dy;
-        for x in (self.start.x as usize)..(self.end.x as usize) {
+        for x in (utils::round(self.start.x))..(utils::round(self.end.x)) {
             let y = (self.start.y + (x as f32 - self.start.x) / m) as usize;
             frame.draw_point(x, y, symbol, color);
         }
@@ -169,10 +169,10 @@ impl Rect {
 
 impl Renderable for Rect {
     fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color) {
-        let left_bound = (self.pivot.x - self.width/2.0) as usize;
-        let right_bound = (self.pivot.x + self.width/2.0) as usize;
-        let upper_bound = (self.pivot.y - self.height/2.0) as usize;
-        let lower_bound = (self.pivot.y + self.height/2.0) as usize;
+        let left_bound = utils::round(self.pivot.x - self.width/2.0) as usize;
+        let right_bound = utils::round(self.pivot.x + self.width/2.0) as usize;
+        let upper_bound = utils::round(self.pivot.y - self.height/2.0) as usize;
+        let lower_bound = utils::round(self.pivot.y + self.height/2.0) as usize;
 
         for y in upper_bound..lower_bound+1 {
             for x in left_bound..right_bound+1 {
