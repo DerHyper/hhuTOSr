@@ -11,6 +11,7 @@ use crate::frame::{self, Frame};
 use crate::ball::{self, Ball};
 //use crate::library::input;
 use crate::sound_fx;
+use crate::upgrades::upgrade_manager::UpgradeManager;
 
 const MIN_WINNING_POINTS: u16 = 11;
 const BAR_LENGTH: f32 = 4.;
@@ -39,7 +40,8 @@ pub struct GameIteration {
     frame: Frame,
     player_1: Player,
     player_2: Player,
-    ball: Ball
+    ball: Ball,
+    upgrade_manager: UpgradeManager
 }
 
 impl GameIteration {
@@ -48,7 +50,8 @@ impl GameIteration {
             frame: Frame::new(),
             player_1: Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS),
             player_2: Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS),
-            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y())
+            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y()),
+            upgrade_manager: UpgradeManager::new()
         }
     }
 
@@ -169,6 +172,7 @@ impl GameIteration {
         self.run_player_input();
         self.move_ball();
         self.check_ball_hit_goal();
+        self.upgrade_manager.update();
     }
 
     /// Checks if goal was hit, if so, update player score
@@ -209,6 +213,9 @@ impl GameIteration {
         self.frame.draw_middle_line();
         self.frame.draw_renderable(&self.player_1.object, self.player_1.symbol, self.player_1.color);
         self.frame.draw_renderable(&self.player_2.object, self.player_2.symbol, self.player_2.color);
+        for upgrade in self.upgrade_manager.get_instantiated_upgrades() {
+            self.frame.draw_renderable(&upgrade.object, upgrade.upgrade_type.get_symbol(), upgrade.upgrade_type.get_color());
+        }
         self.frame.draw_score(&self.player_1, &self.player_2);
         self.frame.draw_renderable(&self.ball.object, self.ball.symbol, self.ball.color);
         self.frame.print_frame();
