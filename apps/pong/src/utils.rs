@@ -47,3 +47,23 @@ pub fn random_range(range_min: usize, range_max: usize) -> usize {
     let rand_within_range = range_min+(random_number%(range_max-range_min));
     rand_within_range
 }
+
+pub struct Timer {
+    start_time: usize
+}
+
+impl Timer {
+    pub fn new() -> Timer {
+        Timer {
+            start_time: usr_get_system_time()
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.start_time = usr_get_system_time();
+    }
+
+    pub fn elapsed(&self) -> usize {
+        usr_get_system_time() - self.start_time
+    }
+}
