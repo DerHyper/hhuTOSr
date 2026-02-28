@@ -8,7 +8,7 @@ const BAR_COLOR: Color = Color::White;
 /// Player, which is represented on the screen as a bar
 pub struct Player {
     //pub game_object: GameObject,
-    pub collider: Rect,
+    pub object: Rect,
     pub symbol: char,
     pub color: Color,
     pub points: u16
@@ -21,7 +21,7 @@ impl Player {
     /// Creates a new player
     pub const fn new(x: f32, y: f32, length: f32, thickness: f32 ) -> Player {
         Player {
-            collider: Rect::new(x as f32, y as f32, thickness, length as f32),
+            object: Rect::new(x as f32, y as f32, thickness, length as f32),
             symbol: BAR_SYMBOL, 
             color: BAR_COLOR,
             points: 0
@@ -32,7 +32,7 @@ impl Player {
     pub fn up(&mut self)
     {
         if self.upper_bar_end() > MIN_Y {
-            self.collider.pivot.y = self.collider.pivot.y-1.0;
+            self.object.pivot.y = self.object.pivot.y-1.0;
         }
     }
 
@@ -40,20 +40,20 @@ impl Player {
     pub fn down(&mut self)
     {
         if self.lower_bar_end() < MAX_Y {
-            self.collider.pivot.y = self.collider.pivot.y+1.0;
+            self.object.pivot.y = self.object.pivot.y+1.0;
         }
     }
 
     /// Returns the y position of the upper end of the bar
     pub fn upper_bar_end(&self) -> f32
     {
-        self.collider.pivot.y - self.collider.height/2.0
+        self.object.pivot.y - self.object.height/2.0
     }
 
     /// Returns the y position of the lower end of the bar
     pub fn lower_bar_end(&self) -> f32
     {
-        self.collider.pivot.y + self.collider.height/2.0
+        self.object.pivot.y + self.object.height/2.0
     }
 
     /// Returns true, if the other coordinates are within the bar 
@@ -69,10 +69,10 @@ impl Player {
     }
     
     fn right_bar_end(&self) -> f32 {
-        self.collider.pivot.x as f32 + self.collider.width/2.0
+        self.object.pivot.x as f32 + self.object.width/2.0
     }
     
     fn left_bar_end(&self) -> f32 {
-        self.collider.pivot.x as f32 - self.collider.width/2.0
+        self.object.pivot.x as f32 - self.object.width/2.0
     }
 }
