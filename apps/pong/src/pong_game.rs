@@ -3,6 +3,8 @@ use core::arch::asm;
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_api::{self, usr_get_char, usr_get_system_time, usr_try_get_char};
 use usrlib::user_cga::{self, Color};
+use crate::game_object::GameObject;
+use crate::geometrics::Renderable;
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
@@ -11,8 +13,8 @@ use crate::ball::{self, Ball};
 use crate::sound_fx;
 
 const MIN_WINNING_POINTS: u16 = 11;
-const BAR_LENGTH: u16 = 5;
-const BAR_THICKNESS: f32 = 1.;
+const BAR_LENGTH: f32 = 5.;
+const BAR_THICKNESS: f32 = 0.9;
 
 const LEFT_SIDE: u16 = 0;
 const RIGHT_SIDE: u16 = (CGA_COLUMNS as u16) - 1;
@@ -36,8 +38,8 @@ pub fn run() {
 fn run_game_interation() {
     // Init Game Objects
     let mut frame = Frame::new();
-    let mut player_1 = Player::new(LEFT_SIDE+1, Y_MIDDLE, BAR_LENGTH, BAR_THICKNESS);
-    let mut player_2 = Player::new(RIGHT_SIDE-1, Y_MIDDLE, BAR_LENGTH, BAR_THICKNESS);
+    let mut player_1 = Player::new((LEFT_SIDE as f32+1.) , Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS);
+    let mut player_2 = Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS);
     let mut ball = Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
     ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
 
@@ -200,8 +202,8 @@ fn run_player_input(player_1: &mut Player, player_2: &mut Player) {
 fn draw_frame(frame: &mut Frame, player_1: &Player, player_2: &Player, ball: &Ball) {
     *frame = Frame::new();
     frame.draw_middle_line();
-    frame.draw_player(&player_1);
-    frame.draw_player(&player_2);
+    frame.draw_renderable(&player_1.collider, player_1.symbol, player_1.color);
+    frame.draw_renderable(&player_2.collider, player_2.symbol, player_2.color);
     frame.draw_score(&player_1, &player_2);
     frame.draw_ball(&ball);
     frame.print_frame();
