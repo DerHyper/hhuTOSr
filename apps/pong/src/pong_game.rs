@@ -193,7 +193,7 @@ impl GameIteration {
 
     /// Move ball by one step
     fn move_ball(&mut self) {
-        self.ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager.instantiated_upgrade);
+        self.ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager);
     }
 
     /// Poll player input, chance input accordingly

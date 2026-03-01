@@ -8,6 +8,7 @@ use crate::geometrics::{Line, Point};
 use crate::player::{self, Player};
 use crate::sound_fx;
 use crate::upgrades::upgrade::Upgrade;
+use crate::upgrades::upgrade_manager::UpgradeManager;
 use crate::utils::random_range;
 
 const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
@@ -50,13 +51,13 @@ impl Ball {
 
     /// Move the ball by one step, flipping the direction if colliding with other object.
     /// Movement direction is definded in `movement_x` and `movement_y`.
-    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade: &mut Upgrade)
+    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager)
     {
-        self.check_collisions(player_1,player_2,upgrade);
+        self.check_collisions(player_1,player_2,upgrade_manager);
         self.move_in_movement_direction();
     }
 
-    fn check_collisions(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade: &mut Upgrade) {
+    fn check_collisions(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager) {
         // Calculate Trajectory
         let trajectory=  self.get_trajectory();
 
@@ -70,7 +71,7 @@ impl Ball {
             return; 
         }
         if self.check_collision_borders(&trajectory) { return; }
-        if self.check_collision_upgrade(upgrade, player_1, player_2, &trajectory) { return; }
+        if self.check_collision_upgrade(upgrade_manager, player_1, player_2, &trajectory) { return; }
     }
 
     fn move_in_movement_direction(&mut self) {
@@ -189,8 +190,8 @@ impl Ball {
         }
     }
     
-    fn check_collision_upgrade(&mut self, upgrade: &mut Upgrade, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> bool {
-        let hitpoint = upgrade.object.collides_with_line(trajectory);
+    fn check_collision_upgrade(&mut self, upgrade_manager: &mut UpgradeManager, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> bool {
+        let hitpoint = upgrade_manager.instantiated_upgrade.object.collides_with_line(trajectory);
         if let Some(hitpoint) = hitpoint {
             // Select players
             let collecting_player;
@@ -203,7 +204,7 @@ impl Ball {
                 other_player = player_1;
             }
 
-            upgrade.apply(collecting_player, other_player, self);
+            upgrade_manager.apply(collecting_player, other_player, self);
             sound_fx::play_collect_upgrade();
             return true;
         }

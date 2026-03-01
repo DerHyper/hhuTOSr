@@ -2,7 +2,7 @@ extern crate alloc;
 
 use core::{mem, ptr::null};
 
-use crate::{geometrics::Rect, pong_game, upgrades::{longerbar::LongerBarUpgrade, upgrade::{Upgrade, UpgradeType, UpgradeTypeTrait}}, utils::Timer};
+use crate::{ball::Ball, geometrics::Rect, player::Player, pong_game, upgrades::{longerbar::LongerBarUpgrade, upgrade::{Upgrade, UpgradeType, UpgradeTypeTrait}}, utils::Timer};
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 const UPGRADE_SPAWN_INTERVAL: usize = 10000; // Spawn upgrade every 10 seconds
@@ -62,5 +62,14 @@ impl UpgradeManager {
 
     pub fn get_color(&self) -> usrlib::user_cga::Color {
         self.instantiated_upgrade.upgrade_type.get_color()
+    }
+
+    pub fn destroy_upgrade(&mut self) {
+        self.instantiated_upgrade.upgrade_type = UpgradeType::None;
+    }
+
+    pub fn apply(&mut self, mut collecting_player: &mut Player, mut other_player: &mut Player, mut ball: &mut Ball) {
+        self.instantiated_upgrade.apply(collecting_player, other_player, ball);
+        self.destroy_upgrade();
     }
 }

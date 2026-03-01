@@ -66,7 +66,7 @@ impl UpgradeType {
         if number_of_upgrade_types == 0 {
             panic!("No upgrade types registered");
         }
-        let random_index = crate::utils::random_range(0, number_of_upgrade_types);
+        let random_index = crate::utils::random_range(1, number_of_upgrade_types);
         UpgradeType::from(random_index)
     }
 }
