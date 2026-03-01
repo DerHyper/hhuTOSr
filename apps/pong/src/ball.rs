@@ -1,10 +1,13 @@
+use core::ops::ControlFlow;
+
 //use crate::devices::{cga::{CGA_COLUMNS, CGA_ROWS}, pit};
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_api::usr_get_system_time;
 use usrlib::user_cga::Color;
-use crate::geometrics::Point;
+use crate::geometrics::{Line, Point};
 use crate::player::{self, Player};
 use crate::sound_fx;
+use crate::upgrades::upgrade::Upgrade;
 use crate::utils::random_range;
 
 const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
@@ -22,13 +25,15 @@ pub struct Ball {
     pub max_x: f32,
     pub min_y: f32,
     pub max_y: f32,
-    pub movement_x: f32,
-    pub movement_y: f32
+    pub movement_direction: Point,
+    pub speed: f32,
+    pub last_hit_player: u8
 }
+
 
 impl Ball {
     /// Creates a new ball
-    pub const fn new(x: f32, y: f32) -> Ball {
+    pub const fn new(x: f32, y: f32, start_player: u8) -> Ball {
         Ball {
             object: Point::new(x, y),
             symbol: BALL_SYMBOL,
@@ -37,25 +42,96 @@ impl Ball {
             max_x: (CGA_COLUMNS -1 ) as f32,
             min_y: 0.0, 
             max_y: (CGA_ROWS-1) as f32,
-            movement_x: 0.,
-            movement_y: 0.
+            movement_direction: Point::new(0.,0.),
+            speed: 0.,
+            last_hit_player: start_player
         }
     }
 
     /// Move the ball by one step, flipping the direction if colliding with other object.
     /// Movement direction is definded in `movement_x` and `movement_y`.
-    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player)
+    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade: &mut Upgrade)
     {
-        self.check_collision(&mut player_1, &mut player_2);
-        self.object.y = self.object.y + self.movement_y;
-        self.object.x = self.object.x + self.movement_x;
+        self.check_collisions(player_1,player_2,upgrade);
+        self.move_in_movement_direction();
+    }
+
+    fn check_collisions(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade: &mut Upgrade) {
+        // Calculate Trajectory
+        let trajectory=  self.get_trajectory();
+
+        // Only check for one collision (early return)
+        if self.check_collision_player(player_1, &trajectory) { 
+            self.last_hit_player = 1;
+            return; 
+        }
+        if self.check_collision_player(player_2, &trajectory) { 
+            self.last_hit_player = 2;
+            return; 
+        }
+        if self.check_collision_borders(&trajectory) { return; }
+        if self.check_collision_upgrade(upgrade, player_1, player_2, &trajectory) { return; }
+    }
+
+    fn move_in_movement_direction(&mut self) {
+        self.object = self.object + self.movement_direction*self.speed;
+    }
+
+    fn check_collision_player(&mut self, player: &mut Player, trajectory: &Line) -> bool {
+        let hitpoint = player.object.collides_with_line(trajectory);
+        if let Some(hitpoint) = hitpoint {
+            // New Direction depends on where on the bar the bal hit. Middle -> (1,0), Upper side -> (0.2, -0.8) and so on
+            let player_to_hitpoint_line = Line::new(player.object.pivot, hitpoint);
+            let mut new_direction = player_to_hitpoint_line.to_directional_vector();
+            
+            self.set_movement_direction(new_direction);
+            self.increase_speed();
+            sound_fx::play_collision_player();
+            return true;
+        }
+        false
+    }
+
+    fn check_collision_borders(&mut self, trajectory: &Line) -> bool {
+        // Check collision with border
+        let next_y = trajectory.end.y;
+        if next_y > self.max_y || next_y < self.min_y {
+            self.flip_y();
+            sound_fx::play_collision_border();
+            return true;
+        }
+        false
+    }
+    
+    fn get_trajectory(&mut self) -> Line {
+        let current_position = self.object;
+        let movement_vector = self.movement_direction * self.speed;
+        let next_position = current_position + movement_vector;
+        Line::new(self.object, next_position)
+    }
+    
+    /// Sets `movement_x` and `movement_y`. Move will be fulfilled after calling `move_step()`.
+    pub fn set_movement_direction(&mut self, mut new_direction: Point)
+    {
+        // Increase x movement to make the game more dynamic.
+        new_direction.x = new_direction.x*10.0;
+        let scaled_direction = new_direction.unit_vector();
+
+        // Secure minimum x movement to prevent boring straight vertical movement
+        scaled_direction.y.clamp(-0.2, 0.2);
+        let scaled_direction = scaled_direction.unit_vector();
+
+        self.movement_direction = scaled_direction;
     }
 
     /// Sets `movement_x` and `movement_y`. Move will be fulfilled after calling `move_step()`.
-    pub fn set_movement(&mut self, new_x: f32, new_y: f32)
+    pub fn increase_speed(&mut self)
     {
-        self.movement_x = new_x;
-        self.movement_y = new_y;
+        self.speed *= BALL_SPEEDUP_MULTIPLICATOR;
+    }
+
+    pub fn set_speed(&mut self, speed: f32) {
+        self.speed = speed;
     }
 
     /// Sets `x` and `y`.
@@ -66,16 +142,17 @@ impl Ball {
 
     /// Checks if ball would clip inside a border/object in the next movement step.
     /// If that would happen, flip the movement.
+    #[deprecated]
     fn check_collision(&mut self, player_1: &mut Player, player_2: &mut Player) {
         // Check collision with border
-        let next_y = self.object.y + self.movement_y;
+        let next_y = self.object.y + self.movement_direction.y*self.speed;
         if next_y > self.max_y || next_y < self.min_y {
             self.flip_y();
             sound_fx::play_collision_border();
         }
 
         // Check collition with bar
-        let next_x = (self.object.x + self.movement_x) as f32;
+        let next_x = (self.object.x + self.movement_direction.x*self.speed) as f32;
         let collides_with_player =
             player_1.is_colliding(next_x, next_y) ||
             player_2.is_colliding(next_x, next_y);
@@ -88,12 +165,12 @@ impl Ball {
     
     /// Invert `movement_y`
     fn flip_y(&mut self) {
-        self.movement_y = -self.movement_y;
+        self.movement_direction.y = -self.movement_direction.y;
     }
 
     /// Invert `movement_x`
     fn flip_x(&mut self) {
-        self.movement_x = -self.movement_x;
+        self.movement_direction.x = -self.movement_direction.x;
     }
 
     /// Returns a random number within the y range
@@ -112,8 +189,24 @@ impl Ball {
         }
     }
     
-    fn increase_speed(&mut self) {
-        self.movement_x = self.movement_x * BALL_SPEEDUP_MULTIPLICATOR;
-        self.movement_y = self.movement_y * BALL_SPEEDUP_MULTIPLICATOR;
+    fn check_collision_upgrade(&mut self, upgrade: &mut Upgrade, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> bool {
+        let hitpoint = upgrade.object.collides_with_line(trajectory);
+        if let Some(hitpoint) = hitpoint {
+            // Select players
+            let collecting_player;
+            let other_player;
+            if self.last_hit_player == 1 {
+                collecting_player = player_1;
+                other_player = player_2;
+            } else {
+                collecting_player = player_2;
+                other_player = player_1;
+            }
+
+            upgrade.apply(collecting_player, other_player, self);
+            sound_fx::play_collect_upgrade();
+            return true;
+        }
+        false
     }
 }

@@ -4,7 +4,7 @@ use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 use usrlib::user_api::{self, usr_get_char, usr_get_system_time, usr_try_get_char};
 use usrlib::user_cga::{self, Color};
 use crate::game_object::GameObject;
-use crate::geometrics::Renderable;
+use crate::geometrics::{Point, Renderable};
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
@@ -24,6 +24,7 @@ const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const STD_BALL_SPEED_X: f32 = 0.5;
 const STD_BALL_SPEED_Y: f32 = 0.25;
+const STD_BALL_SPEED: f32 = 0.5;
 const RESET_TIME_AFTER_GOAL: usize = 700;
 const MENU_COLOR: Color = Color::LightGreen;
 
@@ -51,7 +52,7 @@ impl GameIteration {
             frame: Frame::new(),
             player_1: Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS),
             player_2: Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS),
-            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y()),
+            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8),
             upgrade_manager: UpgradeManager::new()
         }
     }
@@ -59,7 +60,8 @@ impl GameIteration {
     /// Starts a new itteration of the game. 
     pub fn run_game_interation(&mut self) {
         // Init Game Objects
-        self.ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+        self.ball.set_movement_direction(Point::new(STD_BALL_SPEED_X, STD_BALL_SPEED_Y));
+        self.ball.set_speed(STD_BALL_SPEED);
 
         // Show Start Screen
         self.show_start_screen();
@@ -191,7 +193,7 @@ impl GameIteration {
 
     /// Move ball by one step
     fn move_ball(&mut self) {
-        self.ball.move_step(&mut self.player_1, &mut self.player_2);
+        self.ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager.instantiated_upgrade);
     }
 
     /// Poll player input, chance input accordingly
@@ -212,14 +214,11 @@ impl GameIteration {
     fn draw_frame(&mut self) {
         self.frame = Frame::new();
         self.frame.draw_middle_line();
-if self.upgrade_manager.instantiated_upgrade.upgrade_type != UpgradeType::None {
+        if self.upgrade_manager.instantiated_upgrade.upgrade_type != UpgradeType::None {
             self.frame.draw_renderable(&self.upgrade_manager.instantiated_upgrade.object, self.upgrade_manager.get_symbol(), self.upgrade_manager.get_color());
         }
         self.frame.draw_renderable(&self.player_1.object, self.player_1.symbol, self.player_1.color);
         self.frame.draw_renderable(&self.player_2.object, self.player_2.symbol, self.player_2.color);
-        for upgrade in self.upgrade_manager.get_instantiated_upgrades() {
-            self.frame.draw_renderable(&upgrade.object, upgrade.upgrade_type.get_symbol(), upgrade.upgrade_type.get_color());
-        }
         self.frame.draw_score(&self.player_1, &self.player_2);
         self.frame.draw_renderable(&self.ball.object, self.ball.symbol, self.ball.color);
         self.frame.print_frame();
@@ -229,7 +228,8 @@ if self.upgrade_manager.instantiated_upgrade.upgrade_type != UpgradeType::None {
 /// Call if ball hit a goal, resets ball, scores player score and plays sound effect
 pub fn ball_hit_goal(ball: &mut Ball,player: &mut Player) {
     ball.set_position((CGA_COLUMNS/2) as f32, Ball::get_random_start_y());
-    ball.set_movement(STD_BALL_SPEED_X, STD_BALL_SPEED_Y);
+    ball.set_movement_direction(Point::new(STD_BALL_SPEED_X, STD_BALL_SPEED_Y));
+    ball.set_speed(STD_BALL_SPEED);
     ball.randomize_movement_direction();
     player.score_point();
     sound_fx::play_score_point();
