@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(variant_count)]
 mod ball;
 mod frame;
 mod player;

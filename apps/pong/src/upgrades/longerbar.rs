@@ -1,6 +1,3 @@
-extern crate alloc;
-
-use alloc::boxed::Box;
 use usrlib::user_cga::Color;
 
 use crate::upgrades::upgrade::UpgradeTypeTrait;
@@ -23,19 +20,15 @@ impl LongerBarUpgrade {
 }
 
 impl UpgradeTypeTrait for LongerBarUpgrade {
-    fn get_symbol(&self) -> char {
-        self.symbol
+    fn get_symbol() -> char {
+        LONGER_BAR_UPGRADE_SYMBOL
     }
 
-    fn get_color(&self) -> Color {
-        self.color
+    fn get_color() -> Color {
+        LONGER_BAR_UPGRADE_COLOR
     }
 
-    fn apply_upgrade(&self, target_player: &mut crate::player::Player, _other_player: &mut crate::player::Player, _ball: &mut crate::ball::Ball) {
+    fn apply_upgrade(target_player: &mut crate::player::Player, _other_player: &mut crate::player::Player, _ball: &mut crate::ball::Ball) {
         target_player.object.height = target_player.object.height + 1.0;
-    }
-    
-    fn create(&self) -> Box<dyn UpgradeTypeTrait> {
-        Box::new(LongerBarUpgrade::new())
     }
 }
