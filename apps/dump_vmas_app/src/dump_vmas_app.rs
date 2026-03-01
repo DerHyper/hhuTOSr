@@ -27,7 +27,8 @@ fn main() {
     for i in 0..16 {
         v.push(i);
     }
-    println!("Allocated Vec");
+    println!("Allocated 16 Vecs");
+    println!("See console for more info");
 
     loop {}
 }
