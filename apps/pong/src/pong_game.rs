@@ -11,7 +11,8 @@ use crate::frame::{self, Frame};
 use crate::ball::{self, Ball};
 //use crate::library::input;
 use crate::sound_fx;
-use crate::upgrades::upgrade_manager::UpgradeManager;
+use crate::upgrades::upgrade::UpgradeType;
+use crate::upgrades::upgrade_manager::{self, UpgradeManager};
 
 const MIN_WINNING_POINTS: u16 = 11;
 const BAR_LENGTH: f32 = 4.;
@@ -211,6 +212,9 @@ impl GameIteration {
     fn draw_frame(&mut self) {
         self.frame = Frame::new();
         self.frame.draw_middle_line();
+if self.upgrade_manager.instantiated_upgrade.upgrade_type != UpgradeType::None {
+            self.frame.draw_renderable(&self.upgrade_manager.instantiated_upgrade.object, self.upgrade_manager.get_symbol(), self.upgrade_manager.get_color());
+        }
         self.frame.draw_renderable(&self.player_1.object, self.player_1.symbol, self.player_1.color);
         self.frame.draw_renderable(&self.player_2.object, self.player_2.symbol, self.player_2.color);
         for upgrade in self.upgrade_manager.get_instantiated_upgrades() {

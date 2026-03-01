@@ -10,6 +10,7 @@ pub trait UpgradeTypeTrait {
     fn apply_upgrade(collecting_player: &mut crate::player::Player, other_player: &mut crate::player::Player, ball: &mut crate::ball::Ball);
 }
 
+#[derive(PartialEq)]
 pub enum UpgradeType {
     None,
     LongerBar,
