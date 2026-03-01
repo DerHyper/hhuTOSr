@@ -217,7 +217,11 @@ impl GameIteration {
     {
         for mut ball in self.balls.iter_mut() {
             if ball.is_none() {
-                ball = &mut Some(Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8));
+                let mut new_ball = Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8);
+                new_ball.set_movement_direction(Point::new(STD_BALL_SPEED_X, STD_BALL_SPEED_Y));
+                new_ball.set_speed(STD_BALL_SPEED);
+
+                *ball = Some(new_ball);
                 return;
             }
         }

@@ -215,10 +215,10 @@ impl Ball {
                 collecting_player = player_2;
                 other_player = player_1;
             }
-
+            let event = upgrade_manager.get_ball_event();
             upgrade_manager.apply(collecting_player, other_player, self);
             sound_fx::play_collect_upgrade();
-            return (true, upgrade_manager.get_ball_event());
+            return (true, event);
         }
         (false, BallEvent::None)
     }

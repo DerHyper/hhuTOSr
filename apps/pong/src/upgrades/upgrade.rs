@@ -2,7 +2,7 @@ use core::mem;
 
 use usrlib::user_cga::Color;
 
-use crate::{ball::BallEvent, geometrics::Rect, upgrades::{longerbar::LongerBarUpgrade, smallerbar::SmallerBarUpgrade}};
+use crate::{ball::BallEvent, geometrics::Rect, upgrades::{add_ball::AddBallUpgrade, longerbar::LongerBarUpgrade, smallerbar::SmallerBarUpgrade}};
 
 pub trait UpgradeTypeTrait {
     fn get_symbol() -> char;
@@ -18,7 +18,7 @@ pub enum UpgradeType {
     None,
     LongerBar,
     SmallerBar,
-    // AddBall,
+    AddBall,
     // SlowerBalls,
     // Blocker
 }
@@ -29,7 +29,7 @@ impl UpgradeType {
             UpgradeType::None => {},
             UpgradeType::LongerBar => LongerBarUpgrade::apply_upgrade(collecting_player, other_player, ball),
             UpgradeType::SmallerBar => SmallerBarUpgrade::apply_upgrade(other_player, collecting_player, ball),
-            // UpgradeType::AddBall => todo!(),
+            UpgradeType::AddBall => AddBallUpgrade::apply_upgrade(collecting_player, other_player, ball),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
         }
@@ -40,7 +40,7 @@ impl UpgradeType {
             UpgradeType::None => ' ',
             UpgradeType::LongerBar => LongerBarUpgrade::get_symbol(),
             UpgradeType::SmallerBar => SmallerBarUpgrade::get_symbol(),
-            // UpgradeType::AddBall => todo!(),
+            UpgradeType::AddBall => AddBallUpgrade::get_symbol(),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
         }
@@ -51,7 +51,7 @@ impl UpgradeType {
             UpgradeType::None => Color::Black,
             UpgradeType::LongerBar => LongerBarUpgrade::get_color(),
             UpgradeType::SmallerBar => SmallerBarUpgrade::get_color(),
-            // UpgradeType::AddBall => todo!(),
+            UpgradeType::AddBall => AddBallUpgrade::get_color(),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
         }
@@ -62,7 +62,7 @@ impl UpgradeType {
             0 => UpgradeType::None, // No Upgrade
             1 => UpgradeType::LongerBar,
             2 => UpgradeType::SmallerBar,
-            // 3 => UpgradeType::AddBall,
+            3 => UpgradeType::AddBall,
             // 4 => UpgradeType::SlowerBalls,
             // 5 => UpgradeType::Blocker,
             _ => panic!("Invalid upgrade type index")
@@ -74,7 +74,7 @@ impl UpgradeType {
         if number_of_upgrade_types == 0 {
             panic!("No upgrade types registered");
         }
-        let random_index = crate::utils::random_range(1, number_of_upgrade_types);
+        let random_index = crate::utils::random_range(1, number_of_upgrade_types); // Not None
         UpgradeType::from(random_index)
     }
     
@@ -83,7 +83,7 @@ impl UpgradeType {
             UpgradeType::None => BallEvent::None,
             UpgradeType::LongerBar => BallEvent::None,
             UpgradeType::SmallerBar => BallEvent::None,
-            // UpgradeType::AddBall => todo!(),
+            UpgradeType::AddBall => BallEvent::SpawnBall,
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
         }

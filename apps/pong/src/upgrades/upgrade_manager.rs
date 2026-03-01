@@ -6,7 +6,7 @@ use crate::{ball::Ball, geometrics::Rect, player::Player, pong_game, upgrades::{
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 const UPGRADE_SPAWN_INTERVAL: usize = 10000; // Spawn upgrade every 10 seconds
-const UPGRADE_SIZE: f32 = 2.0;
+const UPGRADE_SIZE: f32 = 4.0;
 
 pub struct UpgradeManager {
     pub instantiated_upgrade: Upgrade,
@@ -51,7 +51,7 @@ impl UpgradeManager {
 
     fn pick_random_upgrade_position(&self) -> Rect {
         let x = crate::utils::random_range(5, CGA_COLUMNS-5 as usize) as f32;
-        let y = crate::utils::random_range(0, CGA_ROWS as usize) as f32;
+        let y = crate::utils::random_range(2, CGA_ROWS-2 as usize) as f32;
 
         Rect::new(x, y, UPGRADE_SIZE, UPGRADE_SIZE)
     }
