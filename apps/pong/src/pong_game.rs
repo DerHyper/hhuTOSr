@@ -24,7 +24,7 @@ const Y_MIDDLE: u16 = (CGA_ROWS/2) as u16;
 const X_MIDDLE: u16 = (CGA_COLUMNS/2) as u16;
 const STD_BALL_SPEED_X: f32 = 0.5;
 const STD_BALL_SPEED_Y: f32 = 0.25;
-const STD_BALL_SPEED: f32 = 0.5;
+const STD_BALL_SPEED: f32 = 0.7;
 const RESET_TIME_AFTER_GOAL: usize = 700;
 const MENU_COLOR: Color = Color::LightGreen;
 
@@ -42,7 +42,7 @@ pub struct GameIteration {
     frame: Frame,
     player_1: Player,
     player_2: Player,
-    ball: Ball,
+    balls: [Option<Ball>; 3],
     upgrade_manager: UpgradeManager
 }
 
@@ -52,7 +52,7 @@ impl GameIteration {
             frame: Frame::new(),
             player_1: Player::new(LEFT_SIDE as f32+1., Y_MIDDLE as f32, BAR_LENGTH , BAR_THICKNESS),
             player_2: Player::new(RIGHT_SIDE as f32-1., Y_MIDDLE as f32, BAR_LENGTH, BAR_THICKNESS),
-            ball: Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8),
+            balls: [Some(Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8)), None, None],
             upgrade_manager: UpgradeManager::new()
         }
     }
@@ -60,8 +60,10 @@ impl GameIteration {
     /// Starts a new itteration of the game. 
     pub fn run_game_interation(&mut self) {
         // Init Game Objects
-        self.ball.set_movement_direction(Point::new(STD_BALL_SPEED_X, STD_BALL_SPEED_Y));
-        self.ball.set_speed(STD_BALL_SPEED);
+        if let Some(ball) = self.balls[0].as_mut() {
+            ball.set_movement_direction(Point::new(STD_BALL_SPEED_X, STD_BALL_SPEED_Y));
+            ball.set_speed(STD_BALL_SPEED);
+        }
 
         // Show Start Screen
         self.show_start_screen();
@@ -180,20 +182,24 @@ impl GameIteration {
 
     /// Checks if goal was hit, if so, update player score
     fn check_ball_hit_goal(&mut self) {
-        // Player 2 scored goal
-        if self.ball.object.x < (LEFT_SIDE as f32) -0.1 {
-            ball_hit_goal(&mut self.ball, &mut self.player_2);
-            return;
+        for mut ball in self.balls.iter_mut().flatten() {
+            // Player 2 scored goal
+            if ball.object.x < (LEFT_SIDE as f32) -0.1 {
+                ball_hit_goal(&mut ball, &mut self.player_2);
+                return;
 
-        // Player 1 scored goal
-        } else if self.ball.object.x > (RIGHT_SIDE as f32) +0.1 {
-            ball_hit_goal(&mut self.ball,&mut self.player_1);
+            // Player 1 scored goal
+            } else if ball.object.x > (RIGHT_SIDE as f32) +0.1 {
+                ball_hit_goal(&mut ball,&mut self.player_1);
+            }
         }
     }
 
     /// Move ball by one step
     fn move_ball(&mut self) {
-        self.ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager);
+        for mut ball in self.balls.iter_mut().flatten() {
+            ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager);
+        }
     }
 
     /// Poll player input, chance input accordingly
@@ -220,7 +226,9 @@ impl GameIteration {
         self.frame.draw_renderable(&self.player_1.object, self.player_1.symbol, self.player_1.color);
         self.frame.draw_renderable(&self.player_2.object, self.player_2.symbol, self.player_2.color);
         self.frame.draw_score(&self.player_1, &self.player_2);
-        self.frame.draw_renderable(&self.ball.object, self.ball.symbol, self.ball.color);
+        for mut ball in self.balls.iter_mut().flatten() {
+            self.frame.draw_renderable(&ball.object, ball.symbol, ball.color);
+        }
         self.frame.print_frame();
     }
 }

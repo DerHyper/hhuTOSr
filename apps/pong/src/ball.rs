@@ -11,7 +11,7 @@ use crate::upgrades::upgrade::Upgrade;
 use crate::upgrades::upgrade_manager::UpgradeManager;
 use crate::utils::random_range;
 
-const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.2;
+const BALL_SPEEDUP_MULTIPLICATOR: f32 = 1.1;
 // const BALL: char = 0x09 as char; // '○' in Code page 437
 const BALL_SYMBOL: char = 0xDB as char; // '█' in Code page 437
 const BALL_COLOR: Color = Color::White;
