@@ -13,7 +13,7 @@ use alloc::vec::Vec;
 use core::fmt::Display;
 use core::ptr::NonNull;
 use core::{fmt, panic, ptr};
-use core::sync::atomic::AtomicUsize;
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use spin::Once;
 use usrlib::spinlock::Spinlock as Mutex;
 use usrlib::allocator;
@@ -55,13 +55,13 @@ pub unsafe extern "C" fn unlock_scheduler() {
 struct SchedulerState {
     active_thread: Option<Box<Thread>>,
     ready_queue: LinkedQueue<Box<Thread>>,
-    initialized: bool,
 }
 
 /// Represents the scheduler.
 /// It is round-robin-based and uses a queue to manage the threads.
 pub struct Scheduler {
     state: Mutex<SchedulerState>,
+    initialized: AtomicBool
 }
 
 impl Scheduler {
@@ -70,11 +70,13 @@ impl Scheduler {
     pub fn new() -> Self {
         let state = SchedulerState {
             active_thread: Some(Thread::new_kernel_thread(idle_thread, IDLE_PROCESS_ID)),
-            ready_queue: LinkedQueue::new(),
-            initialized: false,
+            ready_queue: LinkedQueue::new()
         };
         
-        Scheduler { state:  Mutex::new(state) }
+        Scheduler { 
+            state:  Mutex::new(state), 
+            initialized: AtomicBool::new(false)
+        }
     }
 
     /// Get the ID of the currently active thread.
@@ -95,7 +97,7 @@ impl Scheduler {
     /// This function must only be called once.
     pub fn schedule(&self) {
         let mut state = self.state.lock();
-        state.initialized = true;
+        self.initialized.store(true, Ordering::Release);
 
         // The active thread is never None, since we must at least have the idle thread.
         state.active_thread.as_mut().unwrap().start();
@@ -143,7 +145,7 @@ impl Scheduler {
 
         // Check if scheduler was initialized
         let mut state  = state.unwrap();
-        if !state.initialized {
+        if !self.initialized.load(Ordering::Acquire) {
             return
         }
 
@@ -196,7 +198,7 @@ impl Scheduler {
     }
 
     pub fn is_initialized(&self) -> bool {
-        self.state.lock().initialized
+        self.initialized.load(Ordering::Acquire)
     }
 
     /// Prepare the current thread for blocking.
