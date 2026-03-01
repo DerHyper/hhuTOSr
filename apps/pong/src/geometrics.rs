@@ -1,6 +1,7 @@
 extern crate alloc;
 
-use alloc::vec::Vec;
+use core::ops::{Add, Div, Mul};
+
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 use crate::{frame::Frame, utils};
@@ -27,6 +28,45 @@ impl Point {
     /// Using the Pythagorean theorem
     pub fn distance(point1: &Point, point2: &Point) -> f32 {
         utils::sqrt(utils::square(point1.x - point2.x) + utils::square(point1.y - point2.y))
+    }
+
+    /// Returns the distance from (0,0)
+    pub fn length(&self) -> f32 {
+        let length = utils::sqrt(utils::square(self.x)+utils::square(self.y));
+        length
+    }
+
+    /// Returns a Point with a distance from (0,0) of exactly one. 
+    pub fn unit_vector(&self) -> Point {
+        let length = self.length();
+        let scaled_x = self.x/length;
+        let scaled_y = self.y/length;
+        let scaled_vector = Point::new(scaled_x, scaled_y);
+        scaled_vector
+    }
+}
+
+impl Add<Point> for Point {
+    type Output = Point;
+
+    fn add(self, rhs: Point) -> Self::Output {
+        Point::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+impl Mul<f32> for Point {
+    type Output = Point;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Point::new(self.x * rhs, self.y * rhs)
+    }
+}
+
+impl Div<f32> for Point {
+    type Output = Point;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Point::new(self.x / rhs, self.y / rhs)
     }
 }
 
@@ -81,6 +121,19 @@ impl Line {
 
         return Some(Point::new(x, y));
     }
+
+    pub fn length(&self) -> f32 {
+        let dx = self.end.x - self.start.x;
+        let dy = self.end.y - self.start.y;
+        let length = utils::sqrt(utils::square(dx)+utils::square(dy));
+        length
+    }
+
+    pub fn to_directional_vector(&self) -> Point {
+        let dx = self.end.x - self.start.x;
+        let dy = self.end.y - self.start.y;
+        Point::new(dx, dy)
+    }
 }
 
 impl Renderable for Line {
@@ -130,17 +183,19 @@ impl Rect {
     /// Checks if the line collides with the rectangle. 
     /// Returns a vector of all intersection points sorted by distance to the line's start point. 
     /// If the line starts or ends inside the rectangle, the respective endpoint is included in the result vector.
-    pub fn collides_with_line(&self, line: &Line) -> Vec<Point> {
-        let mut res = Vec::new();
+    pub fn collides_with_line(&self, line: &Line) -> Option<Point> {// Vec<Point> {
+        //let mut res = Vec::new();
 
         // Check if either of the line's endpoints are inside the rectangle
         if self.contains(&line.start) {
-            res.push(Point::new(line.start.x, line.start.y));
-            return res;
+            // res.push(Point::new(line.start.x, line.start.y));
+            // return res;
+            return Some(Point::new(line.start.x, line.start.y));
         }
         if self.contains(&line.end) {
-            res.push(Point::new(line.end.x, line.end.y));
-            return res;
+            // res.push(Point::new(line.end.x, line.end.y));
+            // return res;
+            return Some(Point::new(line.end.x, line.end.y));
         }
 
         // Check if the line intersects with any of the rectangle's edges
@@ -153,17 +208,19 @@ impl Rect {
 
         for edge in &rect_edges {
             if let Some(intersection) = Line::lines_intersect(line, edge) {
-                res.push(intersection);
+                return Some(intersection);
+                // res.push(intersection);
             }
         }
 
-        res.sort_by( |a, b| {
-            let dist_a = Point::distance(&line.start, a);
-            let dist_b = Point::distance(&line.start, b);
-            dist_a.partial_cmp(&dist_b).unwrap()
-        });
+        // res.sort_by( |a, b| {
+        //     let dist_a = Point::distance(&line.start, a);
+        //     let dist_b = Point::distance(&line.start, b);
+        //     dist_a.partial_cmp(&dist_b).unwrap()
+        // });
 
-        return res;
+        // return res;
+        return None;
     }
 }
 
