@@ -72,4 +72,8 @@ impl UpgradeManager {
         self.instantiated_upgrade.apply(collecting_player, other_player, ball);
         self.destroy_upgrade();
     }
+    
+    pub fn get_ball_event(&self) -> crate::ball::BallEvent {
+        self.instantiated_upgrade.get_ball_event()
+    }
 }

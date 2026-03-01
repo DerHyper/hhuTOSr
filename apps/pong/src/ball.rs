@@ -31,6 +31,12 @@ pub struct Ball {
     pub last_hit_player: u8
 }
 
+pub enum BallEvent {
+    None,
+    SpawnBall,
+    SlowBall
+}
+
 
 impl Ball {
     /// Creates a new ball
@@ -51,27 +57,31 @@ impl Ball {
 
     /// Move the ball by one step, flipping the direction if colliding with other object.
     /// Movement direction is definded in `movement_x` and `movement_y`.
-    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager)
-    {
-        self.check_collisions(player_1,player_2,upgrade_manager);
+    pub fn move_step(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager) -> BallEvent {
+        let event = self.check_collisions(player_1,player_2,upgrade_manager);
         self.move_in_movement_direction();
+        event
     }
 
-    fn check_collisions(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager) {
+    fn check_collisions(&mut self, mut player_1: &mut Player, mut player_2: &mut Player, mut upgrade_manager: &mut UpgradeManager) -> BallEvent {
         // Calculate Trajectory
         let trajectory=  self.get_trajectory();
 
         // Only check for one collision (early return)
         if self.check_collision_player(player_1, &trajectory) { 
             self.last_hit_player = 1;
-            return; 
+            return BallEvent::None; 
         }
         if self.check_collision_player(player_2, &trajectory) { 
             self.last_hit_player = 2;
-            return; 
+            return BallEvent::None; 
         }
-        if self.check_collision_borders(&trajectory) { return; }
-        if self.check_collision_upgrade(upgrade_manager, player_1, player_2, &trajectory) { return; }
+        if self.check_collision_borders(&trajectory) { return BallEvent::None; }
+
+        let (has_collided_with_upgrade, ret_event) = self.check_collision_upgrade(upgrade_manager, player_1, player_2, &trajectory);
+        if has_collided_with_upgrade { return ret_event; }
+
+        return BallEvent::None;
     }
 
     fn move_in_movement_direction(&mut self) {
@@ -192,7 +202,7 @@ impl Ball {
         }
     }
     
-    fn check_collision_upgrade(&mut self, upgrade_manager: &mut UpgradeManager, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> bool {
+    fn check_collision_upgrade(&mut self, upgrade_manager: &mut UpgradeManager, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> (bool, BallEvent) {
         let hitpoint = upgrade_manager.instantiated_upgrade.object.collides_with_line(trajectory);
         if let Some(hitpoint) = hitpoint.first().unwrap() {
             // Select players
@@ -208,8 +218,8 @@ impl Ball {
 
             upgrade_manager.apply(collecting_player, other_player, self);
             sound_fx::play_collect_upgrade();
-            return true;
+            return (true, upgrade_manager.get_ball_event());
         }
-        false
+        (false, BallEvent::None)
     }
 }

@@ -2,12 +2,15 @@ use core::mem;
 
 use usrlib::user_cga::Color;
 
-use crate::{geometrics::Rect, upgrades::{longerbar::LongerBarUpgrade, smallerbar::SmallerBarUpgrade}};
+use crate::{ball::BallEvent, geometrics::Rect, upgrades::{longerbar::LongerBarUpgrade, smallerbar::SmallerBarUpgrade}};
 
 pub trait UpgradeTypeTrait {
     fn get_symbol() -> char;
     fn get_color() -> Color;
     fn apply_upgrade(collecting_player: &mut crate::player::Player, other_player: &mut crate::player::Player, ball: &mut crate::ball::Ball);
+    fn get_ball_event(&self) -> crate::ball::BallEvent {
+        crate::ball::BallEvent::None
+    }
 }
 
 #[derive(PartialEq)]
@@ -74,6 +77,17 @@ impl UpgradeType {
         let random_index = crate::utils::random_range(1, number_of_upgrade_types);
         UpgradeType::from(random_index)
     }
+    
+    fn get_ball_event(&self) -> crate::ball::BallEvent {
+        match self {
+            UpgradeType::None => BallEvent::None,
+            UpgradeType::LongerBar => BallEvent::None,
+            UpgradeType::SmallerBar => BallEvent::None,
+            // UpgradeType::AddBall => todo!(),
+            // UpgradeType::SlowerBalls => todo!(),
+            // UpgradeType::Blocker => todo!(),
+        }
+    }
 }
 
 pub struct Upgrade {
@@ -91,5 +105,9 @@ impl Upgrade {
 
     pub fn apply(&self, collecting_player: &mut crate::player::Player, other_player: &mut crate::player::Player, ball: &mut crate::ball::Ball) {
         self.upgrade_type.apply_upgrade(collecting_player, other_player, ball);
+    }
+    
+    pub fn get_ball_event(&self) -> crate::ball::BallEvent {
+        self.upgrade_type.get_ball_event()
     }
 }

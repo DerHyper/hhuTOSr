@@ -8,7 +8,7 @@ use crate::geometrics::{Point, Renderable};
 //use crate::devices::{cga, pit};
 use crate::player::{self, Player};
 use crate::frame::{self, Frame};
-use crate::ball::{self, Ball};
+use crate::ball::{self, Ball, BallEvent};
 //use crate::library::input;
 use crate::sound_fx;
 use crate::upgrades::upgrade::UpgradeType;
@@ -197,8 +197,29 @@ impl GameIteration {
 
     /// Move ball by one step
     fn move_ball(&mut self) {
+        let mut do_spawn_ball = false;
+
         for mut ball in self.balls.iter_mut().flatten() {
-            ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager);
+            let event = ball.move_step(&mut self.player_1, &mut self.player_2, &mut self.upgrade_manager);
+            match event {
+                BallEvent::SpawnBall => do_spawn_ball = true,
+                _ => {}
+            }
+        }
+
+        if do_spawn_ball {
+            self.spawn_ball()
+        }
+    }
+
+    /// Spawns a now ball if there is space
+    pub fn spawn_ball(&mut self)
+    {
+        for mut ball in self.balls.iter_mut() {
+            if ball.is_none() {
+                ball = &mut Some(Ball::new((CGA_COLUMNS/2) as f32, Ball::get_random_start_y(), 1 as u8));
+                return;
+            }
         }
     }
 
