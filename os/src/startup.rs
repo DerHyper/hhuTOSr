@@ -81,6 +81,8 @@ use user::aufgabe6::thread_demo_timed;
 use user::aufgabe8::user_threads;
 use user::aufgabe9::syscall_demo;
 
+const ANIMATION_FRAMES: u32 = 3;
+
 fn aufgabe1() {
     text_demo::run();
     println!("");
@@ -131,7 +133,7 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
         kprintln!("Found PCI device {:04x}:{:04x}", device.read_vendor_id(), device.read_device_id());
     }
 
-    // Just a short demo to show how to access PCI devices
+    // Just a short Demo to show how to access PCI devices
     // For more information, see the OsDev Wiki: https://wiki.osdev.org/PCI, https://wiki.osdev.org/RTL8139
     let rtl8139 = get_pci_bus().iter().find(|device| {
         device.read_vendor_id() == 0x10ec && device.read_device_id() == 0x8139
@@ -218,71 +220,116 @@ pub extern "C" fn startup(multiboot_info: &MultibootInfo) {
 }
 
 fn show_startscreen(){
-    // TODO: Remove and add to methods, once kernel Methods work
-    // syscall_demo::syscall_test();
-    // PfListTest::run();
-    // page_table_demo::run();
-    // page_table_thread_demo::run();
-    // user_app_demo::run();
-    // user_app_demo_pid::run();
-    // user_app_dump_vmas::run();
-    // user_app_fibonacci::run();
-    user_app_pong::run();
 
-    // print_startscreen();
+    print_startscreen();
 
-    // let methods = [
-    //     text_demo::run, 
-    //     sound_demo::run,
-    //     keyboard_demo::run,
-    //     thread_demo_preemptive::run,
-    //     heap_demo::run,
-    //     thread_demo_timed::run,
-    //     pong::run
-    //     ];
+    let methods = [
+        text_demo::run, 
+        sound_demo::run,
+        keyboard_demo::run,
+        heap_demo::run,
+        pong::run,
+        user_app_demo_pid::run,
+        user_app_dump_vmas::run,
+        user_app_fibonacci::run,
+        user_app_pong::run
+        ];
 
-    // // Wait for key press
-    // loop{
+    // Wait for key press
+    let mut animation_frame: u32 = 0;
+    loop{
+        
 
-    //     // Check if number
-    //     let input = input::getch();
-    //     let index = input.to_digit(10);
-    //     if index.is_none() {
-    //         println!("{} not a number.", input);
-    //         continue;
-    //     }
+        // Check if number
+        let mut input = input::try_getch();
+        
+        while input.is_none() {
+            input = input::try_getch();
+            print_crab(animation_frame);
+            if animation_frame >= ANIMATION_FRAMES
+            {
+                animation_frame = 0;
+            } else {
+                animation_frame = animation_frame + 1;
+            } 
+            pit::wait(100);
+        }
 
-    //     // Check if within range
-    //     let index = index.unwrap() as usize;
-    //     if index < 1 || index > methods.len() {
-    //         println!("{} not within range.", index);
-    //         continue;
-    //     }
+        let index = input.unwrap().to_digit(10);
+        if index.is_none() {
+            println!("{} not a number.", input.unwrap());
+            continue;
+        }
+        
 
-    //     // Clean screen and call Method
-    //     { cga::CGA.lock().clear(); }
-    //     methods[index-1]();
+        // Check if within range
+        let index = index.unwrap() as usize;
+        if index < 1 || index > methods.len() {
+            println!("{} not within range.", index);
+            continue;
+        }
 
-    //     // Return
-    //     println!("\nPress any key to continue.");
-    //     input::getch();
-    //     print_startscreen();
-    // }
+        // Clean screen and call Method
+        { cga::CGA.lock().clear(); }
+        methods[index-1]();
+
+        // Return
+        println!("\nPress any key to continue.");
+        input::getch();
+
+        print_startscreen();
+    }
 }
 
 fn print_startscreen() {
     { cga::CGA.lock().clear(); }
-    println!("Welcome to hhuTOS!");
-    println!("\n       _~^~^~_\n   \\) /  o o  \\ (/\n     \'_   v   _\'\n     / \'-----\' \\\n");
-    println!("1 - Text demo ");
-    println!("2 - Sound demo ");
-    println!("3 - Keyboard demo ");
-    println!("4 - Thread demo ");
-    println!("5 - Memory demo ");
-    println!("6 - Mutex demo ");
-    println!("7 - Pong demo ");
-    println!("8 - Kernel vs. User Threads ");
+    println!("Welcome to hhuTOS!\n\n\n\n");
+    
+    println!("1 - Text Demo ");
+    println!("2 - Sound Demo ");
+    println!("3 - Keyboard Demo ");
+    println!("4 - Memory Demo ");
+    println!("5 - Pong-Legacy ");
+    println!("6 - User App Demo ");
+    println!("7 - VMAs Demo ");
+    println!("8 - Fibonacci User Heap Demo ");
+    println!("9 - Pong 2.0 ");
     println!("");
+}
+
+fn print_crab(animation_frame_id: u32) {
+    let mut cga = cga::CGA.lock();
+    let old_position = cga.getpos();
+    let mut crab_frame: [& str; 4] = [""; 4];
+    match animation_frame_id {
+        0 => crab_frame = [
+            "        _~^~^~_     ",
+            "   \\) /  o o  \\ (/",
+            "     \'_   v   _\'  ",
+            "     / \'-----\' \\ "],
+        1 => crab_frame = [
+            "   \\)  _~^~^~_    ",
+            "     | /  o o  \\ (/",
+            "     \'_   v   _\'  ",
+            "     / \'-----\' \\ "],
+        2 => crab_frame = [
+            "        _~^~^~_     ",
+            "   \\) /  o o  \\ (/",
+            "     \'_   v   _\'  ",
+            "     / \'-----\' \\ "],
+        3 => crab_frame = [
+            "        _~^~^~_  (/ ",
+            "   \\) /  o o  \\ | ",
+            "    \'_   v   _\'",
+            "    / \'-----\' \\"],
+        _ => crab_frame = [
+            "        _~^~^~_     ",
+            "   \\) /  o o  \\ (/",
+            "     \'_   v   _\'  ",
+            "     / \'-----\' \\ "]
+    }
+    cga.print_centered_block(&crab_frame, 1);
+    cga.setpos(old_position.0, old_position.1);
 }
 
 #[panic_handler]
