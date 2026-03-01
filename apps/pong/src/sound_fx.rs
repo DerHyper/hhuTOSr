@@ -17,3 +17,9 @@ pub fn play_score_point() {
     user_pcspk::play_note(user_pcspk::PitchNote::C1, 10);
     user_pcspk::play_note(user_pcspk::PitchNote::D1, 7);
 }
+
+/// Plays a sound using the `pcspk`
+pub fn play_collect_upgrade() {
+    user_pcspk::play_note(user_pcspk::PitchNote::C1, 10);
+    user_pcspk::play_note(user_pcspk::PitchNote::A1, 5);
+}
