@@ -79,10 +79,10 @@ impl Ball {
     }
 
     fn check_collision_player(&mut self, player: &mut Player, trajectory: &Line) -> bool {
-        let hitpoint = player.object.collides_with_line(trajectory);
-        if let Some(hitpoint) = hitpoint {
-            // New Direction depends on where on the bar the bal hit. Middle -> (1,0), Upper side -> (0.2, -0.8) and so on
-            let player_to_hitpoint_line = Line::new(player.object.pivot, hitpoint);
+        let hitpoints = player.object.collides_with_line(trajectory);
+        if let Some(hitpoint) = hitpoints.first().unwrap() {
+            // New Direction depends on where on the bar the ball hits. Middle -> (1,0), Upper side -> (0.2, -0.8) and so on
+            let player_to_hitpoint_line = Line::new(player.object.pivot, hitpoint.clone());
             let mut new_direction = player_to_hitpoint_line.to_directional_vector();
             
             self.set_movement_direction(new_direction);
@@ -116,10 +116,12 @@ impl Ball {
     {
         // Increase x movement to make the game more dynamic.
         new_direction.x = new_direction.x*10.0;
-        let scaled_direction = new_direction.unit_vector();
+        let mut scaled_direction = new_direction.unit_vector();
 
         // Secure minimum x movement to prevent boring straight vertical movement
-        scaled_direction.y.clamp(-0.2, 0.2);
+        scaled_direction.y = scaled_direction.y.clamp(-0.3, 0.3);
+
+
         let scaled_direction = scaled_direction.unit_vector();
 
         self.movement_direction = scaled_direction;
@@ -192,7 +194,7 @@ impl Ball {
     
     fn check_collision_upgrade(&mut self, upgrade_manager: &mut UpgradeManager, mut player_1: &mut Player, mut player_2: &mut Player, trajectory: &Line) -> bool {
         let hitpoint = upgrade_manager.instantiated_upgrade.object.collides_with_line(trajectory);
-        if let Some(hitpoint) = hitpoint {
+        if let Some(hitpoint) = hitpoint.first().unwrap() {
             // Select players
             let collecting_player;
             let other_player;

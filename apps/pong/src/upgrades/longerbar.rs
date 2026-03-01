@@ -29,6 +29,6 @@ impl UpgradeTypeTrait for LongerBarUpgrade {
     }
 
     fn apply_upgrade(target_player: &mut crate::player::Player, _other_player: &mut crate::player::Player, _ball: &mut crate::ball::Ball) {
-        target_player.object.height = target_player.object.height + 1.0;
+        target_player.object.height = target_player.object.height + 2.0;
     }
 }

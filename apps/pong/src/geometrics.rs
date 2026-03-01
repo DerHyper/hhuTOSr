@@ -6,6 +6,8 @@ use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 use crate::{frame::Frame, utils};
 
+pub const EPS: f32 = 0.0001;
+
 pub trait Renderable {
     fn draw(&self, frame: &mut Frame, symbol: char, color: usrlib::user_cga::Color);
 }
@@ -112,10 +114,10 @@ impl Line {
 
         let x = (b2 * c1 - b1 * c2) / determinant;
         let y = (a1 * c2 - a2 * c1) / determinant;
-        if (x < line1.start.x.min(line1.end.x) || x > line1.start.x.max(line1.end.x)) ||
-           (y < line1.start.y.min(line1.end.y) || y > line1.start.y.max(line1.end.y)) ||
-           (x < line2.start.x.min(line2.end.x) || x > line2.start.x.max(line2.end.x)) ||
-           (y < line2.start.y.min(line2.end.y) || y > line2.start.y.max(line2.end.y)) {
+        if (x < line1.start.x.min(line1.end.x) - EPS || x > line1.start.x.max(line1.end.x) + EPS) ||
+           (y < line1.start.y.min(line1.end.y) - EPS || y > line1.start.y.max(line1.end.y) + EPS) ||
+           (x < line2.start.x.min(line2.end.x) - EPS || x > line2.start.x.max(line2.end.x) + EPS) ||
+           (y < line2.start.y.min(line2.end.y) - EPS || y > line2.start.y.max(line2.end.y) + EPS) {
             return None; // Intersection is outside the line segments
         }
 
@@ -183,44 +185,42 @@ impl Rect {
     /// Checks if the line collides with the rectangle. 
     /// Returns a vector of all intersection points sorted by distance to the line's start point. 
     /// If the line starts or ends inside the rectangle, the respective endpoint is included in the result vector.
-    pub fn collides_with_line(&self, line: &Line) -> Option<Point> {// Vec<Point> {
-        //let mut res = Vec::new();
-
-        // Check if either of the line's endpoints are inside the rectangle
-        if self.contains(&line.start) {
-            // res.push(Point::new(line.start.x, line.start.y));
-            // return res;
-            return Some(Point::new(line.start.x, line.start.y));
-        }
-        if self.contains(&line.end) {
-            // res.push(Point::new(line.end.x, line.end.y));
-            // return res;
-            return Some(Point::new(line.end.x, line.end.y));
-        }
-
+    pub fn collides_with_line(&self, line: &Line) -> [Option<Point>; 4] {// Vec<Point> {
         // Check if the line intersects with any of the rectangle's edges
+        let p_up_left  = Point::new(self.pivot.x - self.width/2.0, self.pivot.y - self.height/2.0);
+        let p_dn_left  = Point::new(self.pivot.x - self.width/2.0, self.pivot.y + self.height/2.0);
+        let p_up_right = Point::new(self.pivot.x + self.width/2.0, self.pivot.y - self.height/2.0);
+        let p_dn_right = Point::new(self.pivot.x + self.width/2.0, self.pivot.y + self.height/2.0);
         let rect_edges = [
-            Line::new(Point::new(self.pivot.x - self.width/2.0, self.pivot.y - self.height/2.0), Point::new(self.pivot.x + self.width/2.0, self.pivot.y - self.height/2.0)), // Top edge
-            Line::new(Point::new(self.pivot.x + self.width/2.0, self.pivot.y - self.height/2.0), Point::new(self.pivot.x + self.width/2.0, self.pivot.y + self.height/2.0)), // Right edge
-            Line::new(Point::new(self.pivot.x + self.width/2.0, self.pivot.y + self.height/2.0), Point::new(self.pivot.x - self.width/2.0, self.pivot.y + self.height/2.0)), // Bottom edge
-            Line::new(Point::new(self.pivot.x - self.width/2.0, self.pivot.y + self.height/2.0), Point::new(self.pivot.x - self.width/2.0, self.pivot.y - self.height/2.0))  // Left edge
+            Line::new(p_up_left, p_up_right), // Top edge
+            Line::new(p_up_right, p_dn_right), // Right edge
+            Line::new(p_dn_left, p_dn_right), // Bottom edge
+            Line::new(p_up_left, p_dn_left)  // Left edge
         ];
 
-        for edge in &rect_edges {
-            if let Some(intersection) = Line::lines_intersect(line, edge) {
-                return Some(intersection);
-                // res.push(intersection);
+        let mut hitpoints: [Option<Point>; 4] = [None, None, None, None];
+        for i in 0..rect_edges.len() {
+            if let Some(intersection) = Line::lines_intersect(line, &rect_edges[i]) {
+                hitpoints[i] = Some(intersection);
             }
         }
 
-        // res.sort_by( |a, b| {
-        //     let dist_a = Point::distance(&line.start, a);
-        //     let dist_b = Point::distance(&line.start, b);
-        //     dist_a.partial_cmp(&dist_b).unwrap()
-        // });
+        hitpoints.sort_by( |a, b| {
+            if a.is_none() && b.is_none() {
+                return core::cmp::Ordering::Equal;
+            } else if a.is_none() {
+                return core::cmp::Ordering::Greater;
+            } else if b.is_none() {
+                return core::cmp::Ordering::Less;
+            }
+
+            let dist_a = Point::distance(&line.start, &a.unwrap());
+            let dist_b = Point::distance(&line.start, &b.unwrap());
+            dist_a.partial_cmp(&dist_b).unwrap()
+        });
 
         // return res;
-        return None;
+        return hitpoints;
     }
 }
 
