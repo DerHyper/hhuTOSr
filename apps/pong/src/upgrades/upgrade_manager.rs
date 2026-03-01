@@ -6,6 +6,7 @@ use crate::{geometrics::Rect, pong_game, upgrades::{longerbar::LongerBarUpgrade,
 use usrlib::consts::{CGA_COLUMNS, CGA_ROWS};
 
 const UPGRADE_SPAWN_INTERVAL: usize = 10000; // Spawn upgrade every 10 seconds
+const UPGRADE_SIZE: f32 = 2.0;
 
 pub struct UpgradeManager {
     pub instantiated_upgrade: Upgrade,
@@ -16,8 +17,8 @@ impl UpgradeManager {
     pub fn new() -> UpgradeManager {
         UpgradeManager {
             instantiated_upgrade: Upgrade {
-                upgrade_type: UpgradeType::LongerBar,
-                object: Rect::new(0.0, 0.0, 1.0, 1.0)
+                upgrade_type: UpgradeType::None,
+                object: Rect::new(0.0, 0.0, UPGRADE_SIZE, UPGRADE_SIZE)
             },
             upgrade_spawn_timer: Timer::new()
         }
@@ -52,7 +53,7 @@ impl UpgradeManager {
         let x = crate::utils::random_range(5, CGA_COLUMNS-5 as usize) as f32;
         let y = crate::utils::random_range(0, CGA_ROWS as usize) as f32;
 
-        Rect::new(x, y, 1.0, 1.0)
+        Rect::new(x, y, UPGRADE_SIZE, UPGRADE_SIZE)
     }
 
     pub fn get_symbol(&self) -> char {
