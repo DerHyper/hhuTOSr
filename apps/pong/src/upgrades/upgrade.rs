@@ -2,7 +2,7 @@ use core::mem;
 
 use usrlib::user_cga::Color;
 
-use crate::{geometrics::Rect, upgrades::longerbar::LongerBarUpgrade};
+use crate::{geometrics::Rect, upgrades::{longerbar::LongerBarUpgrade, smallerbar::SmallerBarUpgrade}};
 
 pub trait UpgradeTypeTrait {
     fn get_symbol() -> char;
@@ -14,6 +14,7 @@ pub trait UpgradeTypeTrait {
 pub enum UpgradeType {
     None,
     LongerBar,
+    SmallerBar,
     // AddBall,
     // SlowerBalls,
     // Blocker
@@ -22,8 +23,9 @@ pub enum UpgradeType {
 impl UpgradeType {
     pub fn apply_upgrade(&self, collecting_player: &mut crate::player::Player, other_player: &mut crate::player::Player, ball: &mut crate::ball::Ball) {
         match self {
-            UpgradeType::LongerBar => LongerBarUpgrade::apply_upgrade(collecting_player, other_player, ball),
             UpgradeType::None => {},
+            UpgradeType::LongerBar => LongerBarUpgrade::apply_upgrade(collecting_player, other_player, ball),
+            UpgradeType::SmallerBar => SmallerBarUpgrade::apply_upgrade(other_player, collecting_player, ball),
             // UpgradeType::AddBall => todo!(),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
@@ -32,8 +34,9 @@ impl UpgradeType {
 
     pub fn get_symbol(&self) -> char {
         match self {
-            UpgradeType::LongerBar => LongerBarUpgrade::get_symbol(),
             UpgradeType::None => ' ',
+            UpgradeType::LongerBar => LongerBarUpgrade::get_symbol(),
+            UpgradeType::SmallerBar => SmallerBarUpgrade::get_symbol(),
             // UpgradeType::AddBall => todo!(),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
@@ -42,8 +45,9 @@ impl UpgradeType {
 
     pub fn get_color(&self) -> Color {
         match self {
-            UpgradeType::LongerBar => LongerBarUpgrade::get_color(),
             UpgradeType::None => Color::Black,
+            UpgradeType::LongerBar => LongerBarUpgrade::get_color(),
+            UpgradeType::SmallerBar => SmallerBarUpgrade::get_color(),
             // UpgradeType::AddBall => todo!(),
             // UpgradeType::SlowerBalls => todo!(),
             // UpgradeType::Blocker => todo!(),
@@ -54,9 +58,10 @@ impl UpgradeType {
         match index {
             0 => UpgradeType::None, // No Upgrade
             1 => UpgradeType::LongerBar,
-            // 2 => UpgradeType::AddBall,
-            // 3 => UpgradeType::SlowerBalls,
-            // 4 => UpgradeType::Blocker,
+            2 => UpgradeType::SmallerBar,
+            // 3 => UpgradeType::AddBall,
+            // 4 => UpgradeType::SlowerBalls,
+            // 5 => UpgradeType::Blocker,
             _ => panic!("Invalid upgrade type index")
         }
     }
